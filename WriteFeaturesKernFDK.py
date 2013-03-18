@@ -180,7 +180,7 @@ class ReadFontLabClasses(object):
 		self.f = font
 		self.keyGlyphs = {}
 		self.groups = {}
-		self.kernClassOrder = []
+		self.groupOrder = []
 		
 		classes = []
 		for c in self.f.classes:
@@ -207,7 +207,7 @@ class ReadFontLabClasses(object):
 			if repFound == False: 
 				print "\tWARNING: Kerning class %s has no explicit key glyph.\n\tUsing first glyph found (%s)." % (c, rep)
 
-			self.kernClassOrder.append(OTgroupName)
+			self.groupOrder.append(OTgroupName)
 			self.keyGlyphs[OTgroupName] = rep
 			self.groups[OTgroupName] = cleanGlyphList 
 
@@ -287,7 +287,7 @@ class KernDataClass(object):
 			flC = ReadFontLabClasses(self.f)
 			self.groups = flC.groups
 			self.keyGlyphs = flC.keyGlyphs
-			self.kernClassOrder = flC.kernClassOrder
+			self.groupOrder = flC.groupOrder
 			self.analyzeGroups()
 			self.kerning = self.readFLkerning()
 
@@ -298,7 +298,7 @@ class KernDataClass(object):
 			self.header.append('# PS Name: %s' % self.f.info.postscriptFontName)
 			self.header.append('# MM Inst: %s' % self.f.info.styleMapFamilyName)
 			self.groups.update(self.f.groups)
-			self.kernClassOrder = sorted(self.f.groups.keys())
+			self.groupOrder = sorted(self.f.groups.keys())
 			self.analyzeGroups()
 			self.kerning = self.f.kerning
 
@@ -672,13 +672,12 @@ class KernDataClass(object):
 		# kerning classes:
 		# ----------------
 
-		for kernClass in self.kernClassOrder:
+		for kernClass in self.groupOrder:
 			glyphList = self.groups[kernClass]
 			glyphString = ' '.join(glyphList)
 			
-			if not kernClass[0] == '@':
-				kernClass = '@%s' % kernClass
-			self.output.append( '%s = [%s];' % (kernClass, glyphString) )
+			if kernClass[0] == '@':
+				self.output.append( '%s = [%s];' % (kernClass, glyphString) )
 
 
 		# ------------------
