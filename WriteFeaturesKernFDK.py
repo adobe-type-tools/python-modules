@@ -52,7 +52,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 __doc__ = """
-WriteKernFeaturesFDK.py v3.2.1 - Mar 08 2013
+WriteKernFeaturesFDK.py v3.3 - Mar 18 2013
 
 Contains a class (KernDataClass) which, when provided with a FontLab font and a path to a folder, will output 
 a file named "features.kern", containing a features-file syntax definition of the font's kerning.
@@ -130,6 +130,7 @@ v3.0   - Oct 24 2012 - Complete re-write.
 v3.1   - Nov 30 2012 - Now compatible with UFOs -- this means the module can be used from Fontlab, from the commandline or from RoboFont.
 v3.2   - Jan 24 2013 - Made subtabling optional, changed subtabling behaviour to also include glyph-to-class pairs.
 v3.2.1 - Mar 08 2013 - Minor improvements.
+v3.3   - Mar 18 2013 - Adds '@' prefix to group names that lack it.
 
 """
 
@@ -674,6 +675,9 @@ class KernDataClass(object):
 		for kernClass in self.kernClassOrder:
 			glyphList = self.groups[kernClass]
 			glyphString = ' '.join(glyphList)
+			
+			if not kernClass[0] == '@':
+				kernClass = '@%s' % kernClass
 			self.output.append( '%s = [%s];' % (kernClass, glyphString) )
 
 
