@@ -1,7 +1,6 @@
 import os
 from defcon import Font as defconFont
 
-__doc__ = ClassKerningToUFO.__doc__
 
 __license__ =  """
 Copyright (c) 2013 Adobe Systems Incorporated. All rights reserved.
@@ -216,4 +215,6 @@ class ClassKerningToUFO(object):
 
 			print 'done'
 	
+	
+__doc__ = ClassKerningToUFO.__doc__
 
