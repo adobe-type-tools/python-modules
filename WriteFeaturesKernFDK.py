@@ -52,7 +52,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 __doc__ = """
-WriteKernFeaturesFDK.py v3.3 - Mar 18 2013
+WriteKernFeaturesFDK.py v3.3.1 - Apr 16 2013
 
 Contains a class (KernDataClass) which, when provided with a FontLab font and a path to a folder, will output 
 a file named "features.kern", containing a features-file syntax definition of the font's kerning.
@@ -131,6 +131,7 @@ v3.1   - Nov 30 2012 - Now compatible with UFOs -- this means the module can be 
 v3.2   - Jan 24 2013 - Made subtabling optional, changed subtabling behaviour to also include glyph-to-class pairs.
 v3.2.1 - Mar 08 2013 - Minor improvements.
 v3.3   - Mar 18 2013 - Ignore non-kerning classes.
+v3.3.1 - Apr 16 2013 – Add MetricsMachine-style side flags.
 
 """
 
