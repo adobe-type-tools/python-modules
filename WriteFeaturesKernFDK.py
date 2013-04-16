@@ -10,8 +10,8 @@ kDefaultWriteTrimmed = False  #if 'False', trimmed pairs will not be processed a
 					  #for a different default behavior change the value to 'True'.
 kDefaultWriteSubtables = True
 
-kLeftTag = ['_LEFT','_1ST']
-kRightTag = ['_RIGHT','_2ND']
+kLeftTag = ['_LEFT','_1ST', '_L_']
+kRightTag = ['_RIGHT','_2ND', '_R_']
 
 kLatinTag = '_LAT'
 kGreekTag = '_GRK'
