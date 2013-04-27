@@ -17,7 +17,7 @@ kDefaultWriteMarkClassesFile = False
 kDefaultIndianScriptsFormat = False
 kCasingTagsList = ['LC','UC','SC','AC'] # All the tags must have the same number of characters, and that number must be equal to kCasingTagSize
 kCasingTagSize = 2
-kRTLtagsList = ['AR','HE'] # Arabic, Hebrew
+kRTLtagsList = ['_AR','_HE'] # Arabic, Hebrew
 kIgnoreAnchorTag = "CXT"
 kLigatureComponentOrderTags = ['1ST','2ND','3RD','4TH'] # Add more as necessary to a maximum of 9 (nine)
 kIndianAboveMarks = "abvm"
@@ -48,7 +48,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 __doc__ = """
-WriteMarkFeaturesFDK.py v2.0 - Mar 08 2013
+WriteMarkFeaturesFDK.py v2.1 - Apr 26 2013
 
 Contains a Python class (markDataClass) which, when provided with a FontLab font and a path to a folder, 
 will output a file named "features.mark", containing a features-file syntax definition of the font's 
@@ -94,7 +94,8 @@ v1.4.4 - Jun 14 2012 - Added checks to avoid anchors with the same name.
 v1.5   - Jun 15 2012 - Added the option to output the lookups in the format required for Indian scripts.
 v1.6   - Jul 19 2012 - The MarkAttachmentType lookupflag is no longer added to mark-to-mark lookups meant for the 'abvm' and 'blwm' features.
 v2.0   - Mar 08 2013 - Now compatible with UFOs -- this means the module can be used from Fontlab, from the commandline or from RoboFont.
-
+v2.1   - Apr 26 2013 - RTL tags were changed to minimize conflicts with anchor names written in caps. Improvements to the output of warning messages.
+                       Contextual anchors no longer produce mark classes.
 """
 
 import os, time, re
@@ -164,6 +165,7 @@ class MarkDataClass(object):
 		self.invalidGlyphNamesList = []
 		self.repeatedGlyphNamesList = []
 		self.markTypesList = []
+		self.anchorNamesNotTrimmed = []
 		
 		self.anchorsDataInCombMarksDict = {}
 		self.anchorsDataInBaseGlyphsDict = {}
@@ -231,7 +233,7 @@ class MarkDataClass(object):
 		
 		self.collectAnchorDataFromBaseGlyphs()
 		if not len(self.anchorsDataInBaseGlyphsDict):
-			print "\nWARNING: No valid anchors were found in base glyphs!"
+			print "\tWARNING: No valid anchors were found in base glyphs!"
 			print
 		
 		if len(self.ligatureClassesDict):
@@ -239,6 +241,9 @@ class MarkDataClass(object):
 
 		self.buildMarkLookups()
 		
+		if len(self.anchorNamesNotTrimmed):
+			print "\tNOTE: These anchor names were not trimmed:\n\t\t%s" % "\n\t\t".join(self.anchorNamesNotTrimmed)
+			
 		if self.writeClassesFile:
 			self.writeMarkClassesFile()
 		
@@ -276,7 +281,7 @@ class MarkDataClass(object):
 				tempGlist.append(gName)
 			else:	
 				self.repeatedGlyphNamesList.append(gName)
-				print "ERROR: The glyph named %s is repeated in the class named %s" % (gName, kCombMarksClassName)
+				print "\tERROR: The glyph named %s is repeated in the class named %s" % (gName, kCombMarksClassName)
 
 
 	def validateLigatureClassesContents(self):
@@ -292,10 +297,10 @@ class MarkDataClass(object):
 						tempAllGlist.append(gName)
 					else:	
 						self.repeatedGlyphNamesList.append(gName)
-						print "ERROR: The glyph named %s is used in more than one ligature class." % (gName)
+						print "\tERROR: The glyph named %s is used in more than one ligature class." % (gName)
 				else:	
 					self.repeatedGlyphNamesList.append(gName)
-					print "ERROR: The glyph named %s is repeated in the class named %s" % (gName, kLigaturesClassName % element)
+					print "\tERROR: The glyph named %s is repeated in the class named %s" % (gName, kLigaturesClassName % element)
 
 
 	def addAllLigaturesToList(self):
@@ -316,7 +321,8 @@ class MarkDataClass(object):
 		if len(anchorName) >= kCasingTagSize + 3: # +3 to guarantee that the name is long enough and will remain long enough after being trimmed
 			if anchorName[-kCasingTagSize:] in kCasingTagsList:
 				return anchorName[:-kCasingTagSize]
-		print "NOTE: The name of this anchor was not trimmed: %s\n" % anchorName
+		if anchorName not in self.anchorNamesNotTrimmed:
+			self.anchorNamesNotTrimmed.append(anchorName)
 		return anchorName
 
 
@@ -336,11 +342,11 @@ class MarkDataClass(object):
 			for anchorIndex in range(len(g.anchors)):
 				anchorName = g.anchors[anchorIndex].name
 				if len(anchorName) == 0:
-					print "ERROR: Glyph %s has a nameless anchor." % gName
+					print "\tERROR: Glyph %s has a nameless anchor." % gName
 					continue
 				if anchorName[0] == '_': # Consider only mark-related anchors (Anchors without undercore are for use in 'mkmk' feature)
 					if anchorName in markAnchorsNames:
-						print "ERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName)
+						print "\tERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName)
 					else:
 						markAnchorsNames.append(anchorName)
 						point = g.anchors[anchorIndex]
@@ -365,11 +371,11 @@ class MarkDataClass(object):
 				for anchorIndex in range(len(g.anchors)):
 					anchorName = g.anchors[anchorIndex].name
 					if len(anchorName) == 0:
-						print "ERROR: Glyph %s has a nameless anchor." % gName
+						print "\tERROR: Glyph %s has a nameless anchor." % gName
 						continue
 					if (anchorName[0] != '_') and (kIgnoreAnchorTag not in anchorName): # Consider only base-related anchors (the ones NOT prefixed with the underscore)
 						if anchorName in markNamesLog:
-							print "ERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName)
+							print "\tERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName)
 						else:
 							markNamesLog.append(anchorName)
 							point = g.anchors[anchorIndex]
@@ -387,11 +393,11 @@ class MarkDataClass(object):
 				for anchorIndex in range(len(g.anchors)):
 					anchorName = g.anchors[anchorIndex].name
 					if len(anchorName) == 0:
-						print "ERROR: Glyph %s has a nameless anchor." % gName
+						print "\tERROR: Glyph %s has a nameless anchor." % gName
 						continue
 					if (anchorName[0] != '_') and (kIgnoreAnchorTag not in anchorName): # Consider only base-related anchors (the ones NOT prefixed with the underscore)
 						if anchorName in markNamesLog:
-							print "ERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName)
+							print "\tERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName)
 						else:
 							markNamesLog.append(anchorName)
 							point = g.anchors[anchorIndex]
@@ -423,6 +429,8 @@ class MarkDataClass(object):
 		for anchor in anchorGroupList:
 			anchorName, anchorX, anchorY = anchor.split(',')
 			markClassName = "@MC%s" % anchorName
+			if kIgnoreAnchorTag in markClassName: # Don't make mark classes from contextual anchors
+				continue
 			if len(self.anchorsDataInCombMarksDict[anchor]) > 1: # make a glyph class only when there's more than one glyph
 				glyphClassName = "@mGC%s_%s_%s" % (anchorName, anchorX.replace('-','n'), anchorY.replace('-','n')) # Coordinates may be negative, and hyphens are not allowed in class names
 				glyphClassContents = ' '.join(self.anchorsDataInCombMarksDict[anchor])
@@ -443,12 +451,12 @@ class MarkDataClass(object):
 			# Do base lookups
 			if len(baseLinesList):
 				self.baseRelatedBasePosLinesList.append('lookup MARK_BASE_%s {\n' % markType)
-				if markType[-2:] in kRTLtagsList:
+				if markType[-3:] in kRTLtagsList:
 					self.baseRelatedBasePosLinesList.append('\tlookupflag RightToLeft;\n\n')
 				self.baseRelatedBasePosLinesList.extend(baseLinesList)
 				self.baseRelatedBasePosLinesList.append('} MARK_BASE_%s;\n\n\n' % markType)
 			else:
-				print "WARNING: The anchor %s is not used in any of the base glyphs." % markType
+				print "\tWARNING: The anchor %s is not used in any of the base glyphs." % markType
 	
 			# Do ligature lookups
 			if len(self.anchorsDataInLigaturesDict):
@@ -456,12 +464,12 @@ class MarkDataClass(object):
 				
 				if len(ligatureLinesList):
 					self.ligatureRelatedBasePosLinesList.append('lookup MARK_LIGATURE_%s {\n' % markType)
-					if markType[-2:] in kRTLtagsList:
+					if markType[-3:] in kRTLtagsList:
 						self.ligatureRelatedBasePosLinesList.append('\tlookupflag RightToLeft;\n\n')
 					self.ligatureRelatedBasePosLinesList.extend(ligatureLinesList)
 					self.ligatureRelatedBasePosLinesList.append('} MARK_LIGATURE_%s;\n\n\n' % markType)
 				else:
-					print "WARNING: The anchor %s is not used in any of the ligature glyphs." % markType
+					print "\tWARNING: The anchor %s is not used in any of the ligature glyphs." % markType
 
 	
 	def buildBaseRelatedLines(self, markTypeName):
@@ -512,7 +520,7 @@ class MarkDataClass(object):
 			anchorPositionsList.sort()
 			
 			if elementCount != len(anchorPositionsList):
-				print "NOT IMPLEMENTED WARNING: Number of elements in ligature %s does not match the number of anchors of the type %s." % (gName, anchorName)
+				print "\tNOT IMPLEMENTED WARNING: Number of elements in ligature %s does not match the number of anchors of the type %s." % (gName, anchorName)
 				continue
 			
 			elementsAnchorsAndMarkClassesList = []
@@ -623,11 +631,11 @@ class MarkDataClass(object):
 			for anchorIndex in range(len(g.anchors)):
 				anchorName = g.anchors[anchorIndex].name
 				if len(anchorName) == 0:
-					print "ERROR: Glyph %s has a nameless anchor." % gName
+					print "\tERROR: Glyph %s has a nameless anchor." % gName
 					continue
 				if anchorName[0] != '_': # Anchors without undercore are for use in 'mkmk' feature
 					if anchorName in markAnchorsNames:
-						print "ERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName)
+						print "\tERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName)
 					else:
 						markAnchorsNames.append(anchorName)
 						point = g.anchors[anchorIndex]
@@ -641,7 +649,7 @@ class MarkDataClass(object):
 		anchorGroupList = self.anchorsDataInCombMkmksDict.keys()
 		anchorGroupList.sort()
 		for anchorName in anchorGroupList:
-			if anchorName[-2:] in kRTLtagsList: rtlFlag = 'RightToLeft ' # Check the last two characters of the anchor's name
+			if anchorName[-3:] in kRTLtagsList: rtlFlag = 'RightToLeft ' # Check the last two characters of the anchor's name
 			else: rtlFlag = ''
 			lookupName = "MKMK_MARK_%s" % anchorName
 			markClassName = "@MC_%s" % anchorName
