@@ -48,7 +48,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 __doc__ = """
-WriteMarkFeaturesFDK.py v2.1 - Apr 26 2013
+WriteMarkFeaturesFDK.py v2.2 - May 01 2013
 
 Contains a Python class (markDataClass) which, when provided with a FontLab font and a path to a folder, 
 will output a file named "features.mark", containing a features-file syntax definition of the font's 
@@ -96,6 +96,7 @@ v1.6   - Jul 19 2012 - The MarkAttachmentType lookupflag is no longer added to m
 v2.0   - Mar 08 2013 - Now compatible with UFOs -- this means the module can be used from Fontlab, from the commandline or from RoboFont.
 v2.1   - Apr 26 2013 - RTL tags were changed to minimize conflicts with anchor names written in caps. Improvements to the output of warning messages.
                        Contextual anchors no longer produce mark classes.
+v2.2   - May 01 2013 - Fixed bug in processing FontLab classes.
 """
 
 import os, time, re
@@ -720,6 +721,7 @@ class MarkDataClass(object):
 class ReadFontLabClasses(object):
 	def __init__(self, font):
 		self.marksClassList = []
+		self.ligatureComponentsList = range(2,len(kLigatureComponentOrderTags)+1) # ligatures have a minimum of 2 components and a maximum determined by the size of kLigatureComponentOrderTags
 		self.ligatureClassesDict = {}
 		
 		for c in font.classes:
