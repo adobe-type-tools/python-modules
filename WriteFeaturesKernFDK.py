@@ -54,7 +54,7 @@ DEALINGS IN THE SOFTWARE.
 __doc__ = """
 WriteKernFeaturesFDK.py v3.3.1 - Apr 16 2013
 
-Contains a class (KernDataClass) which, when provided with a FontLab font and a path to a folder, will output 
+Contains a class (KernDataClass) which, when provided with a UFO or FontLab font, will output 
 a file named "features.kern", containing a features-file syntax definition of the font's kerning.
 
 This script allows the user to customize the minimum kerning value, i.e. the kerning threshold. If the "kDefaultMinKern"
@@ -66,8 +66,8 @@ the lines will be preceded by a number sign (#).
 VERY IMPORTANT: For the creation of the 'features.kern' file to work well, the following class naming rules 
 should be followed:
 
-	Left side classes must contain the string "_LEFT"
-	Right side classes must contain the string "_RIGHT"
+	Left side classes must contain the string "_LEFT" or "_1ST" or "_L_"
+	Right side classes must contain the string "_RIGHT" or "_2ND" or "_R_"
 	Classes to be used on both left and right sides of a kern pair must NOT contain "_LEFT" or "_RIGHT"
 	
 	Latin glyph classes should contain the string "_LAT"
