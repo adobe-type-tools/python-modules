@@ -4,9 +4,9 @@
 ### THE VALUES BELOW CAN BE EDITED AS NEEDED ######
 ###################################################
 
-kKernFeatureFileBaseName = "features"
+kKernFeatureFileName = "kern.fea"
 kDefaultMinKern = 3  #inclusive; this means that pairs which EQUAL this ABSOLUTE value will NOT be ignored/trimmed. Anything below WILL.
-kDefaultWriteTrimmed = False  #if 'False', trimmed pairs will not be processed and, therefore, will not be written to the 'features.kern' file.
+kDefaultWriteTrimmed = False  #if 'False', trimmed pairs will not be processed and, therefore, will not be written to the 'kern.fea' file.
 					  #for a different default behavior change the value to 'True'.
 kDefaultWriteSubtables = True
 
@@ -55,15 +55,15 @@ __doc__ = """
 WriteKernFeaturesFDK.py v3.3.1 - Apr 16 2013
 
 Contains a class (KernDataClass) which, when provided with a UFO or FontLab font, will output 
-a file named "features.kern", containing a features-file syntax definition of the font's kerning.
+a file named "kern.fea", containing a features-file syntax definition of the font's kerning.
 
 This script allows the user to customize the minimum kerning value, i.e. the kerning threshold. If the "kDefaultMinKern"
 value is set to 5 (five), kern pair values of -4, -3, -2, -1, 0, 1, 2, 3 and 4 will be ignored. To include the
-ignored pairs in the 'features.kern' file, change the value of "kDefaultWriteTrimmed" to 'True'. Keep in mind that the
-trimmed pairs will appear in the 'features.kern' file, but they won't be implemented in the font, because
+ignored pairs in the 'kern.fea' file, change the value of "kDefaultWriteTrimmed" to 'True'. Keep in mind that the
+trimmed pairs will appear in the 'kern.fea' file, but they won't be implemented in the font, because
 the lines will be preceded by a number sign (#).
 
-VERY IMPORTANT: For the creation of the 'features.kern' file to work well, the following class naming rules 
+VERY IMPORTANT: For the creation of the 'kern.fea' file to work well, the following class naming rules 
 should be followed:
 
 	Left side classes must contain the string "_LEFT" or "_1ST" or "_L_"
@@ -87,7 +87,7 @@ should be followed:
 		_EXC_E_LC_LEFT_LAT: edieresis' egrave ebreve ecaron emacron etilde
 
 There is no absolute requirement to use any of the strings above, but their usage will facilitate the creation 
-of a correct "features.kern" file, which will prevent kerning class overlapping and subtable overflow.
+of a correct "kern.fea" file, which will prevent kerning class overlapping and subtable overflow.
 
 The default strings values (_LEFT, _LAT, etc.) can be replaced for other values as needed, by editing the 
 entries located at the top of this file.
@@ -132,6 +132,7 @@ v3.2   - Jan 24 2013 - Made subtabling optional, changed subtabling behaviour to
 v3.2.1 - Mar 08 2013 - Minor improvements.
 v3.3   - Mar 18 2013 - Ignore non-kerning classes.
 v3.3.1 - Apr 16 2013 - Add MetricsMachine-style side flags.
+v3.3.2 - Aug 16 2013 - Changed names of output files.
 
 """
 
@@ -225,9 +226,6 @@ class KernDataClass(object):
 		self.inDC = appTest.inDC
 		self.appName = appTest.appName
 
-		# self.outputFileName = '%s_%s' % (kKernFeatureFileBaseName, self.appName)
-		self.outputFileName = kKernFeatureFileBaseName
-				
 		self.f = font
 		self.MM = False
 
@@ -849,15 +847,15 @@ class KernDataClass(object):
 	def writeDataToFile(self):
 
 		if self.MM:
-			kKernFeatureFileName = '%s.%s' % (self.outputFileName, 'mmkern')
+			kKernFeatureFile = 'mm' + kKernFeatureFileName
 		else:
-			kKernFeatureFileName = '%s.%s' % (self.outputFileName, 'kern')
+			kKernFeatureFile = kKernFeatureFileName
 
-		print '\tSaving %s file...' % kKernFeatureFileName
+		print '\tSaving %s file...' % kKernFeatureFile
 		if self.trimmedPairs > 0:
 			print '\tTrimmed pairs: %s' % self.trimmedPairs
 		
-		filePath = os.path.join(self.folder, kKernFeatureFileName)
+		filePath = os.path.join(self.folder, kKernFeatureFile)
 
 		outfile = open(filePath, 'w')
 		outfile.write('\n'.join(self.header))

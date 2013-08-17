@@ -4,11 +4,11 @@
 ### THE VALUES BELOW CAN BE EDITED AS NEEDED ######
 ###################################################
 
-kMarkFeatureFileName = "features.mark"
-kMkmkFeatureFileName = "features.mkmk"
-kMarkClassesFileName = "features.markclasses"
-kAbvmFeatureFileName = "features.abvm"
-kBlwmFeatureFileName = "features.blwm"
+kMarkFeatureFileName = "mark.fea"
+kMkmkFeatureFileName = "mkmk.fea"
+kMarkClassesFileName = "markclasses.fea"
+kAbvmFeatureFileName = "abvm.fea"
+kBlwmFeatureFileName = "blwm.fea"
 kCombMarksClassName = "COMBINING_MARKS"
 kLigaturesClassName = "LIGATURES_WITH_%d_COMPONENTS" # The '%d' part is required
 kDefaultGenMkmkFeature = False
@@ -51,9 +51,9 @@ __doc__ = """
 WriteMarkFeaturesFDK.py v2.2 - May 01 2013
 
 Contains a Python class (markDataClass) which, when provided with a FontLab font and a path to a folder, 
-will output a file named "features.mark", containing a features-file syntax definition of the font's 
-mark attachment and achor data. The script can also generate "feature.mkmk" file. If the Indian scripts
-option is selected, all or part of the lookups will be written to files named "feature.abvm/blwm".
+will output a file named "mark.fea", containing a features-file syntax definition of the font's 
+mark attachment and achor data. The script can also generate "mkmk.fea" file. If the Indian scripts
+option is selected, all or part of the lookups will be written to files named "abvm/blwm.fea".
 
 VERY IMPORTANT: For this script to work, all the combining mark glyphs 
 must be added to an OpenType class named 'COMBINING_MARKS'.
@@ -97,6 +97,7 @@ v2.0   - Mar 08 2013 - Now compatible with UFOs -- this means the module can be 
 v2.1   - Apr 26 2013 - RTL tags were changed to minimize conflicts with anchor names written in caps. Improvements to the output of warning messages.
                        Contextual anchors no longer produce mark classes.
 v2.2   - May 01 2013 - Fixed bug in processing FontLab classes.
+v2.2.1 - Aug 16 2013 - Changed names of output files.
 """
 
 import os, time, re
