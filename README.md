@@ -23,3 +23,27 @@ instanceFolder = os.path.dirname(f.path)
 WriteFeaturesKernFDK.KernDataClass(f, instanceFolder, minKern, writeTrimmed, writeSubtables)
 
 </code></pre>
+
+---
+Example code for a Python file that uses `WriteFeaturesKernFDK` from the command line:
+
+<pre><code>
+import sys
+import os
+from defcon import Font
+import WriteFeaturesKernFDK
+
+ufo = sys.argv[-1]
+if ufo.endswith(os.sep):
+    ufo = ufo[:-1]
+f = Font(ufo)
+
+minKern = 3
+writeTrimmed = False
+writeSubtables = True
+
+instanceFolder = os.path.dirname(f.path)
+
+WriteFeaturesKernFDK.KernDataClass(f, instanceFolder, minKern, writeTrimmed, writeSubtables)
+
+</code></pre>
