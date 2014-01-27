@@ -52,7 +52,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 __doc__ = """
-WriteKernFeaturesFDK.py v3.4 - Jan 22 2014
+WriteKernFeaturesFDK.py v3.5 - Jan 27 2014
 
 Contains a class (KernDataClass) which, when provided with a UFO or FontLab font, will output 
 a file named "kern.fea", containing a features-file syntax definition of the font's kerning.
@@ -134,6 +134,7 @@ v3.3   - Mar 18 2013 - Ignore non-kerning classes.
 v3.3.1 - Apr 16 2013 - Add MetricsMachine-style side flags.
 v3.3.2 - Aug 16 2013 - Changed names of output files.
 v3.4   - Jan 22 2014 - Fixed the sorting of group-glyph pairs; they must be placed among group-group pairs, otherwise subtable breaks may prevent pairs (that have the same left group) downstream from working.
+v3.5   - Jan 27 2014 - Skip the pairs involving groups that have a value of zero; retaining these pairs has no impact on LTR kerning, but it's damaging for RTL kerning because zero value pairs trigger the start of a new subtable.
 
 """
 
@@ -548,7 +549,7 @@ class KernDataClass(object):
 				
 
 	def findExceptions(self):
-		'Process lists (glyph_group, group_group etc.) created above to find out which pairs are exceptions, and which just are just normal pairs'
+		'Process lists (glyph_group, group_group etc.) created above to find out which pairs are exceptions, and which are just normal pairs'
 		
 		# glyph to group pairs:
 		# ---------------------
@@ -573,6 +574,11 @@ class KernDataClass(object):
 							self.glyph_glyph_exceptions_dict[pair] = self.kerning[pair]
 							
 				else:
+					# skip the pair if the value is zero
+					if self.kerning[g, gr] == 0:
+						self.notProcessed += 1
+						continue
+					
 					if isRTLpair:
 						self.RTLglyph_group_dict[g, gr] = '<%s 0 %s 0>' % (self.kerning[g, gr], self.kerning[g, gr])
 					else:
@@ -591,7 +597,7 @@ class KernDataClass(object):
 			try:
 				rgroup = self.groups[rgr]
 			
-			except KeyError: # Because group-glyph pairs are included in the group-group bucket, the right of the pair may not be a group
+			except KeyError: # Because group-glyph pairs are included in the group-group bucket, the right-side element of the pair may not be a group
 				if rgr in self.grouped_right:
 					# it is a group_to_glyph exception!
 					if isRTLpair:
@@ -602,6 +608,11 @@ class KernDataClass(object):
 				
 				else:
 					rgroup = rgr
+			
+			# skip the pair if the value is zero
+			if self.kerning[lgr, rgr] == 0:
+				self.notProcessed += 1
+				continue
 			
 			if isRTLpair:
 				self.RTLgroup_group_dict[lgr, rgr] = '<%s 0 %s 0>' % (self.kerning[lgr, rgr], self.kerning[lgr, rgr])
