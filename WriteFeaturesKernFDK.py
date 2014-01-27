@@ -30,7 +30,7 @@ kIgnorePairTag = '.cxt'
 ###################################################
 
 __copyright__ = __license__ =  """
-Copyright (c) 2006-2013 Adobe Systems Incorporated. All rights reserved.
+Copyright (c) 2006-2014 Adobe Systems Incorporated. All rights reserved.
  
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"), 
@@ -52,7 +52,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 __doc__ = """
-WriteKernFeaturesFDK.py v3.3.1 - Apr 16 2013
+WriteKernFeaturesFDK.py v3.4 - Jan 22 2014
 
 Contains a class (KernDataClass) which, when provided with a UFO or FontLab font, will output 
 a file named "kern.fea", containing a features-file syntax definition of the font's kerning.
@@ -133,6 +133,7 @@ v3.2.1 - Mar 08 2013 - Minor improvements.
 v3.3   - Mar 18 2013 - Ignore non-kerning classes.
 v3.3.1 - Apr 16 2013 - Add MetricsMachine-style side flags.
 v3.3.2 - Aug 16 2013 - Changed names of output files.
+v3.4   - Jan 22 2014 - Fixed the sorting of group-glyph pairs; they must be placed among group-group pairs, otherwise subtable breaks may prevent pairs (that have the same left group) downstream from working.
 
 """
 
@@ -250,14 +251,12 @@ class KernDataClass(object):
 		self.group_group = []
 		self.glyph_glyph = []
 		self.glyph_group = []
-		self.group_glyph = []
 
 		# kerning subtables containing pair-value combinations
 		self.glyph_glyph_dict = {}
 		self.glyph_glyph_exceptions_dict = {}
 		self.glyph_group_dict = {}
 		self.glyph_group_exceptions_dict = {}
-		self.group_glyph_dict = {}
 		self.group_glyph_exceptions_dict = {}
 		self.group_group_dict = {}		
 		self.predefined_exceptions_dict = {}
@@ -266,7 +265,6 @@ class KernDataClass(object):
 		self.RTLglyph_glyph_exceptions_dict = {}
 		self.RTLglyph_group_dict = {}
 		self.RTLglyph_group_exceptions_dict = {}
-		self.RTLgroup_glyph_dict = {}
 		self.RTLgroup_glyph_exceptions_dict = {}
 		self.RTLgroup_group_dict = {}		
 		self.RTLpredefined_exceptions_dict = {}
@@ -451,8 +449,7 @@ class KernDataClass(object):
 		Turns a dictionary to a list of kerning pairs. In a single master font, the function 
 		can filter kerning pairs whose absolute value does not exceed a given threshold.
 		'''
-		data = []				# normal output data
-		additional_data = []	# for sorting group, glyph and group,group kerning within subtables
+		data = []
 
 		trimmed = 0
 
@@ -477,25 +474,14 @@ class KernDataClass(object):
 			else:
 				if abs(kernValue) < min:
 					if self.writeTrimmed:
-						if self.isGroup(pair[0]) and not self.isGroup(pair[1]):
-							additional_data.append('# %s' % string)
-						else:
-							data.append('# %s' % string)
+						data.append('# %s' % string)
 					trimmed += 1
 					
-				if abs(kernValue) >= min:
-					if self.isGroup(pair[0]) and not self.isGroup(pair[1]):
-						additional_data.append(string)
-					else:
-						data.append(string)
+				else:
+					data.append(string)
 
 		self.trimmedPairs += trimmed
 		data.sort()
-
-		if len(additional_data) > 0:
-			additional_data.sort()
-			additional_data.append('') # small break between group, glyph and group, group pairs; within the subtable.
-			data = additional_data + data
 
 		return '\n'.join(data)
 	
@@ -546,10 +532,7 @@ class KernDataClass(object):
 			else:
 				# Filtering the kerning by type.
 			 	if self.isGroup(left):
-			 		if self.isGroup(right):
-			 			self.group_group.append((left, right))
-			 		else:
-			 			self.group_glyph.append((left, right))
+		 			self.group_group.append((left, right))
 
 			 	else:
 					if self.isGroup(right):
@@ -559,7 +542,7 @@ class KernDataClass(object):
 
 		
 		# Quick sanity check
-		if len(self.glyph_group) + len(self.glyph_glyph) + len(self.group_glyph) + len(self.group_group) != len(self.kerning)-self.notProcessed: 
+		if len(self.glyph_group) + len(self.glyph_glyph) + len(self.group_group) != len(self.kerning)-self.notProcessed: 
 			print 'Something went wrong: kerning lists do not match the amount of kerning pairs present in the font.'
 				
 				
@@ -596,34 +579,6 @@ class KernDataClass(object):
 						self.glyph_group_dict[g, gr] = self.kerning[g, gr]
 	
 
-		# group to glyph pairs:
-		# ---------------------
-
-		for (gr, g) in self.group_glyph:
-			isRTLpair = self.checkForRTL((gr, g))
-			group = self.groups[gr]
-			if g in self.grouped_right:
-				# it is a group_to_glyph exception!
-				if isRTLpair:
-					self.RTLgroup_glyph_exceptions_dict[gr, g] = '<%s 0 %s 0>' % (self.kerning[gr, g], self.kerning[gr, g])
-				else:
-					self.group_glyph_exceptions_dict[gr, g] = self.kerning[gr, g]
-			else:
-				for i in group:
-					pair = (i, g)
-					if pair in self.glyph_glyph:
-						# that pair is a glyph_to_glyph exception!
-						if isRTLpair:
-							self.RTLglyph_glyph_exceptions_dict[pair] = '<%s 0 %s 0>' % (self.kerning[pair], self.kerning[pair])
-						else:
-							self.glyph_glyph_exceptions_dict[pair] = self.kerning[pair]
-				else:
-					if isRTLpair:
-						self.RTLgroup_glyph_dict[gr, g] = '<%s 0 %s 0>' % (self.kerning[gr, g], self.kerning[gr, g])
-					else:
-						self.group_glyph_dict[gr, g] = self.kerning[gr, g]
-		
-
 		# group to group pairs:
 		# ---------------------
 
@@ -632,7 +587,22 @@ class KernDataClass(object):
 		for (lgr, rgr) in self.group_group:
 			isRTLpair = self.checkForRTL((lgr, rgr))
 			lgroup = self.groups[lgr]
-			rgroup = self.groups[rgr]
+			
+			try:
+				rgroup = self.groups[rgr]
+			
+			except KeyError: # Because group-glyph pairs are included in the group-group bucket, the right of the pair may not be a group
+				if rgr in self.grouped_right:
+					# it is a group_to_glyph exception!
+					if isRTLpair:
+						self.RTLgroup_glyph_exceptions_dict[lgr, rgr] = '<%s 0 %s 0>' % (self.kerning[lgr, rgr], self.kerning[lgr, rgr])
+					else:
+						self.group_glyph_exceptions_dict[lgr, rgr] = self.kerning[lgr, rgr]
+					continue # it's an exception, so move on to the next pair
+				
+				else:
+					rgroup = rgr
+			
 			if isRTLpair:
 				self.RTLgroup_group_dict[lgr, rgr] = '<%s 0 %s 0>' % (self.kerning[lgr, rgr], self.kerning[lgr, rgr])
 				RTLexplodedPairList.extend(self.explode(lgroup, rgroup))
@@ -695,8 +665,7 @@ class KernDataClass(object):
 		orderExtension = [ 
 		# in case no subtables are desired
 		(self.glyph_group_dict,				self.minKern,	'\n# glyph, group:',				False),
-		(self.group_glyph_dict,				self.minKern,	'\n# group, glyph:',				False),
-		(self.group_group_dict,				self.minKern,	'\n# group, group:',				False)
+		(self.group_group_dict,				self.minKern,	'\n# group, group/glyph:',			False)
 		]
 		
 
@@ -734,8 +703,6 @@ class KernDataClass(object):
 
 			# class-class subtables
 			# ---------------------
-			self.group_group_dict.update(self.group_glyph_dict)
-
 			class_to_class_subtables = MakeSubtables(self.group_group_dict).subtables
 			self.output.append( '\n# group, glyph and group, group:' )
 
@@ -766,8 +733,7 @@ class KernDataClass(object):
 		RTLorderExtension = [ 
 		# in case no subtables are desired
 		(self.RTLglyph_group_dict,				self.minKern,	'\n# RTL glyph, group:',				False),
-		(self.RTLgroup_glyph_dict,				self.minKern,	'\n# RTL group, glyph:',				False),
-		(self.RTLgroup_group_dict,				self.minKern,	'\n# RTL group, group:',				False)
+		(self.RTLgroup_group_dict,				self.minKern,	'\n# RTL group, group/glyph:',			False)
 		]
 
 
@@ -813,8 +779,6 @@ class KernDataClass(object):
 
 			# RTL class-class subtables
 			# -------------------------
-			self.RTLgroup_group_dict.update(self.RTLgroup_glyph_dict)
-
 			RTL_class_class_subtables = MakeSubtables(self.RTLgroup_group_dict, RTL=True).subtables
 			self.output.append( '\n# RTL group, glyph and group, group:' )
 
