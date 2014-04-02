@@ -52,7 +52,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 __doc__ = """
-WriteKernFeaturesFDK.py v3.5 - Jan 27 2014
+WriteKernFeaturesFDK.py v3.6 - Apr 02 2014
 
 Contains a class (KernDataClass) which, when provided with a UFO or FontLab font, will output 
 a file named "kern.fea", containing a features-file syntax definition of the font's kerning.
@@ -135,6 +135,7 @@ v3.3.1 - Apr 16 2013 - Add MetricsMachine-style side flags.
 v3.3.2 - Aug 16 2013 - Changed names of output files.
 v3.4   - Jan 22 2014 - Fixed the sorting of group-glyph pairs; they must be placed among group-group pairs, otherwise subtable breaks may prevent pairs (that have the same left group) downstream from working.
 v3.5   - Jan 27 2014 - Skip the pairs involving groups that have a value of zero; retaining these pairs has no impact on LTR kerning, but it's damaging for RTL kerning because zero value pairs trigger the start of a new subtable.
+v3.6   - Apr 02 2014 - Write only classes involved in kerning.
 
 """
 
@@ -295,8 +296,12 @@ class KernDataClass(object):
 		else:
 			self.header.append('# PS Name: %s' % self.f.info.postscriptFontName)
 			self.header.append('# MM Inst: %s' % self.f.info.styleMapFamilyName)
-			self.groups.update(self.f.groups)
-			self.groupOrder = sorted(self.f.groups.keys())
+
+			groupsUsedInKerning = self.findGroupsUsedInKerning()
+			self.groups.update(groupsUsedInKerning)
+			self.groupOrder = sorted(self.groups.keys())
+			# self.groupOrder.sort(key=lambda x: (x.split('_')[1], len(x)))
+
 			self.analyzeGroups()
 			self.kerning = self.f.kerning
 
@@ -316,6 +321,22 @@ class KernDataClass(object):
 		self.makeOutput()
 		self.sanityCheck()
 		self.writeDataToFile()
+
+
+	def findGroupsUsedInKerning(self):
+		'''
+		Finds all groups used in kerning, and filters all other groups.
+		(e.g. MetricsMachine reference groups). 
+		This also means that any zero-length group is thrown out since
+		it will likely not be used in a kerning pair.
+		'''
+		kerningGroupDict = {}
+		for (first, second), value in self.f.kerning.items():
+			if self.isGroup(first):
+				kerningGroupDict.setdefault(first, self.f.groups[first])
+			if self.isGroup(second):
+				kerningGroupDict.setdefault(second, self.f.groups[second])
+		return kerningGroupDict
 
 
 	def isMMfont(self, font):
@@ -708,7 +729,7 @@ class KernDataClass(object):
 				
 					if subtablesCreated > 1:
 						self.output.append( self.subtbBreak )
-		
+
 					self.output.append( self.dict2pos(table, self.minKern) )
 
 
@@ -919,7 +940,6 @@ class MakeSubtables(KernDataClass):
 			for pair in self.kernDict:
 				self.otherPairs_dict[pair] = self.kernDict[pair]
 				
-
 		
 	def analyzePair(self, pair):
 		if self.RTL:
@@ -933,7 +953,3 @@ class MakeSubtables(KernDataClass):
 			tagDict = self.LTRtagDict
 
 		return first, second, tagDict
-
-
-
-
