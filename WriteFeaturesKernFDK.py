@@ -220,8 +220,9 @@ class ReadFontLabClasses(object):
 
 class KernDataClass(object):
 
-	def __init__(self, font, folderPath, minKern=kDefaultMinKern, writeTrimmed=kDefaultWriteTrimmed, writeSubtables=kDefaultWriteSubtables):
+	def __init__(self, font, folderPath, minKern=kDefaultMinKern, writeTrimmed=kDefaultWriteTrimmed, writeSubtables=kDefaultWriteSubtables, fileName=kKernFeatureFileName):
 		self.header = ['# Created: %s' % time.ctime()]
+		self.fileName = fileName
 
 		appTest = WhichApp()
 		self.inRF = appTest.inRF
@@ -843,9 +844,9 @@ class KernDataClass(object):
 	def writeDataToFile(self):
 
 		if self.MM:
-			kKernFeatureFile = 'mm' + kKernFeatureFileName
+			kKernFeatureFile = 'mm' + self.fileName
 		else:
-			kKernFeatureFile = kKernFeatureFileName
+			kKernFeatureFile = self.fileName
 
 		print '\tSaving %s file...' % kKernFeatureFile
 		if self.trimmedPairs > 0:
