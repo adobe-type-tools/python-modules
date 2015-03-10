@@ -144,9 +144,8 @@ class ClassKerningToUFO(object):
 	def analyzeKernClasses(self):
 		print 'analyzing classes ...'
 		classes = {}
-		for ci in range(len(self.f.classes)):
-			className = self.f.classes[ci]
-			if className[0] == '_':
+		for ci, className in enumerate(self.f.classes):
+			if className[0] == '_': # it is a kerning class
 				
 				if (self.f.GetClassLeft(ci), self.f.GetClassRight(ci)) == (1,0):
 					classes[className] = "LEFT"
@@ -167,29 +166,36 @@ class ClassKerningToUFO(object):
 			glyphList = c.split(sep)[1].split()
 			cleanGlyphList = [i.strip("'") for i in glyphList] # strips out the keyglyph marker
 
-			for g in glyphList:
-				if g[-1] == "'":  # finds keyglyph
-					rep = g.strip("'")  
-					repFound = True
-					break
-				else:
-					rep = glyphList[0]
-			if repFound == False: 
-				print "\tWARNING: Kerning class %s has no explicit key glyph.\n\tAssuming it is the first glyph found (%s).\n" % (className, glyphList[0])
+			if '_EXC_' in className:
+				# Exception classes: (complicated invention sometimes used when generating
+				# kern features from FL, messes up MetricsMachine, therefore I include them as ref groups only.)
+				self.groups[className] = cleanGlyphList 
+				print "%s is an exception class. Adding to UFO as reference group." % (className)
 
-			if classes[c] == 'LEFT':
-				self.leftKeyGlyphs[rep] = leftName
-				self.groups[leftName] = cleanGlyphList 
-			elif classes[c] == 'RIGHT':
-				self.rightKeyGlyphs[rep] = rightName
-				self.groups[rightName] = cleanGlyphList 
-			elif classes[c] == 'BOTH':
-				self.leftKeyGlyphs[rep] = leftName
-				self.groups[leftName] = cleanGlyphList 
-				self.rightKeyGlyphs[rep] = rightName
-				self.groups[rightName] = cleanGlyphList 
 			else:
-				print "\tWARNING: Kerning class %s is not assigned to any side (No checkbox active). Skipping.\n" % className
+				for g in glyphList:
+					if g[-1] == "'":  # finds keyglyph
+						rep = g.strip("'")  
+						repFound = True
+						break
+					else:
+						rep = glyphList[0]
+				if repFound == False: 
+					print "\tWARNING: Kerning class %s has no explicit key glyph.\n\tAssuming it is the first glyph found (%s).\n" % (className, glyphList[0])
+
+				if classes[c] == 'LEFT':
+					self.leftKeyGlyphs[rep] = leftName
+					self.groups[leftName] = cleanGlyphList 
+				elif classes[c] == 'RIGHT':
+					self.rightKeyGlyphs[rep] = rightName
+					self.groups[rightName] = cleanGlyphList 
+				elif classes[c] == 'BOTH':
+					self.leftKeyGlyphs[rep] = leftName
+					self.groups[leftName] = cleanGlyphList 
+					self.rightKeyGlyphs[rep] = rightName
+					self.groups[rightName] = cleanGlyphList 
+				else:
+					print "\tWARNING: Kerning class %s is not assigned to any side (No checkbox active). Skipping.\n" % className
 
 	def run(self):
 		
