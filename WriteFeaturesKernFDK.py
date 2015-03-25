@@ -554,10 +554,10 @@ class KernDataClass(object):
 			
 			else:
 				# Filtering the kerning by type.
-			 	if self.isGroup(left):
-		 			self.group_group.append((left, right))
+				if self.isGroup(left):
+					self.group_group.append((left, right))
 
-			 	else:
+				else:
 					if self.isGroup(right):
 						self.glyph_group.append((left, right))
 					else:
