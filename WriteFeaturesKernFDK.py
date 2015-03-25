@@ -690,9 +690,9 @@ class KernDataClass(object):
 		# dictName							# minKern		# comment							# enum
 		(self.predefined_exceptions_dict,	0,				'\n# pre-defined exceptions:',		True),
 		(self.glyph_glyph_dict,				self.minKern,	'\n# glyph, glyph:',				False),
+		(self.glyph_glyph_exceptions_dict,	0,				'\n# glyph, glyph exceptions:',		False),
 		(self.glyph_group_exceptions_dict,	0,				'\n# glyph, group exceptions:',		True),
 		(self.group_glyph_exceptions_dict,	0,				'\n# group, glyph exceptions:',		True),
-		(self.glyph_glyph_exceptions_dict,	0,				'\n# glyph, glyph exceptions:',		False),
 		]
 
 		orderExtension = [ 
