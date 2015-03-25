@@ -758,9 +758,9 @@ class KernDataClass(object):
 		# dictName								# minKern		# comment								# enum
 		(self.RTLpredefined_exceptions_dict,	0,				'\n# RTL pre-defined exceptions:',		True),
 		(self.RTLglyph_glyph_dict,				self.minKern,	'\n# RTL glyph, glyph:',				False),
+		(self.RTLglyph_glyph_exceptions_dict,	0,				'\n# RTL glyph, glyph exceptions:',		False),
 		(self.RTLglyph_group_exceptions_dict,	0,				'\n# RTL glyph, group exceptions:',		True),
 		(self.RTLgroup_glyph_exceptions_dict,	0,				'\n# RTL group, glyph exceptions:',		True),
-		(self.RTLglyph_glyph_exceptions_dict,	0,				'\n# RTL glyph, glyph exceptions:',		False),
 		]
 
 		RTLorderExtension = [ 
