@@ -114,7 +114,7 @@ class WhichApp(object):
 		
 		if not any((self.inRF, self.inFL, self.inDC)):
 			try:
-				import RoboFont
+				import mojo.roboFont
 				# print 'in Robofont'
 				self.inRF = True
 				self.appName = 'Robofont'
