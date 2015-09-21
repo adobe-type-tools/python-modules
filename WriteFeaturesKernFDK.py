@@ -720,7 +720,7 @@ class KernDataClass(object):
 
 			# glyph-class subtables
 			# ---------------------
-			glyph_to_class_subtables = MakeSubtables(self.glyph_group_dict, checkSide='second').subtables
+			glyph_to_class_subtables = MakeSubtables(self.glyph_group_dict, subtableTrigger='second').subtables
 			self.output.append( '\n# glyph, group:' )
 
 			for table in glyph_to_class_subtables:
@@ -796,7 +796,7 @@ class KernDataClass(object):
 
 			# RTL glyph-class subtables
 			# -------------------------
-			RTL_glyph_class_subtables = MakeSubtables(self.RTLglyph_group_dict, checkSide='second', RTL=True).subtables
+			RTL_glyph_class_subtables = MakeSubtables(self.RTLglyph_group_dict, subtableTrigger='second', RTL=True).subtables
 			self.output.append( '\n# RTL glyph, group:' )
 
 			for table in RTL_glyph_class_subtables:
@@ -866,10 +866,10 @@ class KernDataClass(object):
 
 
 class MakeSubtables(KernDataClass):
-	def __init__(self, kernDict, checkSide='first', RTL=False):
+	def __init__(self, kernDict, subtableTrigger='first', RTL=False):
 		self.kernDict  = kernDict
 		self.RTL       = RTL		# Is the kerning RTL or not?
-		self.checkSide = checkSide	# Which side of the pair is triggering the subtable decision? 
+		self.subtableTrigger = subtableTrigger	# Which side of the pair is triggering the subtable decision? 
 									# "first" would be the left side for LTR, right for RTL.
 									# "second" would be the right side for LTR, left for RTL.
 		
@@ -898,7 +898,7 @@ class MakeSubtables(KernDataClass):
 		
 
 		'Split class-to-class kerning into subtables.'
-		if self.checkSide == 'first':
+		if self.subtableTrigger == 'first':
 			# Creates 'traditional' subtables, for class-to-class, and class-to-glyph kerning.
 			for pair in self.kernDict.keys()[::-1]: 
 				first, second, tagDict = self.analyzePair(pair)
@@ -912,7 +912,7 @@ class MakeSubtables(KernDataClass):
 				self.otherPairs_dict[pair] = self.kernDict[pair]
 			
 
-		if self.checkSide == 'second':
+		if self.subtableTrigger == 'second':
 
 			# Create dictionary of all glyphs on the left side, and the language 
 			# tags of classes those glyphs are kerned against (e.g. _LAT, _GRK)
