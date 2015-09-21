@@ -896,11 +896,6 @@ class MakeSubtables(KernDataClass):
 		self.subtableOrder = [kLatinTag, kGreekTag, kCyrillicTag, kArabicTag, kHebrewTag, kNumberTag, kFractionTag, 'other']
 		# The order in which subtables are written
 		
-		if RTL:
-			self.subtables = [self.RTLtagDict[i] for i in self.subtableOrder if i in self.RTLtagDict]
-		else:
-			self.subtables = [self.LTRtagDict[i] for i in self.subtableOrder]
-		
 
 		'Split class-to-class kerning into subtables.'
 		if self.checkSide == 'first':
@@ -919,7 +914,8 @@ class MakeSubtables(KernDataClass):
 
 		if self.checkSide == 'second':
 
-			# Create dictionary of all glyphs on the left side, and the language tags of classes those glyphs are kerned against (e.g. _LAT, _GRK)
+			# Create dictionary of all glyphs on the left side, and the language 
+			# tags of classes those glyphs are kerned against (e.g. _LAT, _GRK)
 			kernPartnerLanguageTags = {}
 			for pair in self.kernDict:
 				first, second, tagDict = self.analyzePair(pair)
@@ -934,12 +930,50 @@ class MakeSubtables(KernDataClass):
 				for tag in tagDict:
 					if self.checkGroupForTag(tag, second) and len(kernPartnerLanguageTags[first]) == 1:
 						# Using the previously created kernPartnerLanguageTags
-						# If any glyph is kerned against more than one language system, it has to go to the 'otherPairs_dict' subtable.
+						# If any glyph is kerned against more than one language system, 
+						# it has to go to the 'otherPairs_dict' subtable.
 						tagDict[tag][pair] = self.kernDict[pair]
 						del self.kernDict[pair]
 						
-			for pair in self.kernDict:
-				self.otherPairs_dict[pair] = self.kernDict[pair]
+			'This splits the glyph-to-class part into subtables of 1000 left-side items.'
+			if len(self.kernDict) < 1000:
+				self.otherPairs_dict.update(self.kernDict)
+
+			else:
+				# find all the first elements in a kerning pair, since the subtable 
+				# split can only happen between chunks of left elements
+				firstItems = sorted(set([first for first, second in self.kernDict.keys()]))
+
+				# lambda function to split a list into sublists
+				splitList = lambda A, n=100 : [A[i:i+n] for i in range(0, len(A), n)]
+				subTableList = splitList(firstItems)
+
+				for chunk in subTableList:
+					subtableIndex = subTableList.index(chunk)
+					pairlist = sorted([(left, right) for (left, right) in self.kernDict.keys() if left in chunk])
+
+					if subtableIndex == 0:
+						# for the first item in the list, no modification 
+						# of the subtable list order is necessary.
+						for pair in pairlist:
+							self.otherPairs_dict[pair] = self.kernDict[pair]
+							del self.kernDict[pair]
+
+					else:
+						subtableName = 'other_%s' % subtableIndex
+						self.LTRtagDict[subtableName] = {}
+						self.subtableOrder.append(subtableName)
+
+						for pair in pairlist:
+							self.LTRtagDict[subtableName][pair] = self.kernDict[pair]
+							del self.kernDict[pair]
+
+
+		if RTL:
+			self.subtables = [self.RTLtagDict[i] for i in self.subtableOrder if i in self.RTLtagDict]
+		else:
+			self.subtables = [self.LTRtagDict[i] for i in self.subtableOrder]
+
 				
 		
 	def analyzePair(self, pair):
