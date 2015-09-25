@@ -5,9 +5,15 @@
 ###################################################
 
 kKernFeatureFileName = "kern.fea"
-kDefaultMinKern = 3  #inclusive; this means that pairs which EQUAL this ABSOLUTE value will NOT be ignored/trimmed. Anything below WILL.
-kDefaultWriteTrimmed = False  #if 'False', trimmed pairs will not be processed and, therefore, will not be written to the 'kern.fea' file.
-					  #for a different default behavior change the value to 'True'.
+
+kDefaultMinKern = 3 
+# Inclusive; this means that pairs which equal this absolute value will 
+# NOT be ignored/trimmed. Anything in the below that value will be trimmed.
+
+kDefaultWriteTrimmed = False  
+# If 'False', trimmed pairs will not be processed and therefore 
+# not be written to the output file.
+
 kDefaultWriteSubtables = True
 
 kLeftTag = ['_LEFT','_1ST', '_L_']
@@ -22,7 +28,6 @@ kHebrewTag = '_HEB'
 
 kNumberTag = '_NUM'
 kFractionTag = '_FRAC'
-
 kExceptionTag = 'EXC_'
 
 kIgnorePairTag = '.cxt'
@@ -75,7 +80,7 @@ should be followed:
 	Cyrillic glyph classes must contain the string "_CYR"
 	
 	Exception classes must start with the string "EXC_" and the key glyph of the class (marked by a single 
-		quote [']) can NOT be the same as the key glyph of another kerning class.
+	quote [']) can NOT be the same as the key glyph of another kerning class.
 	
 	Examples of kerning classes (in FontLab syntax):
 		_A_LC_RIGHT: a' a.end aacute acircumflex adieresis agrave ae
