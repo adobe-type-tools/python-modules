@@ -22,9 +22,9 @@ kRightTag = ['_RIGHT','_2ND', '_R_']
 kLatinTag = '_LAT'
 kGreekTag = '_GRK'
 kCyrillicTag = '_CYR'
+kArmenianTag = '_AM'
 kArabicTag = '_ARA'
 kHebrewTag = '_HEB'
-
 
 kNumberTag = '_NUM'
 kFractionTag = '_FRAC'
@@ -399,7 +399,7 @@ class KernDataClass(object):
 
 	def returnGroupTag(self, groupName):
 		'Returns group tag (e.g. _CYR, _EXC, _LAT) for a given group name (e.g. @A_LC_LEFT_LAT)'
-		tags = [kLatinTag, kGreekTag, kCyrillicTag, kArabicTag, kHebrewTag, kNumberTag, kFractionTag, kExceptionTag]
+		tags = [kLatinTag, kGreekTag, kCyrillicTag, kArmenianTag, kArabicTag, kHebrewTag, kNumberTag, kFractionTag, kExceptionTag]
 		foundTag = None
 		
 		for tag in tags:
@@ -885,6 +885,7 @@ class MakeSubtables(KernDataClass):
 			kLatinTag: {},
 			kGreekTag: {},
 			kCyrillicTag: {},
+			kArmenianTag: {},
 			kArabicTag: {},
 			kHebrewTag: {},
 			kNumberTag: {},
@@ -898,7 +899,7 @@ class MakeSubtables(KernDataClass):
 			'other': self.otherPairs_dict
 		}
 		
-		self.subtableOrder = [kLatinTag, kGreekTag, kCyrillicTag, kArabicTag, kHebrewTag, kNumberTag, kFractionTag, 'other']
+		self.subtableOrder = [kLatinTag, kGreekTag, kCyrillicTag, kArmenianTag, kArabicTag, kHebrewTag, kNumberTag, kFractionTag, 'other']
 		# The order in which subtables are written
 		
 
