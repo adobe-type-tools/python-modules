@@ -565,6 +565,7 @@ class KernDataClass(object):
 				explodedPairList.extend(self.explode(lgroup, rgroup))
 				# list of all possible pair combinations for the @class @class kerning pairs of the font.
 
+
 		exceptionPairs = set.intersection(set(explodedPairList), set(self.glyph_glyph))
 		RTLexceptionPairs = set.intersection(set(RTLexplodedPairList), set(self.glyph_glyph))
 		# Finds the intersection of the exploded pairs with the glyph_glyph pairs collected above.
