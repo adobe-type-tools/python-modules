@@ -55,8 +55,8 @@ class KerningData(object):
         kernedRight = []
 
         for left, right in self.kerningDict.keys():
-            kernedLeft.extend(self.f.groups.get(left, [left]))
-            kernedRight.extend(self.f.groups.get(right, [right]))
+            kernedLeft.extend(self.groups.get(left, [left]))
+            kernedRight.extend(self.groups.get(right, [right]))
 
         if side == 'left':
             return sorted(set(kernedLeft))
@@ -91,7 +91,7 @@ class KerningData(object):
         grouped_right = []
 
         if not groupFilterList:
-            groupFilterList = self.f.groups.keys()
+            groupFilterList = self.groups.keys()
 
         for left, right in self.kerningDict.keys():
             if isGroup(left) and left in groupFilterList:
