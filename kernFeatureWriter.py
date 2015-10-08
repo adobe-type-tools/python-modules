@@ -101,41 +101,120 @@ class WhichApp(object):
 
 
 
-class ReadFontLabClasses(object):
+class FLKerningData(object):
+
 	def __init__(self, font):
 		self.f = font
-		self.keyGlyphs = {}
+
+		self._readFLGroups()
+		self._splitFLGroups()
+
+		self.leftKeyGlyphs = self._filterKeyGlyphs(self.leftGroups)
+		self.rightKeyGlyphs = self._filterKeyGlyphs(self.rightGroups)
+
+		self._readFLKerning()
+
+
+
+	def _isMMfont(self):
+		'Checks if the FontLab font is a Multiple Master font.'
+		if self.f[0].layers_number > 1:
+			return True
+		else:
+			return False
+
+
+
+	def _readFLGroups(self, *args):
+		self.groupToKeyglyph = {}
 		self.groups = {}
 		self.groupOrder = []
 		
-		classes = []
-		for c in self.f.classes:
-			if c[0] == '_':
-				classes.append(c)
+		flClassStrings = [cString for cString in self.f.classes if cString[0] == '_']
 		
-		sep = ":"
-		for c in classes:
-			repFound = False
+		for cString in flClassStrings:
 
-			className      = c.split(sep)[0]			# FL class name, e.g. _L_LC_LEFT
-			OTgroupName    = '@%s' % className[1:]		# OT group name, e.g. @L_LC_LEFT
-			glyphList      = c.split(sep)[1].split()
-			cleanGlyphList = [i.strip("'") for i in glyphList] # strips out the keyglyph marker
+			FLclassName     = cString.split(":")[0]      # FL class name, e.g. _L_LC_LEFT
+			OTgroupName     = '@%s' % FLclassName[1:]    # OT group name, e.g. @L_LC_LEFT
+			markedGlyphList = cString.split(":")[1].split()
+			cleanGlyphList  = [gName.strip("'") for gName in markedGlyphList] # strips out the keyglyph marker
 
-			for g in glyphList:
-				if g[-1] == "'":  # finds keyglyph
-					rep = g.strip("'")  
-					repFound = True
+			for gName in markedGlyphList:
+				if gName[-1] == "'":  # finds keyglyph
+					keyGlyphName = gName.strip("'")  
 					break
 				else:
-					rep = glyphList[0]
+					keyGlyphName = markedGlyphList[0]
+					print "\tWARNING: Kerning class %s has no explicit key glyph.\n\tUsing first glyph found (%s)." % (cString, keyGlyphName)
 
-			if repFound == False: 
-				print "\tWARNING: Kerning class %s has no explicit key glyph.\n\tUsing first glyph found (%s)." % (c, rep)
 
 			self.groupOrder.append(OTgroupName)
-			self.keyGlyphs[OTgroupName] = rep
+			self.groupToKeyglyph[OTgroupName] = keyGlyphName
 			self.groups[OTgroupName] = cleanGlyphList 
+
+
+
+
+	def _splitFLGroups(self):
+		'''
+		Splits FontLab kerning classes into left and right sides; based on the 
+		class name. Both sides are assigned to classes without an explicit side-flag.'
+		'''
+
+		leftTagsList = ['_LEFT','_1ST', '_L_']
+		rightTagsList = ['_RIGHT','_2ND', '_R_']
+
+		self.leftGroups = []
+		self.rightGroups = []
+
+		for groupName in self.groups:
+			if any([tag in groupName for tag in leftTagsList]):
+				self.leftGroups.append(groupName)
+			elif any([tag in groupName for tag in rightTagsList]):
+				self.rightGroups.append(groupName)
+			else:
+				self.leftGroups.append(groupName)
+				self.rightGroups.append(groupName)
+
+
+
+	def _filterKeyGlyphs(self, groupList):
+		'Returns a dictionary {keyGlyph: FLClassName} for a given list of classNames.'
+
+		filteredKeyGlyphs = {}
+
+		for groupName in groupList:
+			keyGlyphName = self.groupToKeyglyph[groupName]
+			filteredKeyGlyphs[keyGlyphName] = groupName
+
+		return filteredKeyGlyphs
+
+
+
+	def _readFLKerning(self):
+		'Reads FontLab kerning and converts it into a UFO-style kerning dict.'
+
+		self.kerning = {}
+		glyphs = self.f.glyphs
+
+		for gIndexLeft, glyphLeft in enumerate(glyphs):
+			gNameLeft = glyphLeft.name
+			flKerningArray = glyphs[gIndexLeft].kerning
+			
+			for flKerningPair in flKerningArray:
+				gIndexRight = flKerningPair.key
+				gNameRight = glyphs[gIndexRight].name
+
+				if self._isMMfont():
+					kernValue = '<%s>' % ' '.join( map( str, flKerningPair.values ) )  
+					# gl.kerning[p].values is an array holding kern values for each master
+				else:
+					kernValue = int(flKerningPair.value)
+				
+				pair = self.leftKeyGlyphs.get(gNameLeft, gNameLeft), self.rightKeyGlyphs.get(gNameRight, gNameRight)
+				self.kerning[pair] = kernValue
+
+
 
 
 
@@ -162,10 +241,6 @@ class KernDataClass(object):
 		self.kerning = {}
 		self.groups = {}
 
-		self.keyGlyphs = {} # Dict from keyGlyph to groupName 'r': '_R_LC_LEFT_LAT'
-		self.leftKeyGlyphs = {}
-		self.rightKeyGlyphs = {}
-		
 		self.totalKernPairs = 0
 		self.trimmedPairs = 0
 		self.processedPairs = 0
@@ -204,16 +279,17 @@ class KernDataClass(object):
 
 		if self.inFL: 
 			self.header.append('# PS Name: %s' % self.f.font_name)
-			self.isMMfont(self.f) # sets self.MM to True or False
-			flC = ReadFontLabClasses(self.f)
-			self.groups = flC.groups
-			self.keyGlyphs = flC.keyGlyphs
-			self.groupOrder = flC.groupOrder
-			self.analyzeGroups()
-			self.kerning = self.readFLkerning()
+			# self.isMMfont(self.f) # sets self.MM to True or False
+			flK = FLKerningData(self.f)
+			self.MM = flK._isMMfont
+			self.groups = flK.groups
+			self.groupOrder = flK.groupOrder
+			self.kerning = flK.kerning
 
-			if not self.MM:
-				self.header.append('# MM Inst: %s' % self.f.menu_name)
+			self.analyzeGroups()
+
+			# if not self.MM:
+			# 	self.header.append('# MM Inst: %s' % self.f.menu_name)
 
 		else:
 			self.header.append('# PS Name: %s' % self.f.info.postscriptFontName)
@@ -261,12 +337,6 @@ class KernDataClass(object):
 		return kerningGroupDict
 
 
-	def isMMfont(self, font):
-		'Checks if the FontLab font is a Multiple Master font.'
-		if font[0].layers_number > 1:
-			self.MM = True
-
-
 	def isGroup(self, name):
 		'Checks for the first character of a group name. Returns True if it is "@" (OT KerningClass).'
 		if name[0] == '@':
@@ -280,31 +350,6 @@ class KernDataClass(object):
 		return list(itertools.product(leftClass, rightClass))
 
 
-	def getKeyGlyphs(self, classList):
-		'Returns a dictionary keyGlyph: className for a given list of classNames.'
-		specificKeyGlyphs = {}
-		for i in classList:
-			keyGlyph = self.keyGlyphs[i]
-			specificKeyGlyphs[keyGlyph] = i
-		return specificKeyGlyphs
-
-
-	def getClass(self, glyphName, side):
-		'Replaces a glyph name by its class name, in case it is a key glyph for that side.'
-
-		if side == 'left':
-			if glyphName in self.leftKeyGlyphs:
-				return self.leftKeyGlyphs[glyphName]
-			else:
-				return glyphName
-
-		if side == 'right':
-			if glyphName in self.rightKeyGlyphs:
-				return self.rightKeyGlyphs[glyphName]
-			else:
-				return glyphName
-				
-			
 	def checkGroupForTag(self, tag, groupName):
 		'Checks if a tag (e.g. _CYR, _EXC, _LAT) exists in a group name (e.g. @A_LC_LEFT_LAT)'
 		if tag in groupName:
@@ -349,44 +394,6 @@ class KernDataClass(object):
 		return isRTLpair
 
 
-	def readFLkerning(self):
-		'Reads FontLab kerning and converts it into a UFO-style kerning dict.'
-		kerning = {}
-		glyphs = self.f.glyphs
-		for gIdx in range(len(glyphs)):
-			gName = str(glyphs[gIdx].name)
-			gKerning = glyphs[gIdx].kerning
-			for gKern in gKerning:
-				gNameRightglyph = str(glyphs[gKern.key].name)
-
-				if self.MM:
-					kernValue = '<%s>' % ' '.join( map( str, gKern.values ) )  # gl.kerning[p].values is a list holding kern values of each master
-				else:
-					kernValue = int(gKern.value)
-				
-				pair = self.getClass(gName,'left'), self.getClass(gNameRightglyph,'right')
-				
-				kerning[pair] = kernValue
-		return kerning
-		
-
-	def splitClasses(self, leftTagsList, rightTagsList):
-		'Splits kerning classes into left and right sides; and assigns both sides classes without explicit side-flag.'
-
-		ll = []
-		rl = []
-
-		for cl in self.groups: # loop through kerning classes
-			if any([tag in cl for tag in leftTagsList]):
-				ll.append(cl)
-			elif any([tag in cl for tag in rightTagsList]):
-				rl.append(cl)
-			else:
-				ll.append(cl)
-				rl.append(cl)
-	
-		return ll, rl
-
 
 	def dict2pos(self, dictionary, min=0, enum=False, RTL=False):
 		'''
@@ -430,6 +437,7 @@ class KernDataClass(object):
 		return '\n'.join(data)
 	
 	
+
 	def analyzeGroups(self):
 		'Uses self.groups for analysis and splitting.'
 		if not len(self.groups):
@@ -448,11 +456,24 @@ class KernDataClass(object):
 			for i in self.rightClasses:
 				self.grouped_right.extend(self.groups[i])
 			
-			if self.inFL: 
-				# If in FontLab, creates dictionaries of left and right key glyphs with class names.
-				
-				self.leftKeyGlyphs = self.getKeyGlyphs(self.leftClasses) # e.g. 'guillemotleft': '@GUILLEFT' etc.
-				self.rightKeyGlyphs = self.getKeyGlyphs(self.rightClasses)
+
+
+	def splitClasses(self, leftTagsList, rightTagsList):
+		'Splits kerning classes into left and right sides; and assigns both sides classes without explicit side-flag.'
+
+		ll = []
+		rl = []
+
+		for cl in self.groups:
+			if any([tag in cl for tag in leftTagsList]):
+				ll.append(cl)
+			elif any([tag in cl for tag in rightTagsList]):
+				rl.append(cl)
+			else:
+				ll.append(cl)
+				rl.append(cl)
+	
+		return ll, rl
 
 
 	def processKerningPairs(self):
