@@ -11,6 +11,8 @@ kDefaultWriteTrimmed = False
 
 kDefaultWriteSubtables = True
 
+dissolveSingleGroups = True
+
 kLeftTag = ['_LEFT','_1ST', '_L_']
 kRightTag = ['_RIGHT','_2ND', '_R_']
 
@@ -182,7 +184,7 @@ class FLKerningData(object):
             return False
 
 
-    def _readFLGroups(self, *args):
+    def _readFLGroups(self):
         self.groupToKeyglyph = {}
         self.groups = {}
         self.groupOrder = []
@@ -211,8 +213,9 @@ class FLKerningData(object):
 
     def _splitFLGroups(self):
         '''
-        Splits FontLab kerning classes into left and right sides; based on the
-        class name. Both sides are assigned to classes without an explicit side-flag.'
+        Splits FontLab kerning classes into left and right sides; based on
+        the class name. Both sides are assigned to classes without an explicit
+        side-flag.'
         '''
 
         leftTagsList = kLeftTag
@@ -274,8 +277,13 @@ class FLKerningData(object):
 
 class KernProcessor(object):
     def __init__(self, groups, kerning):
-        self.groups = groups
-        self.kerning = kerning
+
+        if dissolveSingleGroups:
+            self.groups, self.kerning = self._dissolveSingleGroups(groups, kerning)
+
+        else:
+            self.groups = groups
+            self.kerning = kerning
 
         # kerning dicts containing pair-value combinations
         self.glyph_glyph = {}
@@ -294,14 +302,27 @@ class KernProcessor(object):
         self.RTLgroup_group = {}
         self.RTLpredefined_exceptions = {}
 
-        self.grouped_left = self._getAllGroupedGlyphs(side='left')
-        self.grouped_right = self._getAllGroupedGlyphs(side='right')
-
         self.pairs_unprocessed = 0
         self.pairs_processed = 0
 
+        self.grouped_left = self._getAllGroupedGlyphs(side='left')
+        self.grouped_right = self._getAllGroupedGlyphs(side='right')
+
         self._findExceptions()
         self._sanityCheck()
+
+
+    def _dissolveSingleGroups(self, groups, kerning):
+        singleGroups = dict([(groupName, glyphList) for groupName, glyphList in groups.items() if len(glyphList) == 1])
+
+        dissolvedKerning = {}
+        for (left, right), value in kerning.items():
+            dissolvedLeft = singleGroups.get(left, [left])[0]
+            dissolvedRight = singleGroups.get(right, [right])[0]
+            dissolvedKerning[(dissolvedLeft, dissolvedRight)] = value
+
+        dissolvedGroups = dict([(groupName, glyphList) for groupName, glyphList in groups.items() if not groupName in singleGroups])
+        return dissolvedGroups, dissolvedKerning
 
 
     def _sanityCheck(self):
@@ -318,7 +339,8 @@ class KernProcessor(object):
 
     def _explode(self, leftGlyphList, rightGlyphList):
         '''
-        Returns a list of tuples, containing all possible combinations of elements in both input lists.
+        Returns a list of tuples, containing all possible combinations
+        of elements in both input lists.
         '''
         return list(itertools.product(leftGlyphList, rightGlyphList))
 
@@ -516,7 +538,7 @@ class run(object):
             self.allGroups = flK.groups
             self.groups = {}
 
-            for groupName in self.getUsedGroups(self.kerning):
+            for groupName in self._getUsedGroups(self.kerning):
                 self.groups[groupName] = self.allGroups[groupName]
 
             self.groupOrder = [groupName for groupName in flK.groupOrder if groupName in self.groups.keys()]
@@ -532,11 +554,12 @@ class run(object):
             self.allGroups = self.f.groups
             self.groups = {}
 
-            for groupName in self.getUsedGroups(self.kerning):
+            for groupName in self._getUsedGroups(self.kerning):
                 self.groups[groupName] = self.allGroups[groupName]
 
             self.groupOrder = sorted(self.groups.keys())
             # self.groupOrder.sort(key=lambda x: (x.split('_')[1], len(x)))
+
 
 
         if not len(self.groups):
@@ -559,8 +582,7 @@ class run(object):
         self.writeDataToFile()
 
 
-
-    def getUsedGroups(self, kernDict):
+    def _getUsedGroups(self, kernDict):
         '''
         Returns all groups which are actually used in kerning.
         '''
@@ -576,8 +598,9 @@ class run(object):
 
     def dict2pos(self, pairValueDict, min=0, enum=False, RTL=False):
         '''
-        Turns a dictionary to a list of kerning pairs. In a single master font, the function
-        can filter kerning pairs whose absolute value does not exceed a given threshold.
+        Turns a dictionary to a list of kerning pairs. In a single master font,
+        the function can filter kerning pairs whose absolute value does not
+        exceed a given threshold.
         '''
         data = []
         trimmed = 0
@@ -956,15 +979,10 @@ class MakeSubtables(run):
         return first, second, tagDict
 
 
+
 if __name__ == '__main__':
     import defcon
     fPath = sys.argv[-1]
     fPath = fPath.rstrip('/')
     f = defcon.Font(fPath)
-    # print dir(f)
-    # print os.path.dirname(f.path)
     run(f, os.path.dirname(f.path))
-    # x = KernProcessor(f.groups, f.kerning)
-    # print dir(x)
-    # print x
-    # x.findExceptions()
