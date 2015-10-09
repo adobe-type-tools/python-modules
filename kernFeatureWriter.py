@@ -85,6 +85,7 @@ def isGroup(itemName):
 		return False
 
 
+
 def checkPairForTag(tag, pair):
     '''
     Checks if a tag (e.g. _ARA, _EXC, _LAT) exists in one or 
@@ -146,7 +147,6 @@ class WhichApp(object):
 		if not any((self.inRF, self.inFL, self.inDC)):
 			try:
 				import mojo.roboFont
-				# print 'in Robofont'
 				self.inRF = True
 				self.appName = 'Robofont'
 			except ImportError:
@@ -155,7 +155,6 @@ class WhichApp(object):
 		if not any((self.inRF, self.inFL, self.inDC)):
 			try:
 				import flsys
-				# print 'In FontLab, dork!'
 				self.inFL = True
 				self.appName = 'FontLab'
 			except ImportError:
@@ -164,7 +163,6 @@ class WhichApp(object):
 		if not any((self.inRF, self.inFL, self.inDC)):
 			try:
 				import defcon
-				# print 'defcon'
 				self.inDC = True
 				self.appName = 'Defcon'
 			except ImportError:
@@ -381,6 +379,8 @@ class KernProcessor(object):
 		glyph_2_group = sorted([pair for pair in self.kerning.keys() if not isGroup(pair[0]) and isGroup(pair[1])])
 		group_2_group = sorted([pair for pair in self.kerning.keys() if isGroup(pair[0])])
 
+		# print len(self.kerning.keys())
+		# print sum([len(glyph_2_glyph), len(glyph_2_group), len(group_2_group)])
 		
 		# glyph to group pairs:
 		# ---------------------
@@ -405,6 +405,7 @@ class KernProcessor(object):
 							self.RTLglyph_glyph_exceptions[pair] = '<%s 0 %s 0>' % (self.kerning[pair], self.kerning[pair])
 						else:
 							self.glyph_glyph_exceptions[pair] = self.kerning[pair]
+						self.pairs_processed += 1
 							
 				else:
 					# skip the pair if the value is zero
@@ -416,8 +417,9 @@ class KernProcessor(object):
 						self.RTLglyph_group[glyph, group] = '<%s 0 %s 0>' % (self.kerning[glyph, group], self.kerning[glyph, group])
 					else:
 						self.glyph_group[glyph, group] = self.kerning[glyph, group]
+					self.pairs_processed += 1
 	
-
+		print self.pairs_processed
 		# group to group pairs:
 		# ---------------------
 
@@ -534,6 +536,8 @@ class run(object):
 
 			self.kerning = self.f.kerning
 			self.allGroups = self.f.groups
+			self.groups = {}
+			
 			for groupName in self.getUsedGroups(self.kerning):
 				self.groups.setdefault(groupName, []).extend(self.allGroups[groupName])
 
@@ -557,13 +561,11 @@ class run(object):
 
 
 		self.totalKernPairs = len(self.kerning)
+
 		if not len(self.kerning):
 			print "\tERROR: The font has no kerning!"
 			return
 
-		
-		# self.processKerningPairs()
-		# self.findExceptions()
 		self.makeOutput()
 		self.sanityCheck()
 		self.writeDataToFile()
@@ -668,7 +670,7 @@ class run(object):
 		# ------------------
 
 		order = [
-		# dictName                          # minKern       # comment                           # enum
+		# dictName                   # minKern       # comment                           # enum
 		(kp.predefined_exceptions,   0,              '\n# pre-defined exceptions:',      True),
 		(kp.glyph_glyph,             self.minKern,   '\n# glyph, glyph:',                False),
 		(kp.glyph_glyph_exceptions,  0,              '\n# glyph, glyph exceptions:',     False),
@@ -736,7 +738,7 @@ class run(object):
 		# ------------------
 
 		RTLorder = [
-		# dictName                              # minKern       # comment                               # enum
+		# dictName                       # minKern       # comment                               # enum
 		(kp.RTLpredefined_exceptions,    0,              '\n# RTL pre-defined exceptions:',      True),
 		(kp.RTLglyph_glyph,              self.minKern,   '\n# RTL glyph, glyph:',                False),
 		(kp.RTLglyph_glyph_exceptions,   0,              '\n# RTL glyph, glyph exceptions:',     False),
@@ -997,8 +999,13 @@ class MakeSubtables(run):
 
 if __name__ == '__main__':
 	import defcon
-	f = defcon.Font(sys.argv[-1])
-	x = KernProcessor(f.groups, f.kerning)
-	print dir(x)
-	print x
+	fPath = sys.argv[-1]
+	fPath = fPath.rstrip('/')
+	f = defcon.Font(fPath)
+	# print dir(f)
+	# print os.path.dirname(f.path)
+	run(f, os.path.dirname(f.path))
+	# x = KernProcessor(f.groups, f.kerning)
+	# print dir(x)
+	# print x
 	# x.findExceptions()
