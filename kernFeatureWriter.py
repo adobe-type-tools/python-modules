@@ -193,7 +193,6 @@ class FLKerningData(object):
             return False
 
 
-
     def _readFLGroups(self, *args):
         self.groupToKeyglyph = {}
         self.groups = {}
@@ -216,12 +215,9 @@ class FLKerningData(object):
                     keyGlyphName = markedGlyphList[0]
                     print "\tWARNING: Kerning class %s has no explicit key glyph.\n\tUsing first glyph found (%s)." % (cString, keyGlyphName)
 
-
             self.groupOrder.append(OTgroupName)
             self.groupToKeyglyph[OTgroupName] = keyGlyphName
             self.groups[OTgroupName] = cleanGlyphList 
-
-
 
 
     def _splitFLGroups(self):
@@ -246,7 +242,6 @@ class FLKerningData(object):
                 self.rightGroups.append(groupName)
 
 
-
     def _filterKeyGlyphs(self, groupList):
         '''
         Returns a dictionary 
@@ -261,7 +256,6 @@ class FLKerningData(object):
             filteredKeyGlyphs[keyGlyphName] = groupName
 
         return filteredKeyGlyphs
-
 
 
     def _readFLKerning(self):
@@ -289,8 +283,6 @@ class FLKerningData(object):
 
 
 
-
-
 class KernProcessor(object):
     def __init__(self, groups, kerning):
         self.groups = groups
@@ -315,10 +307,24 @@ class KernProcessor(object):
         
         self.grouped_left = self._getAllGroupedGlyphs(side='left')
         self.grouped_right = self._getAllGroupedGlyphs(side='right')
+        
         self.pairs_unprocessed = 0
         self.pairs_processed = 0
         
         self._findExceptions()
+        self._sanityCheck()
+
+
+    def _sanityCheck(self):
+        '''
+        Checks if the number of kerning pairs input equals the number of kerning entries output.
+        '''
+        totalKernPairs = len(self.kerning)
+        if totalKernPairs != self.pairs_processed + self.pairs_unprocessed:
+            print 'Something went wrong...'
+            print 'Kerning pairs provided: %s' % totalKernPairs
+            print 'Kern entries generated: %s' % (self.pairs_processed + self.pairs_unprocessed)
+            print 'Pairs not processed: %s' % (totalKernPairs - (self.pairs_processed + self.pairs_unprocessed))
 
 
     def _explode(self, leftGlyphList, rightGlyphList):
@@ -326,7 +332,6 @@ class KernProcessor(object):
         Returns a list of tuples, containing all possible combinations of elements in both input lists.
         '''
         return list(itertools.product(leftGlyphList, rightGlyphList))
-
 
 
     def _getAllGroupedGlyphs(self, groupFilterList=None, side=None):
@@ -355,7 +360,6 @@ class KernProcessor(object):
             return sorted(set(grouped_left)), sorted(set(grouped_right))
 
 
-
     def _findExceptions(self):
         '''
         Process kerning to find which pairs are exceptions,
@@ -366,7 +370,7 @@ class KernProcessor(object):
 
             # Skip pairs in which the name of the left glyph contains the ignore tag.
             if kIgnorePairTag in pair[0]:
-                self.notProcessed += 1
+                self.pairs_unprocessed += 1
                 continue
             
             # Looking for pre-defined exception pairs, and filtering them out.
@@ -419,7 +423,6 @@ class KernProcessor(object):
                         self.glyph_group[glyph, group] = self.kerning[glyph, group]
                     self.pairs_processed += 1
     
-        print self.pairs_processed
         # group to group pairs:
         # ---------------------
 
@@ -428,22 +431,26 @@ class KernProcessor(object):
 
         for (leftGroup, rightGroup) in group_2_group:
             isRTLpair = isRTL((leftGroup, rightGroup))
-            lgroup = self.groups[leftGroup]
+            lgroup_glyphs = self.groups[leftGroup]
             
             try:
-                rgroup = self.groups[rightGroup]
+                rgroup_glyphs = self.groups[rightGroup]
             
-            except KeyError: # Because group-glyph pairs are included in the group-group bucket, the right-side element of the pair may not be a group
+            except KeyError: 
+                # Because group-glyph pairs are included in the group-group 
+                # bucket, the right-side element of the pair may not be a group.
                 if rightGroup in self.grouped_right:
                     # it is a group_to_glyph exception!
                     if isRTLpair:
                         self.RTLgroup_glyph_exceptions[leftGroup, rightGroup] = '<%s 0 %s 0>' % (self.kerning[leftGroup, rightGroup], self.kerning[leftGroup, rightGroup])
                     else:
                         self.group_glyph_exceptions[leftGroup, rightGroup] = self.kerning[leftGroup, rightGroup]
+                    self.pairs_processed += 1
                     continue # it's an exception, so move on to the next pair
                 
                 else:
-                    rgroup = rightGroup
+                    rgroup_glyphs = rightGroup
+
             
             # skip the pair if the value is zero
             if self.kerning[leftGroup, rightGroup] == 0:
@@ -452,11 +459,12 @@ class KernProcessor(object):
             
             if isRTLpair:
                 self.RTLgroup_group[leftGroup, rightGroup] = '<%s 0 %s 0>' % (self.kerning[leftGroup, rightGroup], self.kerning[leftGroup, rightGroup])
-                RTLexplodedPairList.extend(self._explode(lgroup, rgroup))
+                RTLexplodedPairList.extend(self._explode(lgroup_glyphs, rgroup_glyphs))
             else:
                 self.group_group[leftGroup, rightGroup] = self.kerning[leftGroup, rightGroup]
-                explodedPairList.extend(self._explode(lgroup, rgroup))
+                explodedPairList.extend(self._explode(lgroup_glyphs, rgroup_glyphs))
                 # list of all possible pair combinations for the @class @class kerning pairs of the font.
+            self.pairs_processed += 1
 
         self.exceptionPairs = set.intersection(set(explodedPairList), set(glyph_2_glyph))
         self.RTLexceptionPairs = set.intersection(set(RTLexplodedPairList), set(glyph_2_glyph))
@@ -466,11 +474,12 @@ class KernProcessor(object):
         
         for pair in self.exceptionPairs:
             self.glyph_glyph_exceptions[pair] = self.kerning[pair]
+            self.pairs_processed += 1
 
         for pair in self.RTLexceptionPairs:
             self.RTLglyph_glyph_exceptions[pair] = '<%s 0 %s 0>' %  (self.kerning[pair], self.kerning[pair])
+            self.pairs_processed += 1
             
-
 
         # glyph to glyph pairs:
         # ---------------------
@@ -481,12 +490,14 @@ class KernProcessor(object):
             pair = (leftGlyph, rightGlyph)
             if not pair in self.glyph_glyph_exceptions and not pair in self.RTLglyph_glyph_exceptions:
                 self.glyph_glyph[pair] = self.kerning[pair]
+                self.pairs_processed += 1
 
 
 
 class run(object):
 
     def __init__(self, font, folderPath, minKern=kDefaultMinKern, writeTrimmed=kDefaultWriteTrimmed, writeSubtables=kDefaultWriteSubtables, fileName=kKernFeatureFileName):
+
         self.header = ['# Created: %s' % time.ctime()]
         self.fileName = fileName
 
@@ -502,7 +513,6 @@ class run(object):
         self.writeSubtables = writeSubtables
         
         self.processedPairs = 0
-        self.notProcessed = 0
         self.trimmedPairs = 0
 
         self.output = []
@@ -514,21 +524,20 @@ class run(object):
 
         if self.inFL: 
             self.header.append('# PS Name: %s' % self.f.font_name)
-            # self.isMMfont(self.f) # sets self.MM to True or False
+
             flK = FLKerningData(self.f)
             self.MM = flK._isMMfont
-            # self.groups = flK.groups
             self.kerning = flK.kerning
             self.allGroups = flK.groups
             self.groups = {}
 
             for groupName in self.getUsedGroups(self.kerning):
-                self.groups.setdefault(groupName, []).extend(self.allGroups[groupName])
-            # self.groups = {groupName: self.allGroups[groupName] if groupName in self.getUsedGroups(self.kerning)}
+                self.groups[groupName] = self.allGroups[groupName]
+
             self.groupOrder = [groupName for groupName in flK.groupOrder if groupName in self.groups.keys()] 
 
-            # if not self.MM:
-            #   self.header.append('# MM Inst: %s' % self.f.menu_name)
+            if not self.MM:
+              self.header.append('# MM Inst: %s' % self.f.menu_name)
 
         else:
             self.header.append('# PS Name: %s' % self.f.info.postscriptFontName)
@@ -539,7 +548,7 @@ class run(object):
             self.groups = {}
             
             for groupName in self.getUsedGroups(self.kerning):
-                self.groups.setdefault(groupName, []).extend(self.allGroups[groupName])
+                self.groups[groupName] = self.allGroups[groupName]
 
             self.groupOrder = sorted(self.groups.keys())
             # self.groupOrder.sort(key=lambda x: (x.split('_')[1], len(x)))
@@ -552,22 +561,18 @@ class run(object):
             # Consequently, trimming is switched off here.
             self.minKern = 0
             
-        else:
-            self.leftClasses, self.rightClasses = self.splitClasses(kLeftTag, kRightTag)
+        # else:
+        #     self.leftClasses, self.rightClasses = self.splitClasses(kLeftTag, kRightTag)
 
 
         self.header.append('# MinKern: +/- %s inclusive' % self.minKern)
         self.header.append('# exported from %s' % appTest.appName)
-
-
-        self.totalKernPairs = len(self.kerning)
 
         if not len(self.kerning):
             print "\tERROR: The font has no kerning!"
             return
 
         self.makeOutput()
-        self.sanityCheck()
         self.writeDataToFile()
 
 
@@ -586,39 +591,35 @@ class run(object):
 
 
 
-    def dict2pos(self, dictionary, min=0, enum=False, RTL=False):
+    def dict2pos(self, pairValueDict, min=0, enum=False, RTL=False):
         '''
         Turns a dictionary to a list of kerning pairs. In a single master font, the function 
         can filter kerning pairs whose absolute value does not exceed a given threshold.
         '''
         data = []
-
         trimmed = 0
 
-        for pair in dictionary:
+        for pair, value in pairValueDict.items():
 
             if RTL: 
-                kernValue = int(dictionary[pair].split()[2])
+                kernValue = int(value.split()[2])
                 valueString = '<%s 0 %s 0>' % (kernValue, kernValue)
-            else: 
-                kernValue = dictionary[pair]
-                valueString = kernValue
+            else:
+                kernValue = value
+                valueString = value
 
             string =  'pos %s %s;' % (' '.join(pair), valueString) 
             enumstring = 'enum %s' % string
 
             if self.MM: # no filtering happening in MM.
                 data.append(string)
-
             elif enum:
                 data.append(enumstring)
-                
             else:
                 if abs(kernValue) < min:
                     if self.writeTrimmed:
                         data.append('# %s' % string)
                     trimmed += 1
-                    
                 else:
                     data.append(string)
 
@@ -627,42 +628,20 @@ class run(object):
 
         return '\n'.join(data)
     
-    
-
-
-
-    def splitClasses(self, leftTagsList, rightTagsList):
-        'Splits kerning classes into left and right sides; and assigns both sides classes without explicit side-flag.'
-
-        ll = []
-        rl = []
-
-        for cl in self.groups:
-            if any([tag in cl for tag in leftTagsList]):
-                ll.append(cl)
-            elif any([tag in cl for tag in rightTagsList]):
-                rl.append(cl)
-            else:
-                ll.append(cl)
-                rl.append(cl)
-    
-        return ll, rl
-
 
 
     def makeOutput(self):
         'Building the output data.'
 
         kp = KernProcessor(self.groups, self.kerning)
+        print dir(kp)
+        print kp.pairs_processed
+        print kp.pairs_unprocessed
         # kerning classes:
         # ----------------
-
-        for kernClass in self.groupOrder:
-            glyphList = self.groups[kernClass]
-            glyphString = ' '.join(glyphList)
-            
-            if kernClass[0] == '@':
-                self.output.append( '%s = [%s];' % (kernClass, glyphString) )
+        for groupName in self.groupOrder:
+            glyphList = self.groups[groupName]
+            self.output.append('%s = [%s];' % (groupName, ' '.join(glyphList)))
 
 
         # ------------------
@@ -814,18 +793,6 @@ class run(object):
             self.output.append(self.lkupRTLclose)
 
 
-            
-
-    def sanityCheck(self):
-        'Checks if the number of kerning pairs input equals the number of kerning entries output.'
-        
-        if self.totalKernPairs != self.processedPairs + self.notProcessed: # len(self.allKernPairs) + self.notProcessed - self.numBreaks + self.trimmedPairs:
-            print 'Something went wrong...'
-            print 'Kerning pairs provided: %s' % self.totalKernPairs
-            print 'Kern entries generated: %s' % (self.processedPairs + self.notProcessed)
-            print 'Pairs not processed: %s' % (self.totalKernPairs - (self.processedPairs+self.notProcessed))
-
-
     def writeDataToFile(self):
 
         if self.MM:
@@ -881,8 +848,17 @@ class MakeSubtables(run):
             'other': self.otherPairs_dict
         }
         
-        self.subtableOrder = [kLatinTag, kGreekTag, kCyrillicTag, kArmenianTag, kArabicTag, kHebrewTag, kNumberTag, kFractionTag, 'other']
-        # The order in which subtables are written
+        self.subtableOrder = [
+            kLatinTag, 
+            kGreekTag, 
+            kCyrillicTag, 
+            kArmenianTag, 
+            kArabicTag, 
+            kHebrewTag, 
+            kNumberTag, 
+            kFractionTag, 
+            'other',
+        ]
         
 
         'Split class-to-class kerning into subtables.'
