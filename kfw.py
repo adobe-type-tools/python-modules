@@ -81,7 +81,7 @@ class KerningData(object):
 
 
 
-    def getGroupedGlyphs(self, groupFilterList=None, side=None):
+    def getAllGroupedGlyphs(self, groupFilterList=None, side=None):
         '''
         Returns lists of glyphs used in groups on left or right side.
         This is used to calculate the subtable size for a given list of groups
@@ -112,18 +112,18 @@ class KerningData(object):
 if __name__ == "__main__":
 
     arguments = sys.argv
-    path = sys.argv[-1]
 
     if '-t' in arguments:
         import doctest
         doctest.testmod()
 
     else:
+        path = sys.argv[-1]
         font = defcon.Font(path)
         kd = KerningData(font)
         kd.filterKerning(font.kerning)
         print kd.groups
-        # print kd.getGroupedGlyphs(['@MMK_L_a'])
+        # print kd.getAllGroupedGlyphs(['@MMK_L_a'])
         print [len(l) for l in kd.getAllKernedGlyphs()]
         # print font.groups.keys()
         # print dir(kd)
