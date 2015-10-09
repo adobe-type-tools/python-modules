@@ -47,7 +47,7 @@ class KerningData(object):
 
     def getAllKernedGlyphs(self, side=None):
         '''
-        Returns all kerned glyphs for a given side, which means that each member 
+        Returns all kerned glyphs for a given side, which means that each member
         of a kerning group counts. These lists are used to calculate the size
         of the coverage table.
         '''
@@ -107,12 +107,9 @@ class KerningData(object):
             return sorted(set(grouped_left)), sorted(set(grouped_right))
 
 
-
-
 if __name__ == "__main__":
 
     arguments = sys.argv
-
     if '-t' in arguments:
         import doctest
         doctest.testmod()
@@ -123,8 +120,4 @@ if __name__ == "__main__":
         kd = KerningData(font)
         kd.filterKerning(font.kerning)
         print kd.groups
-        # print kd.getAllGroupedGlyphs(['@MMK_L_a'])
         print [len(l) for l in kd.getAllKernedGlyphs()]
-        # print font.groups.keys()
-        # print dir(kd)
-        # print kd.glyph_2_glyph
