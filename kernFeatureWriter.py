@@ -641,10 +641,13 @@ class run(object):
 
         kp = KernProcessor(self.groups, self.kerning)
 
-        # kerning classes:
+        # kerning groups:
         # ----------------
-        for groupName in self.groupOrder:
-            glyphList = self.groups[groupName]
+        groupOrder = [groupName for groupName in self.groupOrder if groupName in kp.groups.keys()]
+        # KernProcessor might remove some when single-element
+        # groups are dissolved.
+        for groupName in groupOrder:
+            glyphList = kp.groups[groupName]
             self.output.append('%s = [%s];' % (groupName, ' '.join(glyphList)))
 
 
