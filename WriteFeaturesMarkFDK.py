@@ -26,7 +26,7 @@ kIndianBelowMarks = "blwm"
 ###################################################
 
 __copyright__ = __license__ =  """
-Copyright (c) 2010-2013 Adobe Systems Incorporated. All rights reserved.
+Copyright (c) 2010-2015 Adobe Systems Incorporated. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -48,7 +48,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 __doc__ = """
-WriteMarkFeaturesFDK.py v2.2 - May 01 2013
+WriteMarkFeaturesFDK.py v2.2.2 - Oct 12 2015
 
 Contains a Python class (markDataClass) which, when provided with a FontLab font and a path to a folder,
 will output a file named "mark.fea", containing a features-file syntax definition of the font's
@@ -98,6 +98,7 @@ v2.1   - Apr 26 2013 - RTL tags were changed to minimize conflicts with anchor n
                        Contextual anchors no longer produce mark classes.
 v2.2   - May 01 2013 - Fixed bug in processing FontLab classes.
 v2.2.1 - Aug 16 2013 - Changed names of output files.
+v2.2.2 - Oct 12 2015 - Improved nameless anchor check.
 """
 
 import os, time, re
@@ -372,7 +373,7 @@ class MarkDataClass(object):
 				markNamesLog = []
 				for anchorIndex in range(len(g.anchors)):
 					anchorName = g.anchors[anchorIndex].name
-					if len(anchorName) == 0:
+					if not anchorName:
 						print "\tERROR: Glyph %s has a nameless anchor." % gName
 						continue
 					if (anchorName[0] != '_') and (kIgnoreAnchorTag not in anchorName): # Consider only base-related anchors (the ones NOT prefixed with the underscore)
