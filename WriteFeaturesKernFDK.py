@@ -52,7 +52,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 __doc__ = """
-WriteKernFeaturesFDK.py v3.6 - Apr 02 2014
+WriteKernFeaturesFDK.py v3.7 - Oct 12 2015
 
 Contains a class (KernDataClass) which, when provided with a UFO or FontLab font, will output
 a file named "kern.fea", containing a features-file syntax definition of the font's kerning.
@@ -136,6 +136,7 @@ v3.3.2 - Aug 16 2013 - Changed names of output files.
 v3.4   - Jan 22 2014 - Fixed the sorting of group-glyph pairs; they must be placed among group-group pairs, otherwise subtable breaks may prevent pairs (that have the same left group) downstream from working.
 v3.5   - Jan 27 2014 - Skip the pairs involving groups that have a value of zero; retaining these pairs has no impact on LTR kerning, but it's damaging for RTL kerning because zero value pairs trigger the start of a new subtable.
 v3.6   - Apr 02 2014 - Write only classes involved in kerning.
+v3.7   - Oct 12 2015 - Make it work with defcon's ufo3 branch.
 
 """
 
@@ -304,7 +305,7 @@ class KernDataClass(object):
 			# self.groupOrder.sort(key=lambda x: (x.split('_')[1], len(x)))
 
 			self.analyzeGroups()
-			self.kerning = self.f.kerning
+			self.kerning = self.stripPublicPrefix(self.f.kerning)
 
 
 		self.header.append('# MinKern: +/- %s inclusive' % self.minKern)
@@ -324,6 +325,17 @@ class KernDataClass(object):
 		self.writeDataToFile()
 
 
+	def stripPublicPrefix(self, kerningDict):
+		newKerningDict = {}
+		for (first, second), value in kerningDict.items():
+			if 'public.kern1.' in first:
+				first = first.replace('public.kern1.', '')
+			if 'public.kern2.' in second:
+				second = second.replace('public.kern2.', '')
+			newKerningDict[(first, second)] = value
+		return newKerningDict
+
+
 	def findGroupsUsedInKerning(self):
 		'''
 		Finds all groups used in kerning, and filters all other groups.
@@ -333,6 +345,10 @@ class KernDataClass(object):
 		'''
 		kerningGroupDict = {}
 		for (first, second), value in self.f.kerning.items():
+			if 'public.kern1.' in first:
+				first = first.replace('public.kern1.', '')
+			if 'public.kern2.' in second:
+				second = second.replace('public.kern2.', '')
 			if self.isGroup(first):
 				kerningGroupDict.setdefault(first, self.f.groups[first])
 			if self.isGroup(second):
