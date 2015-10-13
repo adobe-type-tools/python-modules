@@ -26,48 +26,48 @@ kIndianBelowMarks = "blwm"
 ###################################################
 
 __copyright__ = __license__ =  """
-Copyright (c) 2010-2013 Adobe Systems Incorporated. All rights reserved.
- 
+Copyright (c) 2010-2015 Adobe Systems Incorporated. All rights reserved.
+
 Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the "Software"), 
-to deal in the Software without restriction, including without limitation 
-the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the 
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
 Software is furnished to do so, subject to the following conditions:
- 
+
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
- 
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
 __doc__ = """
-WriteMarkFeaturesFDK.py v2.2 - May 01 2013
+WriteMarkFeaturesFDK.py v2.2.2 - Oct 12 2015
 
-Contains a Python class (markDataClass) which, when provided with a FontLab font and a path to a folder, 
-will output a file named "mark.fea", containing a features-file syntax definition of the font's 
+Contains a Python class (markDataClass) which, when provided with a FontLab font and a path to a folder,
+will output a file named "mark.fea", containing a features-file syntax definition of the font's
 mark attachment and achor data. The script can also generate "mkmk.fea" file. If the Indian scripts
 option is selected, all or part of the lookups will be written to files named "abvm/blwm.fea".
 
-VERY IMPORTANT: For this script to work, all the combining mark glyphs 
+VERY IMPORTANT: For this script to work, all the combining mark glyphs
 must be added to an OpenType class named 'COMBINING_MARKS'.
 
 When designing the combining marks, often there's the need to make specific versions for uppercase
 and small cap glyphs, which are slightly different from the lowercase. For this reason, one might
 want to use a casing tag in the anchors' names (e.g. "_aboveLC", "_aboveUC" and "_aboveSC" instead
 of just "_above" for all the three cases) so that the position of the anchors can be tested in
-FontLab. But this distinction is not necessary for the 'mark' feature, and that is why this script 
+FontLab. But this distinction is not necessary for the 'mark' feature, and that is why this script
 allows for those casing tags to be trimmed, by setting the value of 'kDefaultTrimCasingTags'.
 
 If the font has ligatures and the ligatures have anchors, the ligature glyphs have to be put in
 OpenType classes named "LIGATURES_WITH_X_COMPONENTS", where 'X' should be replaced by a number
-between 2 and 9 (inclusive). Additionally, the names of the anchors used on the ligature glyphs 
+between 2 and 9 (inclusive). Additionally, the names of the anchors used on the ligature glyphs
 need to have a tag (e.g. 1ST, 2ND) which is used for corresponding the anchors with the correct
 ligature component. Keep in mind that in Right-To-Left scripts, the first component of the ligature
 is the one on the right side of the glyph.
@@ -98,6 +98,7 @@ v2.1   - Apr 26 2013 - RTL tags were changed to minimize conflicts with anchor n
                        Contextual anchors no longer produce mark classes.
 v2.2   - May 01 2013 - Fixed bug in processing FontLab classes.
 v2.2.1 - Aug 16 2013 - Changed names of output files.
+v2.2.2 - Oct 12 2015 - Improved nameless anchor check.
 """
 
 import os, time, re
@@ -105,13 +106,13 @@ import os, time, re
 
 class WhichApp(object):
 	'Testing the environment'
-	
+
 	def __init__(self):
 		self.inRF = False
 		self.inFL = False
 		self.inDC = False
 		self.appName = "noApp"
-		
+
 		if not any((self.inRF, self.inFL, self.inDC)):
 			try:
 				import mojo.roboFont
@@ -141,7 +142,7 @@ class WhichApp(object):
 
 
 class MarkDataClass(object):
-	
+
 	def __init__(self, font, folderPath, trimCasingTags=kDefaultTrimCasingTags, genMkmkFeature=kDefaultGenMkmkFeature, writeClassesFile=kDefaultWriteMarkClassesFile, indianScriptsFormat=kDefaultIndianScriptsFormat):
 		self.header = ['# Created: %s' % time.ctime()]
 
@@ -158,7 +159,7 @@ class MarkDataClass(object):
 		self.genMkmkFeature = genMkmkFeature
 		self.writeClassesFile = writeClassesFile
 		self.indianScriptsFormat = indianScriptsFormat
-		
+
 		self.lineBreak = '\n'
 		self.marksClassList = []
 		self.ligatureComponentsList = range(2,len(kLigatureComponentOrderTags)+1) # ligatures have a minimum of 2 components and a maximum determined by the size of kLigatureComponentOrderTags
@@ -168,7 +169,7 @@ class MarkDataClass(object):
 		self.repeatedGlyphNamesList = []
 		self.markTypesList = []
 		self.anchorNamesNotTrimmed = []
-		
+
 		self.anchorsDataInCombMarksDict = {}
 		self.anchorsDataInBaseGlyphsDict = {}
 		self.anchorsDataInLigaturesDict = {}
@@ -184,11 +185,11 @@ class MarkDataClass(object):
 		if self.inFL:
 			self.header.append('# PS Name: %s' % self.f.font_name)
 			self.isMMfont(self.f) # sets self.MM to True or False
-			
+
 			flC = ReadFontLabClasses(self.f)
 			self.marksClassList = flC.marksClassList
 			self.ligatureClassesDict = flC.ligatureClassesDict
-			
+
 			if not self.MM:
 				self.header.append('# MM Inst: %s' % self.f.menu_name)
 
@@ -203,7 +204,7 @@ class MarkDataClass(object):
 		 			self.ligatureClassesDict[compNum] = self.f.groups[kLigaturesClassName % compNum]
 
 		self.header.append('# exported from %s\n\n' % self.appName)
-		
+
 		if not len(self.marksClassList):
 			print "\tERROR: %s class could not be found or is empty!" % kCombMarksClassName
 			return
@@ -213,45 +214,45 @@ class MarkDataClass(object):
 		if len(self.invalidGlyphNamesList):
 			print "\tERROR: The glyph(s) listed below could not be found! Please check the combining marks (and ligatures) classes.\n\t%s\n" % ("\n\t".join(self.invalidGlyphNamesList))
 			return
-		
+
 		if len(self.repeatedGlyphNamesList):
 			# the error messages have already been printed
 			return
-		
+
 		if len(self.ligatureClassesDict):
 			self.addAllLigaturesToList()
-		
+
 		self.collectAnchorDataFromCombMarks()
 		if not len(self.anchorsDataInCombMarksDict):
 			print "\tERROR: No valid anchors were found in combining mark glyphs!"
 			return
-		
+
 		self.buildMarkRelatedLines() # builds the markClass lines and the glyph classes lines
-		
+
 		self.markRelatedGlyphClassLinesList.sort()
 		self.markRelatedMarkClassLinesList.sort()
-		
+
 		self.collectMarkTypesList()
-		
+
 		self.collectAnchorDataFromBaseGlyphs()
 		if not len(self.anchorsDataInBaseGlyphsDict):
 			print "\tWARNING: No valid anchors were found in base glyphs!"
 			print
-		
+
 		if len(self.ligatureClassesDict):
 			self.collectAnchorDataFromLigatureGlyphs()
 
 		self.buildMarkLookups()
-		
+
 		if len(self.anchorNamesNotTrimmed):
 			print "\tNOTE: These anchor names were not trimmed:\n\t\t%s" % "\n\t\t".join(self.anchorNamesNotTrimmed)
-			
+
 		if self.writeClassesFile:
 			self.writeMarkClassesFile()
-		
+
 		self.buildClassesNote()
 		self.writeMarkFeatureFile()
-		
+
 		if self.genMkmkFeature:
 			self.collectAnchorDataFromCombMkmk()
 			self.buildMkmkRelatedLines()
@@ -272,8 +273,8 @@ class MarkDataClass(object):
 			if gName in self.f.keys():
 				return True
 		return False
-	
-	
+
+
 	def validateCombMarksClassContents(self):
 		tempGlist = []
 		for gName in self.marksClassList:
@@ -281,7 +282,7 @@ class MarkDataClass(object):
 				self.invalidGlyphNamesList.append(gName)
 			if gName not in tempGlist:
 				tempGlist.append(gName)
-			else:	
+			else:
 				self.repeatedGlyphNamesList.append(gName)
 				print "\tERROR: The glyph named %s is repeated in the class named %s" % (gName, kCombMarksClassName)
 
@@ -297,10 +298,10 @@ class MarkDataClass(object):
 					tempGlist.append(gName)
 					if gName not in tempAllGlist:
 						tempAllGlist.append(gName)
-					else:	
+					else:
 						self.repeatedGlyphNamesList.append(gName)
 						print "\tERROR: The glyph named %s is used in more than one ligature class." % (gName)
-				else:	
+				else:
 					self.repeatedGlyphNamesList.append(gName)
 					print "\tERROR: The glyph named %s is repeated in the class named %s" % (gName, kLigaturesClassName % element)
 
@@ -335,8 +336,8 @@ class MarkDataClass(object):
 			if markName not in self.markTypesList:
 				self.markTypesList.append(markName)
 		self.markTypesList.sort()
-		
-	
+
+
 	def collectAnchorDataFromCombMarks(self):
 		for gName in self.marksClassList:
 			g = self.f[gName]
@@ -372,7 +373,7 @@ class MarkDataClass(object):
 				markNamesLog = []
 				for anchorIndex in range(len(g.anchors)):
 					anchorName = g.anchors[anchorIndex].name
-					if len(anchorName) == 0:
+					if not anchorName:
 						print "\tERROR: Glyph %s has a nameless anchor." % gName
 						continue
 					if (anchorName[0] != '_') and (kIgnoreAnchorTag not in anchorName): # Consider only base-related anchors (the ones NOT prefixed with the underscore)
@@ -405,7 +406,7 @@ class MarkDataClass(object):
 							point = g.anchors[anchorIndex]
 							if self.trimCasingTags:
 								anchorName = self.trimCaseTags(anchorName)
-							
+
 							# Arrange the data before adding it to the dictionary
 							for i in range(elementNum):
 								elementOrder = kLigatureComponentOrderTags[i]
@@ -413,17 +414,17 @@ class MarkDataClass(object):
 									strippedAnchorName = re.sub(elementOrder, '', anchorName) # remove the component order tag using regexp
 									if strippedAnchorName[-1] == "_":
 										strippedAnchorName = strippedAnchorName[:-1] # remove the last character of the anchor's name, if it happens to be an underscore
-	
+
 									dictKey = "%s,%s" % (strippedAnchorName, gName)
 									anchor = "%s,%d,%d" % (elementOrder, point.x, point.y)
-									
+
 									if dictKey not in self.anchorsDataInLigaturesDict:
 										self.anchorsDataInLigaturesDict[dictKey] = [elementNum, anchor]
 									else:
 										self.anchorsDataInLigaturesDict[dictKey].append(anchor)
-									
+
 									break  # no need to finish the loop since a match was found
-						
+
 
 	def buildMarkRelatedLines(self):
 		anchorGroupList = self.anchorsDataInCombMarksDict.keys()
@@ -449,7 +450,7 @@ class MarkDataClass(object):
 	def buildMarkLookups(self):
 		for markType in self.markTypesList:
 			baseLinesList = self.buildBaseRelatedLines(markType)
-			
+
 			# Do base lookups
 			if len(baseLinesList):
 				self.baseRelatedBasePosLinesList.append('lookup MARK_BASE_%s {\n' % markType)
@@ -459,11 +460,11 @@ class MarkDataClass(object):
 				self.baseRelatedBasePosLinesList.append('} MARK_BASE_%s;\n\n\n' % markType)
 			else:
 				print "\tWARNING: The anchor %s is not used in any of the base glyphs." % markType
-	
+
 			# Do ligature lookups
 			if len(self.anchorsDataInLigaturesDict):
 				ligatureLinesList = self.buildLigatureRelatedLines(markType)
-				
+
 				if len(ligatureLinesList):
 					self.ligatureRelatedBasePosLinesList.append('lookup MARK_LIGATURE_%s {\n' % markType)
 					if markType[-3:] in kRTLtagsList:
@@ -473,21 +474,21 @@ class MarkDataClass(object):
 				else:
 					print "\tWARNING: The anchor %s is not used in any of the ligature glyphs." % markType
 
-	
+
 	def buildBaseRelatedLines(self, markTypeName):
 		anchorGroupList = self.anchorsDataInBaseGlyphsDict.keys() # ['aboveAR,1675,697', 'below,367,-30', ... ]
 		anchorGroupList.sort()
 		glyphClassLinesList = []
 		basePosLinesList = []
-		
+
 		for anchor in anchorGroupList:
 			anchorName, anchorX, anchorY = anchor.split(',')
-			
+
 			if anchorName != markTypeName: # skip anchors that are not the same kind of the one requested
 				continue
-			
+
 			anchorAndMarkClass = "<anchor %s %s> mark @MC_%s" % (anchorX, anchorY, anchorName)
-			
+
 			if len(self.anchorsDataInBaseGlyphsDict[anchor]) > 1: # make a glyph class only when there's more than one glyph
 				glyphClassName = "@bGC_%s_%s" % (self.anchorsDataInBaseGlyphsDict[anchor][0], anchorName)
 				glyphClassContents = ' '.join(self.anchorsDataInBaseGlyphsDict[anchor])
@@ -502,7 +503,7 @@ class MarkDataClass(object):
 
 		glyphClassLinesList.sort()
 		basePosLinesList.sort()
-		
+
 		return glyphClassLinesList + basePosLinesList
 
 
@@ -510,31 +511,31 @@ class MarkDataClass(object):
 		anchorGroupList = self.anchorsDataInLigaturesDict.keys() # ['aboveAR,arAlefMaksura_AlefMaksura', 'aboveAR,arAlefMaksura_AlefMaksura.f', 'aboveAR,arAlefMaksura_AlefMaksura.fj',
 		anchorGroupList.sort()
 		ligaturePosLinesList = []
-		
+
 		for anchor in anchorGroupList:
 			anchorName, gName = anchor.split(',')
-			
+
 			if anchorName != markTypeName: # skip anchors that are not the same kind of the one requested
 				continue
-			
+
 			elementCount = int(self.anchorsDataInLigaturesDict[anchor][0])
 			anchorPositionsList = self.anchorsDataInLigaturesDict[anchor][1:]  # ['1ST,1735,358', '2ND,680,234']
 			anchorPositionsList.sort()
-			
+
 			if elementCount != len(anchorPositionsList):
 				print "\tNOT IMPLEMENTED WARNING: Number of elements in ligature %s does not match the number of anchors of the type %s." % (gName, anchorName)
 				continue
-			
+
 			elementsAnchorsAndMarkClassesList = []
-			
+
 			for position in anchorPositionsList:
 				ord, anchorX, anchorY = position.split(',')
 				anchorAndMarkClass = "<anchor %s %s> mark @MC_%s" % (anchorX, anchorY, anchorName)
 				elementsAnchorsAndMarkClassesList.append(anchorAndMarkClass)
-			
+
 			ligaturePosLine = "\tpos ligature %s %s;\n" % (gName, ' ligComponent '.join(elementsAnchorsAndMarkClassesList))
 			ligaturePosLinesList.append(ligaturePosLine)
-		
+
 		return ligaturePosLinesList
 
 
@@ -556,7 +557,7 @@ class MarkDataClass(object):
 			classesLinesList.append(self.lineBreak)
 		return classesLinesList
 
-	
+
 	def writeMarkClassesFile(self):
 		print '\tSaving %s file...' % kMarkClassesFileName
 		filePath = os.path.join(self.folder, kMarkClassesFileName)
@@ -575,7 +576,7 @@ class MarkDataClass(object):
 			outfile.write(self.classesNote)
 		else:
 			outfile.writelines(self.assembleClassesLines())
-		
+
 		fileHeader = "\n".join(self.header) + self.classesNote
 
 		if self.indianScriptsFormat:
@@ -586,7 +587,7 @@ class MarkDataClass(object):
 			blwmfile = open(blwmFilePath, 'w')
 			abvmfile.write(fileHeader)
 			blwmfile.write(fileHeader)
-			
+
 			# pos base lookups
 			for line in self.baseRelatedBasePosLinesList: # the lines will have to be analized and written to separate files
 				if kIndianAboveMarks in line:
@@ -595,7 +596,7 @@ class MarkDataClass(object):
 					blwmfile.write(line)
 				else:
 					outfile.write(line)
-						
+
 			outfile.write(self.lineBreak)
 
 			# pos ligature lookups
@@ -606,7 +607,7 @@ class MarkDataClass(object):
 					blwmfile.write(line)
 				else:
 					outfile.write(line)
-						
+
 			abvmfile.close()
 			blwmfile.close()
 
@@ -674,14 +675,14 @@ class MarkDataClass(object):
 		outfile.write("\n".join(self.header))
 		outfile.write(self.classesNote)
 		fileHeader = "\n".join(self.header) + self.classesNote
-		
+
 		if self.indianScriptsFormat:
 			print '\tAdding mark-to-mark lookups to %s and %s files...' % (kAbvmFeatureFileName, kBlwmFeatureFileName)
 			abvmFilePath = os.path.join(self.folder, kAbvmFeatureFileName)
 			blwmFilePath = os.path.join(self.folder, kBlwmFeatureFileName)
 			abvmfile = open(abvmFilePath, 'a') # append the data instead of writting a new file; the file is expected to contain lookups for 'pos base' already
 			blwmfile = open(blwmFilePath, 'a')
-			
+
 			for line in self.mkmkRelatedBasePosLinesList: # the lines will have to be analized and written to separate files
 				if kIndianAboveMarks in line:
 					abvmfile.write(line)
@@ -689,7 +690,7 @@ class MarkDataClass(object):
 					blwmfile.write(line)
 				else:
 					outfile.write(line)
-						
+
 			abvmfile.close()
 			blwmfile.close()
 
@@ -699,9 +700,9 @@ class MarkDataClass(object):
 		else: # the Indian scripts option is not checked; all the lines can be written to the file at once
 			if len(self.mkmkRelatedBasePosLinesList):
 				outfile.writelines(self.mkmkRelatedBasePosLinesList)
-		
+
 		outfile.close()
-		
+
 		self.checkFileContentsAndDeleteIfEmpty(filePath, fileHeader)
 
 
@@ -711,12 +712,12 @@ class MarkDataClass(object):
 		file.close()
 		fileContents = fileContents.strip()
 		fileHeader = fileHeader.strip()
-		
+
 		if fileContents == fileHeader:
 			print "\tFile %s is empty. Deleted." % os.path.basename(filePath)
 			if os.path.exists(filePath):
 				os.remove(filePath)
-	
+
 
 
 class ReadFontLabClasses(object):
@@ -724,12 +725,12 @@ class ReadFontLabClasses(object):
 		self.marksClassList = []
 		self.ligatureComponentsList = range(2,len(kLigatureComponentOrderTags)+1) # ligatures have a minimum of 2 components and a maximum determined by the size of kLigatureComponentOrderTags
 		self.ligatureClassesDict = {}
-		
+
 		for c in font.classes:
 			if c[0] not in ['_','.']: # Ignore kerning and metrics classes
 				classNameAndContentsList = c.split(':') # Split class name and class contents
 				if len(classNameAndContentsList) == 2: # Make sure there are only two elements, the class name and the class contents
-		
+
 					if classNameAndContentsList[0] == kCombMarksClassName: # Find class by matching the name
 						self.marksClassList = classNameAndContentsList[1].split() # Return the class contents as a list
 						continue

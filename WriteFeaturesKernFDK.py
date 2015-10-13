@@ -6,12 +6,12 @@
 
 kKernFeatureFileName = "kern.fea"
 
-kDefaultMinKern = 3 
-# Inclusive; this means that pairs which equal this absolute value will 
+kDefaultMinKern = 3
+# Inclusive; this means that pairs which equal this absolute value will
 # NOT be ignored/trimmed. Anything in the below that value will be trimmed.
 
-kDefaultWriteTrimmed = False  
-# If 'False', trimmed pairs will not be processed and therefore 
+kDefaultWriteTrimmed = False
+# If 'False', trimmed pairs will not be processed and therefore
 # not be written to the output file.
 
 kDefaultWriteSubtables = True
@@ -31,35 +31,35 @@ kFractionTag = '_FRAC'
 kExceptionTag = 'EXC_'
 
 kIgnorePairTag = '.cxt'
-	
+
 ###################################################
 
 __copyright__ = __license__ =  """
 Copyright (c) 2006-2014 Adobe Systems Incorporated. All rights reserved.
- 
+
 Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the "Software"), 
-to deal in the Software without restriction, including without limitation 
-the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the 
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
 Software is furnished to do so, subject to the following conditions:
- 
+
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
- 
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
 __doc__ = """
 WriteKernFeaturesFDK.py v3.6 - Apr 02 2014
 
-Contains a class (KernDataClass) which, when provided with a UFO or FontLab font, will output 
+Contains a class (KernDataClass) which, when provided with a UFO or FontLab font, will output
 a file named "kern.fea", containing a features-file syntax definition of the font's kerning.
 
 This script allows the user to customize the minimum kerning value, i.e. the kerning threshold. If the "kDefaultMinKern"
@@ -68,20 +68,20 @@ ignored pairs in the 'kern.fea' file, change the value of "kDefaultWriteTrimmed"
 trimmed pairs will appear in the 'kern.fea' file, but they won't be implemented in the font, because
 the lines will be preceded by a number sign (#).
 
-VERY IMPORTANT: For the creation of the 'kern.fea' file to work well, the following class naming rules 
+VERY IMPORTANT: For the creation of the 'kern.fea' file to work well, the following class naming rules
 should be followed:
 
 	Left side classes must contain the string "_LEFT" or "_1ST" or "_L_"
 	Right side classes must contain the string "_RIGHT" or "_2ND" or "_R_"
 	Classes to be used on both left and right sides of a kern pair must NOT contain "_LEFT" or "_RIGHT"
-	
+
 	Latin glyph classes should contain the string "_LAT"
 	Greek glyph classes must contain the string "_GRK"
 	Cyrillic glyph classes must contain the string "_CYR"
-	
-	Exception classes must start with the string "EXC_" and the key glyph of the class (marked by a single 
+
+	Exception classes must start with the string "EXC_" and the key glyph of the class (marked by a single
 	quote [']) can NOT be the same as the key glyph of another kerning class.
-	
+
 	Examples of kerning classes (in FontLab syntax):
 		_A_LC_RIGHT: a' a.end aacute acircumflex adieresis agrave ae
 		_T_UC: T' Tcaron Tcommaaccent Tcedilla
@@ -91,24 +91,24 @@ should be followed:
 		_EPSILON_LC_GRK: epsilon' epsilonacute epsilonasper epsilonasperacute
 		_EXC_E_LC_LEFT_LAT: edieresis' egrave ebreve ecaron emacron etilde
 
-There is no absolute requirement to use any of the strings above, but their usage will facilitate the creation 
+There is no absolute requirement to use any of the strings above, but their usage will facilitate the creation
 of a correct "kern.fea" file, which will prevent kerning class overlapping and subtable overflow.
 
-The default strings values (_LEFT, _LAT, etc.) can be replaced for other values as needed, by editing the 
+The default strings values (_LEFT, _LAT, etc.) can be replaced for other values as needed, by editing the
 entries located at the top of this file.
 
-If a script tag (_LAT, _GRK or _CYR) is used in one kerning class, all kerning classes related with 
+If a script tag (_LAT, _GRK or _CYR) is used in one kerning class, all kerning classes related with
 that script MUST use the tag string as well.
 
 Classes that do not contain a side tag (_LEFT or _RIGHT), will be used on both sides of a kerning pair. Classes
-containing only symmetrical glyphs, normally do not require a side tag. Nonetheless, adding side tags is a good 
+containing only symmetrical glyphs, normally do not require a side tag. Nonetheless, adding side tags is a good
 practice, as it can prevent overlap of classes.
 
-It is possible to do multiple kerning exceptions at once, by grouping all the exception glyphs in the same 
+It is possible to do multiple kerning exceptions at once, by grouping all the exception glyphs in the same
 class, and making a kerning exception with the key glyph of the class. However, the key glyph of an exception
 class can NOT be the key glyph of another class at the same time.
 
-In order to process all RTL kerning pairs as such, all the RTL glyphs need to be included in kerning classes 
+In order to process all RTL kerning pairs as such, all the RTL glyphs need to be included in kerning classes
 tagged as RTL (via the usage of _ARA or _HEB in the classes' names). A RTL kerning class needs to be created
 even if its content is one single glyph.
 
@@ -125,12 +125,12 @@ v2.3.2 - Jun 20 2011 - Added an option to ignore some pairs, based on the name o
 v2.4   - Oct 01 2012 - Changed the way exceptions are handled, to support single class-to-glyph and glyph-to-class kerns for glyphs that are not in a kerning class to begin with.
 v2.5   - Oct 04 2012 - Made MM compatible for the sake of eliminating a separate MM module.
 v2.5.1 - Oct 15 2012 - Minor fixes and cleanup.
-v3.0   - Oct 24 2012 - Complete re-write. 
+v3.0   - Oct 24 2012 - Complete re-write.
 					   Now, the kern feature file will identify all levels of exceptions. Single-glyph classes are no longer necessary for the left-to-right part of the kerning.
 					   (The single-glyph kerning classes were used for subtable assignment. Later in the process, single-class-to-single-class pairs were dissolved into glyph-to-glyph pairs.
 					   Only pairs that have a class as their first element should be in a subtable. For now, only class-to-class pairs are split into subtables.
 					   Any glyphs that are not in a kerning class are now assumed to be in LTR kerning.
-					   This is an area that might need more work -- the need for creating single-glyph kerning classes may be counter-intuitive; 
+					   This is an area that might need more work -- the need for creating single-glyph kerning classes may be counter-intuitive;
 					   the subtable problem could also be solved e.g. by adding glyph notes).
 v3.1   - Nov 30 2012 - Now compatible with UFOs -- this means the module can be used from Fontlab, from the commandline or from RoboFont.
 v3.2   - Jan 24 2013 - Made subtabling optional, changed subtabling behaviour to also include glyph-to-class pairs.
@@ -149,13 +149,13 @@ import os, time, itertools
 
 class WhichApp(object):
 	'Testing the environment'
-	
+
 	def __init__(self):
 		self.inRF = False
 		self.inFL = False
 		self.inDC = False
 		self.appName = "noApp"
-		
+
 		if not any((self.inRF, self.inFL, self.inDC)):
 			try:
 				import mojo.roboFont
@@ -191,12 +191,12 @@ class ReadFontLabClasses(object):
 		self.keyGlyphs = {}
 		self.groups = {}
 		self.groupOrder = []
-		
+
 		classes = []
 		for c in self.f.classes:
 			if c[0] == '_':
 				classes.append(c)
-		
+
 		sep = ":"
 		for c in classes:
 			repFound = False
@@ -208,18 +208,18 @@ class ReadFontLabClasses(object):
 
 			for g in glyphList:
 				if g[-1] == "'":  # finds keyglyph
-					rep = g.strip("'")  
+					rep = g.strip("'")
 					repFound = True
 					break
 				else:
 					rep = glyphList[0]
 
-			if repFound == False: 
+			if repFound == False:
 				print "\tWARNING: Kerning class %s has no explicit key glyph.\n\tUsing first glyph found (%s)." % (c, rep)
 
 			self.groupOrder.append(OTgroupName)
 			self.keyGlyphs[OTgroupName] = rep
-			self.groups[OTgroupName] = cleanGlyphList 
+			self.groups[OTgroupName] = cleanGlyphList
 
 
 
@@ -249,12 +249,12 @@ class KernDataClass(object):
 		self.keyGlyphs = {} # Dict from keyGlyph to groupName 'r': '_R_LC_LEFT_LAT'
 		self.leftKeyGlyphs = {}
 		self.rightKeyGlyphs = {}
-		
+
 		self.totalKernPairs = 0
 		self.trimmedPairs = 0
 		self.processedPairs = 0
 		self.notProcessed = 0
-		
+
 		# kerning lists for pairs only
 		self.group_group = []
 		self.glyph_glyph = []
@@ -266,27 +266,27 @@ class KernDataClass(object):
 		self.glyph_group_dict = {}
 		self.glyph_group_exceptions_dict = {}
 		self.group_glyph_exceptions_dict = {}
-		self.group_group_dict = {}		
+		self.group_group_dict = {}
 		self.predefined_exceptions_dict = {}
-		
+
 		self.RTLglyph_glyph_dict = {}
 		self.RTLglyph_glyph_exceptions_dict = {}
 		self.RTLglyph_group_dict = {}
 		self.RTLglyph_group_exceptions_dict = {}
 		self.RTLgroup_glyph_exceptions_dict = {}
-		self.RTLgroup_group_dict = {}		
+		self.RTLgroup_group_dict = {}
 		self.RTLpredefined_exceptions_dict = {}
-		
+
 		self.grouped_right = []
 		self.grouped_left = []
 		self.output = []
-		
+
 		self.subtbBreak = '\nsubtable;'
 		self.lkupRTLopen = '\n\nlookup RTL_kerning {\nlookupflag RightToLeft IgnoreMarks;\n'
 		self.lkupRTLclose = '\n\n} RTL_kerning;\n'
-	
 
-		if self.inFL: 
+
+		if self.inFL:
 			self.header.append('# PS Name: %s' % self.f.font_name)
 			self.isMMfont(self.f) # sets self.MM to True or False
 			flC = ReadFontLabClasses(self.f)
@@ -321,7 +321,7 @@ class KernDataClass(object):
 			print "\tERROR: The font has no kerning!"
 			return
 
-		
+
 		self.processKerningPairs()
 		self.findExceptions()
 		self.makeOutput()
@@ -332,7 +332,7 @@ class KernDataClass(object):
 	def findGroupsUsedInKerning(self):
 		'''
 		Finds all groups used in kerning, and filters all other groups.
-		(e.g. MetricsMachine reference groups). 
+		(e.g. MetricsMachine reference groups).
 		This also means that any zero-length group is thrown out since
 		it will likely not be used in a kerning pair.
 		'''
@@ -387,8 +387,8 @@ class KernDataClass(object):
 				return self.rightKeyGlyphs[glyphName]
 			else:
 				return glyphName
-				
-			
+
+
 	def checkGroupForTag(self, tag, groupName):
 		'Checks if a tag (e.g. _CYR, _EXC, _LAT) exists in a group name (e.g. @A_LC_LEFT_LAT)'
 		if tag in groupName:
@@ -401,13 +401,13 @@ class KernDataClass(object):
 		'Returns group tag (e.g. _CYR, _EXC, _LAT) for a given group name (e.g. @A_LC_LEFT_LAT)'
 		tags = [kLatinTag, kGreekTag, kCyrillicTag, kArmenianTag, kArabicTag, kHebrewTag, kNumberTag, kFractionTag, kExceptionTag]
 		foundTag = None
-		
+
 		for tag in tags:
 			if self.checkGroupForTag(tag, groupName):
 				foundTag = tag
 				break
 		return foundTag
-				
+
 
 	def checkPairForTag(self, tag, pair):
 		'Checks if a tag (e.g. _ARA, _EXC, _LAT) exists in one of both sides of a kerning pair (e.g. arJeh @ALEF_2ND_ARA)'
@@ -421,7 +421,7 @@ class KernDataClass(object):
 		else:
 			return False
 
-			
+
 	def checkForRTL(self, pair):
 		'Checks if a given kerning pair is RTL. (Must involve a class on at least one side.)'
 		RTLkerningTagsList = [kArabicTag , kHebrewTag]
@@ -447,12 +447,12 @@ class KernDataClass(object):
 					kernValue = '<%s>' % ' '.join( map( str, gKern.values ) )  # gl.kerning[p].values is a list holding kern values of each master
 				else:
 					kernValue = int(gKern.value)
-				
+
 				pair = self.getClass(gName,'left'), self.getClass(gNameRightglyph,'right')
-				
+
 				kerning[pair] = kernValue
 		return kerning
-		
+
 
 	def splitClasses(self, leftTagsList, rightTagsList):
 		'Splits kerning classes into left and right sides; and assigns both sides classes without explicit side-flag.'
@@ -468,13 +468,13 @@ class KernDataClass(object):
 			else:
 				ll.append(cl)
 				rl.append(cl)
-	
+
 		return ll, rl
 
 
 	def dict2pos(self, dictionary, min=0, enum=False, RTL=False):
 		'''
-		Turns a dictionary to a list of kerning pairs. In a single master font, the function 
+		Turns a dictionary to a list of kerning pairs. In a single master font, the function
 		can filter kerning pairs whose absolute value does not exceed a given threshold.
 		'''
 		data = []
@@ -483,14 +483,14 @@ class KernDataClass(object):
 
 		for pair in dictionary:
 
-			if RTL: 
+			if RTL:
 				kernValue = int(dictionary[pair].split()[2])
 				valueString = '<%s 0 %s 0>' % (kernValue, kernValue)
-			else: 
+			else:
 				kernValue = dictionary[pair]
 				valueString = kernValue
 
-			string =  'pos %s %s;' % (' '.join(pair), valueString) 
+			string =  'pos %s %s;' % (' '.join(pair), valueString)
 			enumstring = 'enum %s' % string
 
 			if self.MM: # no filtering happening in MM.
@@ -498,13 +498,13 @@ class KernDataClass(object):
 
 			elif enum:
 				data.append(enumstring)
-				
+
 			else:
 				if abs(kernValue) < min:
 					if self.writeTrimmed:
 						data.append('# %s' % string)
 					trimmed += 1
-					
+
 				else:
 					data.append(string)
 
@@ -512,17 +512,17 @@ class KernDataClass(object):
 		data.sort()
 
 		return '\n'.join(data)
-	
-	
+
+
 	def analyzeGroups(self):
 		'Uses self.groups for analysis and splitting.'
 		if not len(self.groups):
 			print "\tWARNING: The font has no kerning classes! Trimming switched off."
 			# If there are no kerning classes present, there is no way to distinguish between
-			# low-value pairs that just result from interpolation; and exception pairs. 
+			# low-value pairs that just result from interpolation; and exception pairs.
 			# Consequently, trimming is switched off here.
 			self.minKern = 0
-			
+
 		else:
 			self.leftClasses, self.rightClasses = self.splitClasses(kLeftTag, kRightTag)
 
@@ -531,19 +531,19 @@ class KernDataClass(object):
 				self.grouped_left.extend(self.groups[i])
 			for i in self.rightClasses:
 				self.grouped_right.extend(self.groups[i])
-			
-			if self.inFL: 
+
+			if self.inFL:
 				# If in FontLab, creates dictionaries of left and right key glyphs with class names.
-				
+
 				self.leftKeyGlyphs = self.getKeyGlyphs(self.leftClasses) # e.g. 'guillemotleft': '@GUILLEFT' etc.
 				self.rightKeyGlyphs = self.getKeyGlyphs(self.rightClasses)
 
 
 	def processKerningPairs(self):
 		'Sorting the kerning into various buckets.'
-		
+
 		print '\tProcessing kerning pairs...'
-		
+
 		for (left, right), value in sorted(self.kerning.items()[::-1]):
 			pair = (left, right)
 
@@ -551,12 +551,12 @@ class KernDataClass(object):
 			if kIgnorePairTag in left:
 				self.notProcessed += 1
 				continue
-			
+
 			# Looking for pre-defined exception pairs, and filtering them out.
 			if self.checkPairForTag(kExceptionTag, pair):
 				self.predefined_exceptions_dict[pair] = self.kerning[pair]
 				del self.kerning[pair]
-			
+
 			else:
 				# Filtering the kerning by type.
 				if self.isGroup(left):
@@ -568,16 +568,16 @@ class KernDataClass(object):
 					else:
 						self.glyph_glyph.append((left, right))
 
-		
+
 		# Quick sanity check
-		if len(self.glyph_group) + len(self.glyph_glyph) + len(self.group_group) != len(self.kerning)-self.notProcessed: 
+		if len(self.glyph_group) + len(self.glyph_glyph) + len(self.group_group) != len(self.kerning)-self.notProcessed:
 			print 'Something went wrong: kerning lists do not match the amount of kerning pairs present in the font.'
-				
-				
+
+
 
 	def findExceptions(self):
 		'Process lists (glyph_group, group_group etc.) created above to find out which pairs are exceptions, and which are just normal pairs'
-		
+
 		# glyph to group pairs:
 		# ---------------------
 
@@ -599,18 +599,18 @@ class KernDataClass(object):
 							self.RTLglyph_glyph_exceptions_dict[pair] = '<%s 0 %s 0>' % (self.kerning[pair], self.kerning[pair])
 						else:
 							self.glyph_glyph_exceptions_dict[pair] = self.kerning[pair]
-							
+
 				else:
 					# skip the pair if the value is zero
 					if self.kerning[g, gr] == 0:
 						self.notProcessed += 1
 						continue
-					
+
 					if isRTLpair:
 						self.RTLglyph_group_dict[g, gr] = '<%s 0 %s 0>' % (self.kerning[g, gr], self.kerning[g, gr])
 					else:
 						self.glyph_group_dict[g, gr] = self.kerning[g, gr]
-	
+
 
 		# group to group pairs:
 		# ---------------------
@@ -620,10 +620,10 @@ class KernDataClass(object):
 		for (lgr, rgr) in self.group_group:
 			isRTLpair = self.checkForRTL((lgr, rgr))
 			lgroup = self.groups[lgr]
-			
+
 			try:
 				rgroup = self.groups[rgr]
-			
+
 			except KeyError: # Because group-glyph pairs are included in the group-group bucket, the right-side element of the pair may not be a group
 				if rgr in self.grouped_right:
 					# it is a group_to_glyph exception!
@@ -632,15 +632,15 @@ class KernDataClass(object):
 					else:
 						self.group_glyph_exceptions_dict[lgr, rgr] = self.kerning[lgr, rgr]
 					continue # it's an exception, so move on to the next pair
-				
+
 				else:
 					rgroup = rgr
-			
+
 			# skip the pair if the value is zero
 			if self.kerning[lgr, rgr] == 0:
 				self.notProcessed += 1
 				continue
-			
+
 			if isRTLpair:
 				self.RTLgroup_group_dict[lgr, rgr] = '<%s 0 %s 0>' % (self.kerning[lgr, rgr], self.kerning[lgr, rgr])
 				RTLexplodedPairList.extend(self.explode(lgroup, rgroup))
@@ -653,19 +653,19 @@ class KernDataClass(object):
 		RTLexceptionPairs = set.intersection(set(RTLexplodedPairList), set(self.glyph_glyph))
 		# Finds the intersection of the exploded pairs with the glyph_glyph pairs collected above.
 		# Those must be exceptions, as they occur twice (once in class-kerning, once as a single pair).
-		
-		
+
+
 		for pair in exceptionPairs:
 			self.glyph_glyph_exceptions_dict[pair] = self.kerning[pair]
 
 		for pair in RTLexceptionPairs:
 			self.RTLglyph_glyph_exceptions_dict[pair] = '<%s 0 %s 0>' %  (self.kerning[pair], self.kerning[pair])
-			
+
 
 
 		# glyph to glyph pairs (No RTL possible, as of now. RTL pairs are now only identified by their group name, this must be changed one day (to a glyph note, for instance).)
 		# ---------------------
-		
+
 		for (lg, rg) in self.glyph_glyph:
 			pair = (lg, rg)
 			if not pair in self.glyph_glyph_exceptions_dict and not pair in self.RTLglyph_glyph_exceptions_dict:
@@ -682,7 +682,7 @@ class KernDataClass(object):
 		for kernClass in self.groupOrder:
 			glyphList = self.groups[kernClass]
 			glyphString = ' '.join(glyphList)
-			
+
 			if kernClass[0] == '@':
 				self.output.append( '%s = [%s];' % (kernClass, glyphString) )
 
@@ -700,16 +700,16 @@ class KernDataClass(object):
 		(self.group_glyph_exceptions_dict,	0,				'\n# group, glyph exceptions:',		True),
 		]
 
-		orderExtension = [ 
+		orderExtension = [
 		# in case no subtables are desired
 		(self.glyph_group_dict,				self.minKern,	'\n# glyph, group:',				False),
 		(self.group_group_dict,				self.minKern,	'\n# group, group/glyph:',			False)
 		]
-		
+
 
 		if not self.writeSubtables:
 			order.extend(orderExtension)
-			
+
 
 		for dictName, minKern, comment, enum in order:
 			if len(dictName):
@@ -732,7 +732,7 @@ class KernDataClass(object):
 				if len(table):
 					self.processedPairs += len(table)
 					subtablesCreated += 1
-				
+
 					if subtablesCreated > 1:
 						self.output.append( self.subtbBreak )
 
@@ -748,7 +748,7 @@ class KernDataClass(object):
 				if len(table):
 					self.processedPairs += len(table)
 					subtablesCreated += 1
-				
+
 					if subtablesCreated > 1:
 						self.output.append( self.subtbBreak )
 
@@ -768,7 +768,7 @@ class KernDataClass(object):
 		(self.RTLgroup_glyph_exceptions_dict,	0,				'\n# RTL group, glyph exceptions:',		True),
 		]
 
-		RTLorderExtension = [ 
+		RTLorderExtension = [
 		# in case no subtables are desired
 		(self.RTLglyph_group_dict,				self.minKern,	'\n# RTL glyph, group:',				False),
 		(self.RTLgroup_group_dict,				self.minKern,	'\n# RTL group, group/glyph:',			False)
@@ -777,7 +777,7 @@ class KernDataClass(object):
 
 		if not self.writeSubtables:
 			RTLorder.extend(RTLorderExtension)
-		
+
 		# checking if RTL pairs exist
 		RTLpairsExist = False
 		allRTL = RTLorderExtension + RTLorder
@@ -785,16 +785,16 @@ class KernDataClass(object):
 			if len(dictName):
 				RTLpairsExist = True
 				break
-		
+
 		if RTLpairsExist:
 			self.output.append(self.lkupRTLopen)
-		
+
 			for dictName, minKern, comment, enum in RTLorder:
 				if len(dictName):
 					self.processedPairs += len(dictName)
 					self.output.append(comment)
 					self.output.append( self.dict2pos(dictName, minKern, enum, RTL=True) )
-		
+
 
 		if RTLpairsExist and self.writeSubtables:
 			RTLsubtablesCreated = 0
@@ -808,10 +808,10 @@ class KernDataClass(object):
 				if len(table):
 					self.processedPairs += len(table)
 					RTLsubtablesCreated += 1
-				
+
 					if RTLsubtablesCreated > 1:
 						self.output.append( self.subtbBreak )
-		
+
 					self.output.append( self.dict2pos(table, self.minKern, RTL=True) )
 
 
@@ -824,21 +824,21 @@ class KernDataClass(object):
 				if len(table):
 					self.processedPairs += len(table)
 					RTLsubtablesCreated += 1
-				
+
 					if RTLsubtablesCreated > 1:
 						# This would happen when both Arabic and Hebrew glyphs are present in one font.
 						self.output.append( self.subtbBreak )
-					
+
 					self.output.append( self.dict2pos(table, self.minKern, RTL=True) )
-					
-					
+
+
 		if RTLpairsExist:
 			self.output.append(self.lkupRTLclose)
-			
+
 
 	def sanityCheck(self):
 		'Checks if the number of kerning pairs input equals the number of kerning entries output.'
-		
+
 		if self.totalKernPairs != self.processedPairs + self.notProcessed: # len(self.allKernPairs) + self.notProcessed - self.numBreaks + self.trimmedPairs:
 			print 'Something went wrong...'
 			print 'Kerning pairs provided: %s' % self.totalKernPairs
@@ -856,7 +856,7 @@ class KernDataClass(object):
 		print '\tSaving %s file...' % kKernFeatureFile
 		if self.trimmedPairs > 0:
 			print '\tTrimmed pairs: %s' % self.trimmedPairs
-		
+
 		filePath = os.path.join(self.folder, kKernFeatureFile)
 
 		outfile = open(filePath, 'w')
@@ -874,10 +874,10 @@ class MakeSubtables(KernDataClass):
 	def __init__(self, kernDict, subtableTrigger='first', RTL=False):
 		self.kernDict  = kernDict
 		self.RTL       = RTL		# Is the kerning RTL or not?
-		self.subtableTrigger = subtableTrigger	# Which side of the pair is triggering the subtable decision? 
+		self.subtableTrigger = subtableTrigger	# Which side of the pair is triggering the subtable decision?
 									# "first" would be the left side for LTR, right for RTL.
 									# "second" would be the right side for LTR, left for RTL.
-		
+
 		self.otherPairs_dict = {}
 		# Container for any pairs that cannot be assigned to a specific language tag.
 
@@ -898,17 +898,17 @@ class MakeSubtables(KernDataClass):
 			kHebrewTag: {},
 			'other': self.otherPairs_dict
 		}
-		
+
 		self.subtableOrder = [kLatinTag, kGreekTag, kCyrillicTag, kArmenianTag, kArabicTag, kHebrewTag, kNumberTag, kFractionTag, 'other']
 		# The order in which subtables are written
-		
+
 
 		'Split class-to-class kerning into subtables.'
 		if self.subtableTrigger == 'first':
 			# Creates 'traditional' subtables, for class-to-class, and class-to-glyph kerning.
-			for pair in self.kernDict.keys()[::-1]: 
+			for pair in self.kernDict.keys()[::-1]:
 				first, second, tagDict = self.analyzePair(pair)
-				
+
 				for tag in tagDict:
 					if self.checkGroupForTag(tag, first):
 						tagDict[tag][pair] = kernDict[pair]
@@ -916,11 +916,11 @@ class MakeSubtables(KernDataClass):
 
 			for pair in self.kernDict:
 				self.otherPairs_dict[pair] = self.kernDict[pair]
-			
+
 
 		if self.subtableTrigger == 'second':
 
-			# Create dictionary of all glyphs on the left side, and the language 
+			# Create dictionary of all glyphs on the left side, and the language
 			# tags of classes those glyphs are kerned against (e.g. _LAT, _GRK)
 			kernPartnerLanguageTags = {}
 			for pair in self.kernDict:
@@ -932,21 +932,21 @@ class MakeSubtables(KernDataClass):
 
 			for pair in self.kernDict.keys()[::-1]:
 				first, second, tagDict = self.analyzePair(pair)
-				
+
 				for tag in tagDict:
 					if self.checkGroupForTag(tag, second) and len(kernPartnerLanguageTags[first]) == 1:
 						# Using the previously created kernPartnerLanguageTags
-						# If any glyph is kerned against more than one language system, 
+						# If any glyph is kerned against more than one language system,
 						# it has to go to the 'otherPairs_dict' subtable.
 						tagDict[tag][pair] = self.kernDict[pair]
 						del self.kernDict[pair]
-						
+
 			'This splits the glyph-to-class part into subtables of 1000 left-side items.'
 			if len(self.kernDict) < 1000:
 				self.otherPairs_dict.update(self.kernDict)
 
 			else:
-				# find all the first elements in a kerning pair, since the subtable 
+				# find all the first elements in a kerning pair, since the subtable
 				# split can only happen between chunks of left elements
 				firstItems = sorted(set([first for first, second in self.kernDict.keys()]))
 
@@ -959,7 +959,7 @@ class MakeSubtables(KernDataClass):
 					pairlist = sorted([(left, right) for (left, right) in self.kernDict.keys() if left in chunk])
 
 					if subtableIndex == 0:
-						# for the first item in the list, no modification 
+						# for the first item in the list, no modification
 						# of the subtable list order is necessary.
 						for pair in pairlist:
 							self.otherPairs_dict[pair] = self.kernDict[pair]
@@ -980,14 +980,14 @@ class MakeSubtables(KernDataClass):
 		else:
 			self.subtables = [self.LTRtagDict[i] for i in self.subtableOrder]
 
-				
-		
+
+
 	def analyzePair(self, pair):
 		if self.RTL:
 			first   = pair[0]
 			second  = pair[1]
 			tagDict = self.RTLtagDict
-				
+
 		else:
 			first   = pair[0]
 			second  = pair[1]
