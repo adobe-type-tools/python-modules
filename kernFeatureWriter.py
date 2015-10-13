@@ -11,6 +11,7 @@ kDefaultWriteTrimmed = False
 
 kDefaultWriteSubtables = True
 
+# dissolveSingleGroups = False
 dissolveSingleGroups = True
 
 kLeftTag = ['_LEFT','_1ST', '_L_']
@@ -167,13 +168,15 @@ class WhichApp(object):
 
 class FLKerningData(object):
 
-    def __init__(self, font):
+    def __init__(self, font=None):
         self.f = font
-        self._readFLGroups()
-        self._splitFLGroups()
-        self.leftKeyGlyphs = self._filterKeyGlyphs(self.leftGroups)
-        self.rightKeyGlyphs = self._filterKeyGlyphs(self.rightGroups)
-        self._readFLKerning()
+
+        if font:
+            self._readFLGroups()
+            self._splitFLGroups()
+            self.leftKeyGlyphs = self._filterKeyGlyphs(self.leftGroups)
+            self.rightKeyGlyphs = self._filterKeyGlyphs(self.rightGroups)
+            self._readFLKerning()
 
 
     def _isMMfont(self):
@@ -503,10 +506,10 @@ class KernProcessor(object):
 
 class run(object):
 
-    def __init__(self, font, folderPath, minKern=kDefaultMinKern, writeTrimmed=kDefaultWriteTrimmed, writeSubtables=kDefaultWriteSubtables, fileName=kDefaultFileName):
+    def __init__(self, font, folderPath, minKern=kDefaultMinKern, writeTrimmed=kDefaultWriteTrimmed, writeSubtables=kDefaultWriteSubtables, outputFileName=kDefaultFileName):
 
         self.header = ['# Created: %s' % time.ctime()]
-        self.fileName = fileName
+        self.outputFileName = outputFileName
 
         appTest = WhichApp()
         self.inFL = appTest.inFL
@@ -524,7 +527,7 @@ class run(object):
 
         self.output = []
 
-        self.subtbBreak = '\nsubtable;'
+       self.subtbBreak = '\nsubtable'
         self.lkupRTLopen = '\n\nlookup RTL_kerning {\nlookupflag RightToLeft IgnoreMarks;\n'
         self.lkupRTLclose = '\n\n} RTL_kerning;\n'
 
@@ -700,7 +703,7 @@ class run(object):
                     subtablesCreated += 1
 
                     if subtablesCreated > 1:
-                        self.output.append( self.subtbBreak )
+                        self.output.append(self.subtbBreak)
 
                     self.output.append( self.dict2pos(table, self.minKern) )
 
@@ -716,7 +719,7 @@ class run(object):
                     subtablesCreated += 1
 
                     if subtablesCreated > 1:
-                        self.output.append( self.subtbBreak )
+                        self.output.append(self.subtbBreak)
 
                     self.output.append( self.dict2pos(table, self.minKern) )
 
@@ -776,7 +779,7 @@ class run(object):
                     RTLsubtablesCreated += 1
 
                     if RTLsubtablesCreated > 1:
-                        self.output.append( self.subtbBreak )
+                        self.output.append(self.subtbBreak)
 
                     self.output.append( self.dict2pos(table, self.minKern, RTL=True) )
 
@@ -793,7 +796,7 @@ class run(object):
 
                     if RTLsubtablesCreated > 1:
                         # This would happen when both Arabic and Hebrew glyphs are present in one font.
-                        self.output.append( self.subtbBreak )
+                        self.output.append(self.subtbBreak)
 
                     self.output.append( self.dict2pos(table, self.minKern, RTL=True) )
 
@@ -805,24 +808,25 @@ class run(object):
     def writeDataToFile(self):
 
         if self.MM:
-            kKernFeatureFile = 'mm' + self.fileName
+            kKernFeatureFile = 'mm' + self.outputFileName
         else:
-            kKernFeatureFile = self.fileName
+            kKernFeatureFile = self.outputFileName
 
         print '\tSaving %s file...' % kKernFeatureFile
         if self.trimmedPairs > 0:
             print '\tTrimmed pairs: %s' % self.trimmedPairs
 
-        filePath = os.path.join(self.folder, kKernFeatureFile)
+        outputPath = os.path.join(self.folder, kKernFeatureFile)
 
-        outfile = open(filePath, 'w')
-        outfile.write('\n'.join(self.header))
-        outfile.write('\n\n')
-        if len(self.output):
-            outfile.write('\n'.join(self.output))
-            outfile.write('\n')
-        outfile.close()
-        if not self.inFL: print '\tOutput file written to %s' % filePath
+        with open(outputPath, 'w') as outfile:
+            outfile.write('\n'.join(self.header))
+            outfile.write('\n\n')
+            if len(self.output):
+                outfile.write('\n'.join(self.output))
+                outfile.write('\n')
+
+        if not self.inFL:
+            print '\tOutput file written to %s' % outputPath
 
 
 
@@ -832,9 +836,10 @@ class MakeSubtables(run):
     def __init__(self, kernDict, subtableTrigger='first', RTL=False):
         self.kernDict  = kernDict
         self.RTL       = RTL        # Is the kerning RTL or not?
-        self.subtableTrigger = subtableTrigger  # Which side of the pair is triggering the subtable decision?
-                                    # "first" would be the left side for LTR, right for RTL.
-                                    # "second" would be the right side for LTR, left for RTL.
+        self.subtableTrigger = subtableTrigger
+        # Which side of the pair is triggering the subtable decision?
+        # "first" would be the left side for LTR, right for RTL.
+        # "second" would be the right side for LTR, left for RTL.
 
         self.otherPairs_dict = {}
         # Container for any pairs that cannot be assigned to a specific language tag.
