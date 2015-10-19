@@ -268,8 +268,8 @@ class FLKerningData(object):
                 gNameRight = glyphs[gIndexRight].name
 
                 if self._isMMfont():
-                    kernValue = '<%s>' % ' '.join( map( str, flKerningPair.values ) )
-                    # gl.kerning[p].values is an array holding kern values for each master
+                    kernValue = '<%s>' % ' '.join(map(str, flKerningPair.values))
+                    # flKerningPair.values is an array holding kern values for each master
                 else:
                     kernValue = int(flKerningPair.value)
 
@@ -279,14 +279,7 @@ class FLKerningData(object):
 
 
 class KernProcessor(object):
-    def __init__(self, groups, kerning):
-
-        if dissolveSingleGroups:
-            self.groups, self.kerning = self._dissolveSingleGroups(groups, kerning)
-
-        else:
-            self.groups = groups
-            self.kerning = kerning
+    def __init__(self, groups=None, kerning=None):
 
         # kerning dicts containing pair-value combinations
         self.glyph_glyph = {}
@@ -308,11 +301,21 @@ class KernProcessor(object):
         self.pairs_unprocessed = 0
         self.pairs_processed = 0
 
-        self.grouped_left = self._getAllGroupedGlyphs(side='left')
-        self.grouped_right = self._getAllGroupedGlyphs(side='right')
+        if groups and dissolveSingleGroups:
+            self.groups, self.kerning = self._dissolveSingleGroups(groups, kerning)
 
-        self._findExceptions()
-        self._sanityCheck()
+        else:
+            self.groups = groups
+            self.kerning = kerning
+
+
+        if groups:
+            self.grouped_left = self._getAllGroupedGlyphs(side='left')
+            self.grouped_right = self._getAllGroupedGlyphs(side='right')
+            self._findExceptions()
+
+        if kerning:
+            self._sanityCheck()
 
 
     def _dissolveSingleGroups(self, groups, kerning):
@@ -478,6 +481,7 @@ class KernProcessor(object):
                 # list of all possible pair combinations for the @class @class kerning pairs of the font.
             self.pairs_processed += 1
 
+
         self.exceptionPairs = set.intersection(set(explodedPairList), set(glyph_2_glyph))
         self.RTLexceptionPairs = set.intersection(set(RTLexplodedPairList), set(glyph_2_glyph))
         # Finds the intersection of the exploded pairs with the glyph_2_glyph pairs collected above.
@@ -527,7 +531,7 @@ class run(object):
 
         self.output = []
 
-       self.subtbBreak = '\nsubtable'
+        self.subtbBreak = '\nsubtable'
         self.lkupRTLopen = '\n\nlookup RTL_kerning {\nlookupflag RightToLeft IgnoreMarks;\n'
         self.lkupRTLclose = '\n\n} RTL_kerning;\n'
 
@@ -695,7 +699,7 @@ class run(object):
             # glyph-class subtables
             # ---------------------
             glyph_to_class_subtables = MakeSubtables(kp.glyph_group, subtableTrigger='second').subtables
-            self.output.append( '\n# glyph, group:' )
+            self.output.append('\n# glyph, group:')
 
             for table in glyph_to_class_subtables:
                 if len(table):
@@ -705,13 +709,13 @@ class run(object):
                     if subtablesCreated > 1:
                         self.output.append(self.subtbBreak)
 
-                    self.output.append( self.dict2pos(table, self.minKern) )
+                    self.output.append(self.dict2pos(table, self.minKern))
 
 
             # class-class subtables
             # ---------------------
             class_to_class_subtables = MakeSubtables(kp.group_group).subtables
-            self.output.append( '\n# group, glyph and group, group:' )
+            self.output.append('\n# group, glyph and group, group:')
 
             for table in class_to_class_subtables:
                 if len(table):
@@ -721,7 +725,7 @@ class run(object):
                     if subtablesCreated > 1:
                         self.output.append(self.subtbBreak)
 
-                    self.output.append( self.dict2pos(table, self.minKern) )
+                    self.output.append(self.dict2pos(table, self.minKern))
 
 
         # ------------------
@@ -762,7 +766,7 @@ class run(object):
                 if len(dictName):
                     self.processedPairs += len(dictName)
                     self.output.append(comment)
-                    self.output.append( self.dict2pos(dictName, minKern, enum, RTL=True) )
+                    self.output.append(self.dict2pos(dictName, minKern, enum, RTL=True))
 
 
         if RTLpairsExist and self.writeSubtables:
@@ -771,7 +775,7 @@ class run(object):
             # RTL glyph-class subtables
             # -------------------------
             RTL_glyph_class_subtables = MakeSubtables(kp.RTLglyph_group, subtableTrigger='second', RTL=True).subtables
-            self.output.append( '\n# RTL glyph, group:' )
+            self.output.append('\n# RTL glyph, group:')
 
             for table in RTL_glyph_class_subtables:
                 if len(table):
@@ -781,13 +785,13 @@ class run(object):
                     if RTLsubtablesCreated > 1:
                         self.output.append(self.subtbBreak)
 
-                    self.output.append( self.dict2pos(table, self.minKern, RTL=True) )
+                    self.output.append(self.dict2pos(table, self.minKern, RTL=True))
 
 
             # RTL class-class subtables
             # -------------------------
             RTL_class_class_subtables = MakeSubtables(kp.RTLgroup_group, RTL=True).subtables
-            self.output.append( '\n# RTL group, glyph and group, group:' )
+            self.output.append('\n# RTL group, glyph and group, group:')
 
             for table in RTL_class_class_subtables:
                 if len(table):
@@ -798,7 +802,7 @@ class run(object):
                         # This would happen when both Arabic and Hebrew glyphs are present in one font.
                         self.output.append(self.subtbBreak)
 
-                    self.output.append( self.dict2pos(table, self.minKern, RTL=True) )
+                    self.output.append(self.dict2pos(table, self.minKern, RTL=True))
 
 
         if RTLpairsExist:
@@ -879,7 +883,7 @@ class MakeSubtables(run):
         if self.subtableTrigger == 'first':
             # Creates 'traditional' subtables, for class-to-class, and class-to-glyph kerning.
             for pair in self.kernDict.keys()[::-1]:
-                first, second, tagDict = self.analyzePair(pair)
+                first, second, tagDict = self.identifyPair(pair)
 
                 for tag in tagDict:
                     if self.checkGroupForTag(tag, first):
@@ -896,14 +900,14 @@ class MakeSubtables(run):
             # tags of classes those glyphs are kerned against (e.g. _LAT, _GRK)
             kernPartnerLanguageTags = {}
             for pair in self.kernDict:
-                first, second, tagDict = self.analyzePair(pair)
+                first, second, tagDict = self.identifyPair(pair)
 
                 if not first in kernPartnerLanguageTags:
                     kernPartnerLanguageTags[first] = set([])
                 kernPartnerLanguageTags[first].add(self.returnGroupTag(pair[1]))
 
             for pair in self.kernDict.keys()[::-1]:
-                first, second, tagDict = self.analyzePair(pair)
+                first, second, tagDict = self.identifyPair(pair)
 
                 for tag in tagDict:
                     if self.checkGroupForTag(tag, second) and len(kernPartnerLanguageTags[first]) == 1:
@@ -973,7 +977,7 @@ class MakeSubtables(run):
         return foundTag
 
 
-    def analyzePair(self, pair):
+    def identifyPair(self, pair):
         if self.RTL:
             first   = pair[0]
             second  = pair[1]
@@ -989,8 +993,16 @@ class MakeSubtables(run):
 
 
 if __name__ == '__main__':
-    import defcon
-    fPath = sys.argv[-1]
-    fPath = fPath.rstrip('/')
-    f = defcon.Font(fPath)
-    run(f, os.path.dirname(f.path))
+    arguments = sys.argv
+
+    if '-t' in arguments:
+        import doctest
+        doctest.testmod()
+
+    else:
+        import defcon
+        fPath = arguments[-1]
+        fPath = fPath.rstrip('/')
+        f = defcon.Font(fPath)
+        print KernProcessor()
+        # run(f, os.path.dirname(f.path))
