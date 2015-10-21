@@ -21,8 +21,10 @@ kLatinTag = '_LAT'
 kGreekTag = '_GRK'
 kCyrillicTag = '_CYR'
 kArmenianTag = '_AM'
+
 kArabicTag = '_ARA'
 kHebrewTag = '_HEB'
+kRTLTag = '_RTL'
 
 kNumberTag = '_NUM'
 kFractionTag = '_FRAC'
@@ -123,16 +125,47 @@ def isRTL(pair):
 
     '''
 
-    RTLkerningTagsList = [kArabicTag , kHebrewTag]
+    RTLkerningTagsList = [kArabicTag , kHebrewTag, kRTLTag]
+
     for tag in RTLkerningTagsList:
         if any([tag in item for item in pair]):
             return True
     return False
 
 
+def isRTLGroup(groupName):
+
+    '''
+    >>> isRTLGroup('a')
+    False
+    >>> isRTLGroup('@MMK_L_t')
+    False
+    >>> isRTLGroup('@MMK_L_ARA_T_UC_LEFT')
+    True
+    >>> isRTLGroup('@MMK_L_HEB_DASH')
+    True
+    >>> isRTLGroup('@MMK_L_whatever_RTL')
+    True
+
+    '''
+
+    RTLkerningTagsList = [kArabicTag , kHebrewTag, kRTLTag]
+
+    for tag in RTLkerningTagsList:
+        if any([tag in groupName]):
+            return True
+    return False
+
+
 
 class WhichApp(object):
-    'Testing the environment'
+    '''
+    Testing the environment.
+    When running from the command line, 'Defcon' is the expected environment
+    >>> a = WhichApp()
+    >>> a.appName
+    'Defcon'
+    '''
 
     def __init__(self):
         self.inRF = False
@@ -319,7 +352,8 @@ class KernProcessor(object):
 
 
     def _dissolveSingleGroups(self, groups, kerning):
-        singleGroups = dict([(groupName, glyphList) for groupName, glyphList in groups.items() if len(glyphList) == 1])
+        singleGroups = dict([(groupName, glyphList) for groupName, glyphList in groups.items() if len(glyphList) == 1 and not isRTLGroup(groupName)])
+        # find any groups with a single-item glyph list, which are not RTL groups.
 
         dissolvedKerning = {}
         for (left, right), value in kerning.items():
@@ -327,8 +361,8 @@ class KernProcessor(object):
             dissolvedRight = singleGroups.get(right, [right])[0]
             dissolvedKerning[(dissolvedLeft, dissolvedRight)] = value
 
-        dissolvedGroups = dict([(groupName, glyphList) for groupName, glyphList in groups.items() if not groupName in singleGroups])
-        return dissolvedGroups, dissolvedKerning
+        remainingGroups = dict([(groupName, glyphList) for groupName, glyphList in groups.items() if not groupName in singleGroups])
+        return remainingGroups, dissolvedKerning
 
 
     def _sanityCheck(self):
@@ -531,7 +565,7 @@ class run(object):
 
         self.output = []
 
-        self.subtbBreak = '\nsubtable'
+        self.subtbBreak = '\nsubtable;'
         self.lkupRTLopen = '\n\nlookup RTL_kerning {\nlookupflag RightToLeft IgnoreMarks;\n'
         self.lkupRTLclose = '\n\n} RTL_kerning;\n'
 
