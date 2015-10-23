@@ -688,16 +688,21 @@ class run(object):
             enumLine = 'enum %s' % posLine
 
             if self.MM: # no filtering happening in MM.
-                data.append(posLine)
-            elif enum:
-                data.append(enumLine)
-            else:
-                if abs(kernValue) < min:
-                    if self.writeTrimmed:
-                        data.append('# %s' % posLine)
-                    trimmed += 1
+                if enum:
+                    data.append(enumLine)
                 else:
                     data.append(posLine)
+
+            else:
+                if enum:
+                    data.append(enumLine)
+                else:
+                    if abs(kernValue) < min:
+                        if self.writeTrimmed:
+                            data.append('# %s' % posLine)
+                        trimmed += 1
+                    else:
+                        data.append(posLine)
 
         self.trimmedPairs += trimmed
         data.sort()
@@ -865,11 +870,12 @@ class run(object):
 
 
 
-class NewSubtables(object):
-    """docstring for NewSubtables"""
+class MakeNewSubtables(object):
+    """docstring for MakeNewSubtables"""
     def __init__(self, kerning,):
-        # super(NewSubtables, self).__init__()
+        # super(MakeNewSubtables, self).__init__()
         self.kerning = kerning
+
 
 
 
