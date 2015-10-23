@@ -576,25 +576,19 @@ class run(object):
     def __init__(self, font, folderPath, minKern=kDefaultMinKern, writeTrimmed=kDefaultWriteTrimmed, writeSubtables=kDefaultWriteSubtables, outputFileName=kDefaultFileName):
 
         self.header = ['# Created: %s' % time.ctime()]
-        self.outputFileName = outputFileName
 
         appTest = WhichApp()
         self.inFL = appTest.inFL
 
         self.f = font
-        self.MM = False
-
         self.folder = folderPath
+
         self.minKern = minKern
         self.writeTrimmed = writeTrimmed
         self.writeSubtables = writeSubtables
 
         self.processedPairs = 0
         self.trimmedPairs = 0
-
-        self.subtbBreak = '\nsubtable;'
-        self.lkupRTLopen = '\n\nlookup RTL_kerning {\nlookupflag RightToLeft IgnoreMarks;\n'
-        self.lkupRTLclose = '\n\n} RTL_kerning;\n'
 
 
         if self.inFL:
@@ -606,12 +600,15 @@ class run(object):
             self.groups = flK.groups
             self.groupOrder = flK.groupOrder
 
-            if not self.MM:
-              self.header.append('# MM Inst: %s' % self.f.menu_name)
+            if self.MM:
+                outputFileName = 'mm' + outputFileName
+            else:
+                self.header.append('# MM Inst: %s' % self.f.menu_name)
 
         else:
             self.header.append('# PS Name: %s' % self.f.info.postscriptFontName)
 
+            self.MM = False
             self.kerning = self.f.kerning
             self.groups = self.f.groups
             self.groupOrder = sorted(self.groups.keys())
@@ -624,8 +621,8 @@ class run(object):
         self.header.append('# MinKern: +/- %s inclusive' % self.minKern)
         self.header.append('# exported from %s' % appTest.appName)
 
-        kernData = self.makeOutput()
-        self.writeDataToFile(kernData)
+        outputData = self._makeOutputData()
+        self.writeDataToFile(outputData, outputFileName)
 
 
     def dict2pos(self, pairValueDict, min=0, enum=False, RTL=False):
@@ -708,9 +705,10 @@ class run(object):
         return '\n'.join(data)
 
 
-    def buildSubtableOutput(self, subtableList, comment, RTL=False):
-
+    def _buildSubtableOutput(self, subtableList, comment, RTL=False):
         subtableOutput = []
+        subtableBreak = '\nsubtable;'
+
         if sum([len(subtable.keys()) for subtable in subtableList]) > 0:
             subtableOutput.append(comment)
 
@@ -721,19 +719,19 @@ class run(object):
                 if RTL:
                     self.RTLsubtablesCreated += 1
                     if self.RTLsubtablesCreated > 1:
-                        subtableOutput.append(self.subtbBreak)
+                        subtableOutput.append(subtableBreak)
 
                 else:
                     self.subtablesCreated += 1
                     if self.subtablesCreated > 1:
-                        subtableOutput.append(self.subtbBreak)
+                        subtableOutput.append(subtableBreak)
 
                 subtableOutput.append(self.dict2pos(table, self.minKern, RTL=RTL))
 
         return subtableOutput
 
 
-    def makeOutput(self):
+    def _makeOutputData(self):
         'Building the output data.'
 
         output = []
@@ -803,22 +801,25 @@ class run(object):
             self.subtablesCreated = 0
 
             glyph_to_class_subtables = MakeSubtables(kp.glyph_group, subtableTrigger='second').subtables
-            output.extend(self.buildSubtableOutput(glyph_to_class_subtables, '\n# glyph, group:'))
+            output.extend(self._buildSubtableOutput(glyph_to_class_subtables, '\n# glyph, group:'))
 
             class_to_class_subtables = MakeSubtables(kp.group_group).subtables
-            output.extend(self.buildSubtableOutput(class_to_class_subtables, '\n# group, glyph and group, group:'))
+            output.extend(self._buildSubtableOutput(class_to_class_subtables, '\n# group, glyph and group, group:'))
 
 
-        # checking if RTL pairs exist
+        # Checking if RTL pairs exist
         RTLpairsExist = False
-
         for dictName, minKern, comment, enum in RTLorderExtension + RTLorder:
             if len(dictName.keys()):
                 RTLpairsExist = True
                 break
 
         if RTLpairsExist:
-            output.append(self.lkupRTLopen)
+
+            lookupRTLopen = '\n\nlookup RTL_kerning {\nlookupflag RightToLeft IgnoreMarks;\n'
+            lookupRTLclose = '\n\n} RTL_kerning;\n'
+
+            output.append(lookupRTLopen)
 
             for dictName, minKern, comment, enum in RTLorder:
                 if len(dictName):
@@ -827,36 +828,30 @@ class run(object):
                     output.append(self.dict2pos(dictName, minKern, enum, RTL=True))
 
 
-        if RTLpairsExist and self.writeSubtables:
-            self.RTLsubtablesCreated = 0
+            if self.writeSubtables:
+                self.RTLsubtablesCreated = 0
 
-            RTL_glyph_class_subtables = MakeSubtables(kp.RTLglyph_group, subtableTrigger='second', RTL=True).subtables
-            output.extend(self.buildSubtableOutput(RTL_glyph_class_subtables, '\n# RTL glyph, group:', RTL=True))
+                RTL_glyph_class_subtables = MakeSubtables(kp.RTLglyph_group, subtableTrigger='second', RTL=True).subtables
+                output.extend(self._buildSubtableOutput(RTL_glyph_class_subtables, '\n# RTL glyph, group:', RTL=True))
 
-            RTL_class_class_subtables = MakeSubtables(kp.RTLgroup_group, RTL=True).subtables
-            output.extend(self.buildSubtableOutput(RTL_class_class_subtables, '\n# RTL group, glyph and group, group:', RTL=True))
+                RTL_class_class_subtables = MakeSubtables(kp.RTLgroup_group, RTL=True).subtables
+                output.extend(self._buildSubtableOutput(RTL_class_class_subtables, '\n# RTL group, glyph and group, group:', RTL=True))
 
 
-        if RTLpairsExist:
-            output.append(self.lkupRTLclose)
+            output.append(lookupRTLclose)
 
         return output
 
 
 
-    def writeDataToFile(self, data):
+    def writeDataToFile(self, data, fileName):
 
-        if self.MM:
-            kKernFeatureFile = 'mm' + self.outputFileName
-        else:
-            kKernFeatureFile = self.outputFileName
-
-        print '\tSaving %s file...' % kKernFeatureFile
+        print '\tSaving %s file...' % fileName
 
         if self.trimmedPairs > 0:
             print '\tTrimmed pairs: %s' % self.trimmedPairs
 
-        outputPath = os.path.join(self.folder, kKernFeatureFile)
+        outputPath = os.path.join(self.folder, fileName)
 
         with open(outputPath, 'w') as outfile:
             outfile.write('\n'.join(self.header))
@@ -869,6 +864,12 @@ class run(object):
             print '\tOutput file written to %s' % outputPath
 
 
+
+class NewSubtables(object):
+    """docstring for NewSubtables"""
+    def __init__(self, kerning,):
+        # super(NewSubtables, self).__init__()
+        self.kerning = kerning
 
 
 
