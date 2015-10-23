@@ -617,15 +617,6 @@ class run(object):
             self.groupOrder = sorted(self.groups.keys())
 
 
-        if not len(self.groups):
-            print "\tWARNING: The font has no kerning classes! Trimming switched off."
-            self.minKern = 0
-            # If there are no kerning classes present, there is no way to
-            # distinguish between low-value pairs that just result from
-            # interpolation; and exception pairs.
-            # Consequently, trimming is switched off here.
-
-
         if not len(self.kerning):
             print "\tERROR: The font has no kerning!"
             return
