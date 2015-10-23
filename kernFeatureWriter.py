@@ -320,7 +320,7 @@ class FLKerningData(object):
 
 
 class KernProcessor(object):
-    def __init__(self, groups=None, kerning=None):
+    def __init__(self, groups=None, kerning=None, groupOrder=None):
 
         # kerning dicts containing pair-value combinations
         self.glyph_glyph = {}
@@ -354,14 +354,30 @@ class KernProcessor(object):
             self.grouped_right = self._getAllGroupedGlyphs(side='right')
             self._findExceptions()
 
-        if kerning:
-            self._sanityCheck()
+        if self.kerning and len(self.kerning.keys()):
+            usedGroups = self._getUsedGroups(self.kerning)
+            self.groupOrder = [ groupName for groupName in groupOrder if groupName in usedGroups ]
+            self._sanityCheck(self.kerning)
+
+
+    def _getUsedGroups(self, kerning):
+        '''
+        Returns all groups which are actually used in kerning.
+        '''
+        groupList = []
+        for left, right in kerning.keys():
+            if isGroup(left):
+                groupList.append(left)
+            if isGroup(right):
+                groupList.append(right)
+        return sorted(set(groupList))
 
 
     def _dissolveSingleGroups(self, groups, kerning):
+        '''
+        Finds any groups with a single-item glyph list, which are not RTL groups.
+        '''
         singleGroups = dict([(groupName, glyphList) for groupName, glyphList in groups.items() if len(glyphList) == 1 and not isRTLGroup(groupName)])
-        # find any groups with a single-item glyph list, which are not RTL groups.
-
         dissolvedKerning = {}
         for (left, right), value in kerning.items():
             dissolvedLeft = singleGroups.get(left, [left])[0]
@@ -372,11 +388,11 @@ class KernProcessor(object):
         return remainingGroups, dissolvedKerning
 
 
-    def _sanityCheck(self):
+    def _sanityCheck(self, kerning):
         '''
         Checks if the number of kerning pairs input equals the number of kerning entries output.
         '''
-        totalKernPairs = len(self.kerning)
+        totalKernPairs = len(kerning.keys())
         if totalKernPairs != self.pairs_processed + self.pairs_unprocessed:
             print 'Something went wrong...'
             print 'Kerning pairs provided: %s' % totalKernPairs
@@ -388,7 +404,15 @@ class KernProcessor(object):
         '''
         Returns a list of tuples, containing all possible combinations
         of elements in both input lists.
+
+        >>> kp = KernProcessor(None, None, None)
+        >>> input1 = ['a', 'b', 'c']
+        >>> input2 = ['d', 'e', 'f']
+        >>> explosion = kp._explode(input1, input2)
+        >>> sorted(explosion)
+        [('a', 'd'), ('a', 'e'), ('a', 'f'), ('b', 'd'), ('b', 'e'), ('b', 'f'), ('c', 'd'), ('c', 'e'), ('c', 'f')]
         '''
+
         return list(itertools.product(leftGlyphList, rightGlyphList))
 
 
@@ -441,8 +465,6 @@ class KernProcessor(object):
         glyph_2_group = sorted([pair for pair in self.kerning.keys() if not isGroup(pair[0]) and isGroup(pair[1])])
         group_2_group = sorted([pair for pair in self.kerning.keys() if isGroup(pair[0])])
 
-        # print len(self.kerning.keys())
-        # print sum([len(glyph_2_glyph), len(glyph_2_group), len(group_2_group)])
 
         # glyph to group pairs:
         # ---------------------
@@ -452,7 +474,6 @@ class KernProcessor(object):
             if glyph in self.grouped_left:
                 # it is a glyph_to_group exception!
                 if isRTLpair:
-                    # self.RTLglyph_group_exceptions[glyph, group] = '<%s 0 %s 0>' % (self.kerning[glyph, group], self.kerning[glyph, group])
                     self.RTLglyph_group_exceptions[glyph, group] = self.kerning[glyph, group]
                 else:
                     self.glyph_group_exceptions[glyph, group] = self.kerning[glyph, group]
@@ -464,7 +485,6 @@ class KernProcessor(object):
                     if pair in glyph_2_glyph:
                         # that pair is a glyph_to_glyph exception!
                         if isRTLpair:
-                            # self.RTLglyph_glyph_exceptions[pair] = '<%s 0 %s 0>' % (self.kerning[pair], self.kerning[pair])
                             self.RTLglyph_glyph_exceptions[pair] = self.kerning[pair]
                         else:
                             self.glyph_glyph_exceptions[pair] = self.kerning[pair]
@@ -477,7 +497,6 @@ class KernProcessor(object):
                         continue
 
                     if isRTLpair:
-                        # self.RTLglyph_group[glyph, group] = '<%s 0 %s 0>' % (self.kerning[glyph, group], self.kerning[glyph, group])
                         self.RTLglyph_group[glyph, group] = self.kerning[glyph, group]
                     else:
                         self.glyph_group[glyph, group] = self.kerning[glyph, group]
@@ -501,7 +520,6 @@ class KernProcessor(object):
                 if rightGroup in self.grouped_right:
                     # it is a group_to_glyph exception!
                     if isRTLpair:
-                        # self.RTLgroup_glyph_exceptions[leftGroup, rightGroup] = '<%s 0 %s 0>' % (self.kerning[leftGroup, rightGroup], self.kerning[leftGroup, rightGroup])
                         self.RTLgroup_glyph_exceptions[leftGroup, rightGroup] = self.kerning[leftGroup, rightGroup]
                     else:
                         self.group_glyph_exceptions[leftGroup, rightGroup] = self.kerning[leftGroup, rightGroup]
@@ -518,7 +536,6 @@ class KernProcessor(object):
                 continue
 
             if isRTLpair:
-                # self.RTLgroup_group[leftGroup, rightGroup] = '<%s 0 %s 0>' % (self.kerning[leftGroup, rightGroup], self.kerning[leftGroup, rightGroup])
                 self.RTLgroup_group[leftGroup, rightGroup] = self.kerning[leftGroup, rightGroup]
                 RTLexplodedPairList.extend(self._explode(lgroup_glyphs, rgroup_glyphs))
             else:
@@ -538,7 +555,6 @@ class KernProcessor(object):
             self.pairs_processed += 1
 
         for pair in self.RTLexceptionPairs:
-            # self.RTLglyph_glyph_exceptions[pair] = '<%s 0 %s 0>' %  (self.kerning[pair], self.kerning[pair])
             self.RTLglyph_glyph_exceptions[pair] = self.kerning[pair]
             self.pairs_processed += 1
 
@@ -576,8 +592,6 @@ class run(object):
         self.processedPairs = 0
         self.trimmedPairs = 0
 
-        self.output = []
-
         self.subtbBreak = '\nsubtable;'
         self.lkupRTLopen = '\n\nlookup RTL_kerning {\nlookupflag RightToLeft IgnoreMarks;\n'
         self.lkupRTLclose = '\n\n} RTL_kerning;\n'
@@ -589,31 +603,18 @@ class run(object):
             flK = FLKerningData(self.f)
             self.MM = flK._isMMfont()
             self.kerning = flK.kerning
-            self.allGroups = flK.groups
-            self.groups = {}
-
-            for groupName in self._getUsedGroups(self.kerning):
-                self.groups[groupName] = self.allGroups[groupName]
-
-            self.groupOrder = [groupName for groupName in flK.groupOrder if groupName in self.groups.keys()]
+            self.groups = flK.groups
+            self.groupOrder = flK.groupOrder
 
             if not self.MM:
               self.header.append('# MM Inst: %s' % self.f.menu_name)
 
         else:
             self.header.append('# PS Name: %s' % self.f.info.postscriptFontName)
-            self.header.append('# MM Inst: %s' % self.f.info.styleMapFamilyName)
 
             self.kerning = self.f.kerning
-            self.allGroups = self.f.groups
-            self.groups = {}
-
-            for groupName in self._getUsedGroups(self.kerning):
-                self.groups[groupName] = self.allGroups[groupName]
-
+            self.groups = self.f.groups
             self.groupOrder = sorted(self.groups.keys())
-            # self.groupOrder.sort(key=lambda x: (x.split('_')[1], len(x)))
-
 
 
         if not len(self.groups):
@@ -632,22 +633,8 @@ class run(object):
         self.header.append('# MinKern: +/- %s inclusive' % self.minKern)
         self.header.append('# exported from %s' % appTest.appName)
 
-        self.makeOutput()
-        self.writeDataToFile()
-
-
-    def _getUsedGroups(self, kernDict):
-        '''
-        Returns all groups which are actually used in kerning.
-        '''
-        groupList = []
-        for left, right in kernDict.keys():
-            if isGroup(left):
-                groupList.append(left)
-            if isGroup(right):
-                groupList.append(right)
-        return sorted(set(groupList))
-
+        kernData = self.makeOutput()
+        self.writeDataToFile(kernData)
 
 
     def dict2pos(self, pairValueDict, min=0, enum=False, RTL=False):
@@ -656,32 +643,33 @@ class run(object):
         the function can filter kerning pairs whose absolute value does not
         exceed a given threshold.
 
-        >>>kD_RTL_MM = {
-        >>>    ('@VAV_1ST_HEB', '@TSADI_HEB'): '<22 15 26 19>',
-        >>>    ('@TSADI_HEB', '@TET_2ND_HEB'): '<4 -17 0 -17>',
-        >>>    ('@QUOTEBASE', '@SHIN_2ND_HEB'): '<-38 -69 0 -50>',
-        >>>    ('@QUOTEBASE', '@KAF_2ND_HEB'): '<-22 0 -9 0>',
-        >>>}
+        # >>>kD_RTL_MM = {
+        # >>>    ('@VAV_1ST_HEB', '@TSADI_HEB'): '<22 15 26 19>',
+        # >>>    ('@TSADI_HEB', '@TET_2ND_HEB'): '<4 -17 0 -17>',
+        # >>>    ('@QUOTEBASE', '@SHIN_2ND_HEB'): '<-38 -69 0 -50>',
+        # >>>    ('@QUOTEBASE', '@KAF_2ND_HEB'): '<-22 0 -9 0>',
+        # >>>}
 
-        >>>kD_MM = {
-        >>>    ('@PERIODCENTERED_CAP', 'V'): '<-10 0>',
-        >>>    ('@QUOTELEFT_LEFT', '@COMMA'): '<-30 -60>',
-        >>>    ('@QUESTIONDOWN_LEFT', '@T_UC_RIGHT_LAT'): '<0 -40>',
-        >>>    ('@PERIOD', 'zeta'): '<-19 -30>',
-        >>>}
+        # >>>kD_MM = {
+        # >>>    ('@PERIODCENTERED_CAP', 'V'): '<-10 0>',
+        # >>>    ('@QUOTELEFT_LEFT', '@COMMA'): '<-30 -60>',
+        # >>>    ('@QUESTIONDOWN_LEFT', '@T_UC_RIGHT_LAT'): '<0 -40>',
+        # >>>    ('@PERIOD', 'zeta'): '<-19 -30>',
+        # >>>}
 
-        >>>kD = {
-        >>>    ('@QUOTERIGHT', '@YA_LC_RIGHT_CYR'): -49,
-        >>>    ('@QUOTE', '@T_UC_RIGHT_LAT'): 30,
-        >>>    ('@QUOTERIGHT', '@UPSILON_ACC1_LC_RIGHT_GRK'): 292,
-        >>>    ('@PARENLEFT', '@J_LC_RIGHT_LAT'): -11,
+        # >>>kD = {
+        # >>>    ('@QUOTERIGHT', '@YA_LC_RIGHT_CYR'): -49,
+        # >>>    ('@QUOTE', '@T_UC_RIGHT_LAT'): 30,
+        # >>>    ('@QUOTERIGHT', '@UPSILON_ACC1_LC_RIGHT_GRK'): 292,
+        # >>>    ('@PARENLEFT', '@J_LC_RIGHT_LAT'): -11,
 
-        >>>kD_RTL = {
-        >>>    ('@QUOTERIGHT', '@YA_LC_RIGHT_CYR'): -49,
-        >>>    ('@QUOTE', '@T_UC_RIGHT_LAT'): 30,
-        >>>    ('@QUOTERIGHT', '@UPSILON_ACC1_LC_RIGHT_GRK'): 292,
-        >>>    ('@PARENLEFT', '@J_LC_RIGHT_LAT'): -11,
-        >>>}
+        # >>>kD_RTL = {
+        # >>>    ('@QUOTERIGHT', '@YA_LC_RIGHT_CYR'): -49,
+        # >>>    ('@QUOTE', '@T_UC_RIGHT_LAT'): 30,
+        # >>>    ('@QUOTERIGHT', '@UPSILON_ACC1_LC_RIGHT_GRK'): 292,
+        # >>>    ('@PARENLEFT', '@J_LC_RIGHT_LAT'): -11,
+        # >>>}
+
 
         '''
 
@@ -691,10 +679,10 @@ class run(object):
 
             if RTL:
                 if self.MM:
-                    # kern value is stored in a string like this: '<10 20 30 40>'
-                    values = value[1:-1].split()
-                    # take out carets, convert to list
+                    # kern value is stored in an array (represented as a string),
+                    # for instance: '<10 20 30 40>'
 
+                    values = value[1:-1].split()
                     values = ['<{0} 0 {0} 0>'.format(kernValue) for kernValue in values]
                     valueString = '<%s>' % ' '.join(values)
                     # creates an (experimental, but consequent) string like this:
@@ -754,27 +742,26 @@ class run(object):
         return subtableOutput
 
 
-
     def makeOutput(self):
         'Building the output data.'
 
-        kp = KernProcessor(self.groups, self.kerning)
+        output = []
+        kp = KernProcessor(self.groups, self.kerning, self.groupOrder)
 
+        # ----------------
         # kerning groups:
         # ----------------
-        groupOrder = [groupName for groupName in self.groupOrder if groupName in kp.groups.keys()]
-        # KernProcessor might remove some when single-element
-        # groups are dissolved.
 
-        for groupName in groupOrder:
+        for groupName in kp.groupOrder:
             glyphList = kp.groups[groupName]
-            self.output.append('%s = [%s];' % (groupName, ' '.join(glyphList)))
+            output.append('%s = [%s];' % (groupName, ' '.join(glyphList)))
+
 
         # ------------------
         # LTR kerning pairs:
         # ------------------
 
-        order = [
+        LTRorder = [
             # dictName                   # minKern       # comment                           # enum
             (kp.predefined_exceptions,   0,              '\n# pre-defined exceptions:',      True),
             (kp.glyph_glyph,             self.minKern,   '\n# glyph, glyph:',                False),
@@ -783,34 +770,11 @@ class run(object):
             (kp.group_glyph_exceptions,  0,              '\n# group, glyph exceptions:',     True),
         ]
 
-        orderExtension = [
+        LTRorderExtension = [
             # in case no subtables are desired
             (kp.glyph_group,             self.minKern,   '\n# glyph, group:',                False),
             (kp.group_group,             self.minKern,   '\n# group, group/glyph:',          False),
         ]
-
-
-        if not self.writeSubtables:
-            order.extend(orderExtension)
-
-
-        for dictName, minKern, comment, enum in order:
-            if len(dictName):
-                self.processedPairs += len(dictName)
-                self.output.append(comment)
-                self.output.append(self.dict2pos(dictName, minKern, enum))
-
-
-        if self.writeSubtables:
-            self.subtablesCreated = 0
-
-            glyph_to_class_subtables = MakeSubtables(kp.glyph_group, subtableTrigger='second').subtables
-            self.output.extend(self.buildSubtableOutput(glyph_to_class_subtables, '\n# glyph, group:'))
-
-            class_to_class_subtables = MakeSubtables(kp.group_group).subtables
-            self.output.extend(self.buildSubtableOutput(class_to_class_subtables, '\n# group, glyph and group, group:'))
-
-
 
         # ------------------
         # RTL kerning pairs:
@@ -831,8 +795,28 @@ class run(object):
             (kp.RTLgroup_group,              self.minKern,   '\n# RTL group, group/glyph:',          False)
         ]
 
+
         if not self.writeSubtables:
+            LTRorder.extend(LTRorderExtension)
             RTLorder.extend(RTLorderExtension)
+
+
+        for dictName, minKern, comment, enum in LTRorder:
+            if len(dictName):
+                self.processedPairs += len(dictName)
+                output.append(comment)
+                output.append(self.dict2pos(dictName, minKern, enum))
+
+
+        if self.writeSubtables:
+            self.subtablesCreated = 0
+
+            glyph_to_class_subtables = MakeSubtables(kp.glyph_group, subtableTrigger='second').subtables
+            output.extend(self.buildSubtableOutput(glyph_to_class_subtables, '\n# glyph, group:'))
+
+            class_to_class_subtables = MakeSubtables(kp.group_group).subtables
+            output.extend(self.buildSubtableOutput(class_to_class_subtables, '\n# group, glyph and group, group:'))
+
 
         # checking if RTL pairs exist
         RTLpairsExist = False
@@ -843,31 +827,33 @@ class run(object):
                 break
 
         if RTLpairsExist:
-            self.output.append(self.lkupRTLopen)
+            output.append(self.lkupRTLopen)
 
             for dictName, minKern, comment, enum in RTLorder:
                 if len(dictName):
                     self.processedPairs += len(dictName)
-                    self.output.append(comment)
-                    self.output.append(self.dict2pos(dictName, minKern, enum, RTL=True))
+                    output.append(comment)
+                    output.append(self.dict2pos(dictName, minKern, enum, RTL=True))
 
 
         if RTLpairsExist and self.writeSubtables:
             self.RTLsubtablesCreated = 0
 
             RTL_glyph_class_subtables = MakeSubtables(kp.RTLglyph_group, subtableTrigger='second', RTL=True).subtables
-            self.output.extend(self.buildSubtableOutput(RTL_glyph_class_subtables, '\n# RTL glyph, group:', RTL=True))
+            output.extend(self.buildSubtableOutput(RTL_glyph_class_subtables, '\n# RTL glyph, group:', RTL=True))
 
             RTL_class_class_subtables = MakeSubtables(kp.RTLgroup_group, RTL=True).subtables
-            self.output.extend(self.buildSubtableOutput(RTL_class_class_subtables, '\n# RTL group, glyph and group, group:', RTL=True))
+            output.extend(self.buildSubtableOutput(RTL_class_class_subtables, '\n# RTL group, glyph and group, group:', RTL=True))
 
 
         if RTLpairsExist:
-            self.output.append(self.lkupRTLclose)
+            output.append(self.lkupRTLclose)
+
+        return output
 
 
 
-    def writeDataToFile(self):
+    def writeDataToFile(self, data):
 
         if self.MM:
             kKernFeatureFile = 'mm' + self.outputFileName
@@ -875,6 +861,7 @@ class run(object):
             kKernFeatureFile = self.outputFileName
 
         print '\tSaving %s file...' % kKernFeatureFile
+
         if self.trimmedPairs > 0:
             print '\tTrimmed pairs: %s' % self.trimmedPairs
 
@@ -883,8 +870,8 @@ class run(object):
         with open(outputPath, 'w') as outfile:
             outfile.write('\n'.join(self.header))
             outfile.write('\n\n')
-            if len(self.output):
-                outfile.write('\n'.join(self.output))
+            if len(data):
+                outfile.write('\n'.join(data))
                 outfile.write('\n')
 
         if not self.inFL:
@@ -894,7 +881,7 @@ class run(object):
 
 
 
-class MakeSubtables(run):
+class MakeSubtables(object):
     def __init__(self, kernDict, subtableTrigger='first', RTL=False):
         self.kernDict  = kernDict
         self.RTL       = RTL        # Is the kerning RTL or not?
@@ -993,7 +980,7 @@ class MakeSubtables(run):
 
                     if subtableIndex == 0:
                         # for the first item in the list, no modification
-                        # of the subtable list order is necessary.
+                        # of the subtable list LTRorder is necessary.
                         for pair in pairlist:
                             self.otherPairs_dict[pair] = self.kernDict[pair]
                             del self.kernDict[pair]
