@@ -10,26 +10,17 @@ kDefaultWriteTrimmed = False
 # not be written to the output file.
 
 kDefaultWriteSubtables = True
-
-# dissolveSingleGroups = False
 dissolveSingleGroups = True
+
 
 kLeftTag = ['_LEFT','_1ST', '_L_']
 kRightTag = ['_RIGHT','_2ND', '_R_']
-
-kLatinTag = '_LAT'
-kGreekTag = '_GRK'
-kCyrillicTag = '_CYR'
-kArmenianTag = '_AM'
 
 kArabicTag = '_ARA'
 kHebrewTag = '_HEB'
 kRTLTag = '_RTL'
 
-kNumberTag = '_NUM'
-kFractionTag = '_FRAC'
 kExceptionTag = 'EXC_'
-
 kIgnorePairTag = '.cxt'
 
 ###################################################
@@ -592,7 +583,7 @@ class KernProcessor(object):
 
 class run(object):
 
-    def __init__(self, font, folderPath, minKern=kDefaultMinKern, writeTrimmed=kDefaultWriteTrimmed, writeSubtables=kDefaultWriteSubtables, outputFileName=kDefaultFileName):
+    def __init__(self, font, folderPath, minKern=kDefaultMinKern, writeSubtables=kDefaultWriteSubtables, outputFileName=kDefaultFileName):
 
         self.header = ['# Created: %s' % time.ctime()]
 
@@ -603,7 +594,6 @@ class run(object):
         self.folder = folderPath
 
         self.minKern = minKern
-        self.writeTrimmed = writeTrimmed
         self.writeSubtables = writeSubtables
 
         # This does not do anything really. Remove or fix
@@ -646,7 +636,7 @@ class run(object):
         self.writeDataToFile(outputData, outputFileName)
 
 
-    def dict2pos(self, pairValueDict, min=0, enum=False, RTL=False):
+    def dict2pos(self, pairValueDict, min=0, enum=False, RTL=False, writeTrimmed=kDefaultWriteTrimmed):
         '''
         Turns a dictionary to a list of kerning pairs. In a single master font,
         the function can filter kerning pairs whose absolute value does not
@@ -720,7 +710,7 @@ class run(object):
                     data.append(enumLine)
                 else:
                     if abs(kernValue) < min:
-                        if self.writeTrimmed:
+                        if writeTrimmed:
                             data.append('# %s' % posLine)
                         trimmed += 1
                     else:
@@ -819,25 +809,18 @@ class run(object):
 
         for dictName, minKern, comment, enum in LTRorder:
             if len(dictName):
-                self.processedPairs += len(dictName)
                 output.append(comment)
                 output.append(self.dict2pos(dictName, minKern, enum))
+                self.processedPairs += len(dictName)
 
 
         if self.writeSubtables:
             self.subtablesCreated = 0
 
-            # glyph_to_class_subtables = MakeSubtables(kp.glyph_group, subtableTrigger='second').subtables
-            # print len(glyph_to_class_subtables_old)
             glyph_to_class_subtables = MakeMeasuredSubtables(kp.glyph_group, kp.kerning, kp.groups).subtables
-            # print glyph_to_class_subtables
             output.extend(self._buildSubtableOutput(glyph_to_class_subtables, '\n# glyph, group:'))
 
-            # class_to_class_subtables_old = MakeSubtables(kp.group_group).subtables
-            # print len(class_to_class_subtables_old)
             class_to_class_subtables = MakeMeasuredSubtables(kp.group_group, kp.kerning, kp.groups).subtables
-            # print class_to_class_subtables
-            # nothing happening here !!
             output.extend(self._buildSubtableOutput(class_to_class_subtables, '\n# group, glyph and group, group:'))
 
 
@@ -857,9 +840,9 @@ class run(object):
 
             for dictName, minKern, comment, enum in RTLorder:
                 if len(dictName):
-                    self.processedPairs += len(dictName)
                     output.append(comment)
                     output.append(self.dict2pos(dictName, minKern, enum, RTL=True))
+                    self.processedPairs += len(dictName)
 
 
             if self.writeSubtables:
@@ -905,11 +888,10 @@ class MakeMeasuredSubtables(object):
 
         self.kernDict = kernDict
         self.subtables = []
-        self.numberOfKernedGlyphs = self.getNumberOfKernedGlyphs(kerning, groups)
+        self.numberOfKernedGlyphs = self._getNumberOfKernedGlyphs(kerning, groups)
 
         coverageTableSize = 2 + (2 * self.numberOfKernedGlyphs)
-        # maxSubtableSize = 2 ** 16
-        maxSubtableSize = 2 ** 12
+        maxSubtableSize = 2 ** 16
 
         measuredSubtables = []
         leftItems = sorted(set([left for left, right in self.kernDict.keys()]))
@@ -948,8 +930,10 @@ class MakeMeasuredSubtables(object):
                 usedGroupsLeft = set([])
                 usedGroupsRight = set([])
 
-        # don't forget the last subtable:
-        measuredSubtables.append(subtable)
+        # Last subtable:
+        if len(subtable):
+            measuredSubtables.append(subtable)
+
 
         for leftItemList in measuredSubtables:
             stDict = {}
@@ -960,7 +944,7 @@ class MakeMeasuredSubtables(object):
 
 
 
-    def getNumberOfKernedGlyphs(self, kerning, groups):
+    def _getNumberOfKernedGlyphs(self, kerning, groups):
         leftList = []
         rightList = []
         for left, right in kerning.keys():
@@ -977,162 +961,6 @@ class MakeMeasuredSubtables(object):
         # return len(set(leftList)) + len(set(rightList))
 
 
-class MakeSubtables(object):
-    def __init__(self, kernDict, subtableTrigger='first', RTL=False):
-        self.kernDict  = kernDict
-        self.RTL       = RTL        # Is the kerning RTL or not?
-
-        # 'subtableTrigger' defines which side of the pair triggers the subtable break decision.
-        # "first" would be the left side for LTR, right for RTL.
-        # "second" would be the right side for LTR, left for RTL.
-
-        self.otherPairs_dict = {}
-        # Container for any pairs that cannot be assigned to a specific language tag.
-
-        self.LTRtagDict = {
-            kLatinTag: {},
-            kGreekTag: {},
-            kCyrillicTag: {},
-            kArmenianTag: {},
-            kArabicTag: {},
-            kHebrewTag: {},
-            kNumberTag: {},
-            kFractionTag: {},
-            'other': self.otherPairs_dict
-        }
-
-        self.RTLtagDict = {
-            kArabicTag: {},
-            kHebrewTag: {},
-            'other': self.otherPairs_dict
-        }
-
-        self.subtableOrder = [
-            kLatinTag,
-            kGreekTag,
-            kCyrillicTag,
-            kArmenianTag,
-            kArabicTag,
-            kHebrewTag,
-            kNumberTag,
-            kFractionTag,
-            'other',
-        ]
-
-
-        'Split class-to-class kerning into subtables.'
-        if subtableTrigger == 'first':
-            # Creates 'traditional' subtables, for class-to-class, and class-to-glyph kerning.
-            for pair in self.kernDict.keys()[::-1]:
-                first, second, tagDict = self.identifyPair(pair)
-
-                for tag in tagDict:
-                    if self.checkGroupForTag(tag, first):
-                        tagDict[tag][pair] = kernDict[pair]
-                        del self.kernDict[pair]
-
-            for pair in self.kernDict:
-                self.otherPairs_dict[pair] = self.kernDict[pair]
-
-
-        if subtableTrigger == 'second':
-            # subtabletrigger is only necessary because of the language-based subtabling.
-
-            # Create dictionary of all glyphs on the left side, and the language
-            # tags of classes those glyphs are kerned against (e.g. _LAT, _GRK)
-            kernPartnerLanguageTags = {}
-            for pair in self.kernDict:
-                first, second, tagDict = self.identifyPair(pair)
-
-                if not first in kernPartnerLanguageTags:
-                    kernPartnerLanguageTags[first] = set([])
-                kernPartnerLanguageTags[first].add(self.returnGroupTag(pair[1]))
-
-            for pair in self.kernDict.keys()[::-1]:
-                first, second, tagDict = self.identifyPair(pair)
-
-                for tag in tagDict:
-                    if self.checkGroupForTag(tag, second) and len(kernPartnerLanguageTags[first]) == 1:
-                        # Using the previously created kernPartnerLanguageTags
-                        # If any glyph is kerned against more than one language system,
-                        # it has to go to the 'otherPairs_dict' subtable.
-                        tagDict[tag][pair] = self.kernDict[pair]
-                        del self.kernDict[pair]
-
-            'This splits the glyph-to-class part into subtables of 1000 left-side items.'
-            if len(self.kernDict) < 1000:
-                self.otherPairs_dict.update(self.kernDict)
-
-            else:
-                # find all the first elements in a kerning pair, since the subtable
-                # split can only happen between chunks of left elements
-                firstItems = sorted(set([first for first, second in self.kernDict.keys()]))
-
-                # lambda function to split a list into sublists
-                splitList = lambda A, n=100 : [A[i:i+n] for i in range(0, len(A), n)]
-                subTableList = splitList(firstItems)
-
-                for chunk in subTableList:
-                    subtableIndex = subTableList.index(chunk)
-                    pairlist = sorted([(left, right) for (left, right) in self.kernDict.keys() if left in chunk])
-
-                    if subtableIndex == 0:
-                        # for the first item in the list, no modification
-                        # of the subtable list LTRorder is necessary.
-                        for pair in pairlist:
-                            self.otherPairs_dict[pair] = self.kernDict[pair]
-                            del self.kernDict[pair]
-
-                    else:
-                        subtableName = 'other_%s' % subtableIndex
-                        self.LTRtagDict[subtableName] = {}
-                        self.subtableOrder.append(subtableName)
-
-                        for pair in pairlist:
-                            self.LTRtagDict[subtableName][pair] = self.kernDict[pair]
-                            del self.kernDict[pair]
-
-
-        if RTL:
-            self.subtables = [self.RTLtagDict[i] for i in self.subtableOrder if i in self.RTLtagDict]
-        else:
-            self.subtables = [self.LTRtagDict[i] for i in self.subtableOrder]
-
-
-    def checkGroupForTag(self, tag, groupName):
-        'Checks if a tag (e.g. _CYR, _EXC, _LAT) exists in a group name (e.g. @A_LC_LEFT_LAT)'
-        if tag in groupName:
-            return True
-        else:
-            return False
-
-
-    def returnGroupTag(self, groupName):
-        'Returns group tag (e.g. _CYR, _EXC, _LAT) for a given group name (e.g. @A_LC_LEFT_LAT)'
-        tags = [kLatinTag, kGreekTag, kCyrillicTag, kArmenianTag, kArabicTag, kHebrewTag, kNumberTag, kFractionTag, kExceptionTag]
-        foundTag = None
-
-        for tag in tags:
-            if self.checkGroupForTag(tag, groupName):
-                foundTag = tag
-                break
-        return foundTag
-
-
-    def identifyPair(self, pair):
-        if self.RTL:
-            first   = pair[0]
-            second  = pair[1]
-            tagDict = self.RTLtagDict
-
-        else:
-            first   = pair[0]
-            second  = pair[1]
-            tagDict = self.LTRtagDict
-
-        return first, second, tagDict
-
-
 
 if __name__ == '__main__':
     arguments = sys.argv
@@ -1146,6 +974,4 @@ if __name__ == '__main__':
         fPath = arguments[-1]
         fPath = fPath.rstrip('/')
         f = defcon.Font(fPath)
-        # print dir(KernProcessor())
         run(f, os.path.dirname(f.path))
-        # MakeMeasuredSubtables(f.kerning, f.groups)
