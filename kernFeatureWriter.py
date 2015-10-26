@@ -376,23 +376,40 @@ class KernProcessor(object):
     def _dissolveSingleGroups(self, groups, kerning):
         '''
         Finds any groups with a single-item glyph list, which are not RTL groups.
+
+        >>> groups = {'@ALEF_1ST_ARA': ['arAlef', 'arAlef.f', 'arAlef.wide', 'arAlef.fwide'], '@MMK_L_SIX_FITTED_NUM': ['six.fitted'], '@MMK_R_FOUR_FITTED_NUM': ['four.fitted'], '@MMK_L_LAT_BSMALL_LC_LEFT': ['Bsmall'], '@MMK_R_LAT_X_UC_RIGHT': ['X', 'Xdieresis', 'Xdotaccent'], '@MMK_L_PERIOD': ['period', 'ellipsis'], '@MMK_R_FOUR_SC_NUM_RIGHT': ['four.sc'], '@MMK_L_CYR_IUKRAN_LC_LEFT': ['i.ukran', 'yi'], '@MMK_R_CYR_HA_LC_RIGHT': ['ha', 'hadescender']}
+        >>> kerning = {('@MMK_L_SIX_FITTED_NUM', '@MMK_R_FOUR_FITTED_NUM'): 10, ('@MMK_L_LAT_BSMALL_LC_LEFT', '@MMK_R_LAT_X_UC_RIGHT'): 20, ('@MMK_L_PERIOD', '@MMK_R_FOUR_SC_NUM_RIGHT'): 10, ('@MMK_L_CYR_IUKRAN_LC_LEFT', '@MMK_R_CYR_HA_LC_RIGHT'): 10}
+        >>> kp = KernProcessor()
+        >>> remaingGroups = kp._dissolveSingleGroups(groups, kerning)[0]
+        >>> sorted(remaingGroups.items())
+        [('@ALEF_1ST_ARA', ['arAlef', 'arAlef.f', 'arAlef.wide', 'arAlef.fwide']), ('@MMK_L_CYR_IUKRAN_LC_LEFT', ['i.ukran', 'yi']), ('@MMK_L_PERIOD', ['period', 'ellipsis']), ('@MMK_R_CYR_HA_LC_RIGHT', ['ha', 'hadescender']), ('@MMK_R_LAT_X_UC_RIGHT', ['X', 'Xdieresis', 'Xdotaccent'])]
+
+        >>> remainingKerning = kp._dissolveSingleGroups(groups, kerning)[1]
+        >>> sorted(remainingKerning.items())
+        [(('@MMK_L_CYR_IUKRAN_LC_LEFT', '@MMK_R_CYR_HA_LC_RIGHT'), 10), (('@MMK_L_PERIOD', 'four.sc'), 10), (('Bsmall', '@MMK_R_LAT_X_UC_RIGHT'), 20), (('six.fitted', 'four.fitted'), 10)]
+
         '''
         singleGroups = dict([(groupName, glyphList) for groupName, glyphList in groups.items() if len(glyphList) == 1 and not isRTLGroup(groupName)])
-        dissolvedKerning = {}
-        for (left, right), value in kerning.items():
-            dissolvedLeft = singleGroups.get(left, [left])[0]
-            dissolvedRight = singleGroups.get(right, [right])[0]
-            dissolvedKerning[(dissolvedLeft, dissolvedRight)] = value
 
-        remainingGroups = dict([(groupName, glyphList) for groupName, glyphList in groups.items() if not groupName in singleGroups])
-        return remainingGroups, dissolvedKerning
+        if singleGroups:
+            dissolvedKerning = {}
+            for (left, right), value in kerning.items():
+                dissolvedLeft = singleGroups.get(left, [left])[0]
+                dissolvedRight = singleGroups.get(right, [right])[0]
+                dissolvedKerning[(dissolvedLeft, dissolvedRight)] = value
+
+            remainingGroups = dict([(groupName, glyphList) for groupName, glyphList in groups.items() if not groupName in singleGroups])
+            return remainingGroups, dissolvedKerning
+
+        else:
+            return groups, kerning
 
 
     def _sanityCheck(self, kerning):
         '''
         Checks if the number of kerning pairs input equals the number of kerning entries output.
         '''
-        totalKernPairs = len(kerning.keys())
+        totalKernPairs = len(self.kerning.keys())
         processedPairs = len(self.pairs_processed)
         unprocessedPairs = len(self.pairs_unprocessed)
         if totalKernPairs != processedPairs + unprocessedPairs:
@@ -407,7 +424,7 @@ class KernProcessor(object):
         Returns a list of tuples, containing all possible combinations
         of elements in both input lists.
 
-        >>> kp = KernProcessor(None, None, None)
+        >>> kp = KernProcessor()
         >>> input1 = ['a', 'b', 'c']
         >>> input2 = ['d', 'e', 'f']
         >>> explosion = kp._explode(input1, input2)
