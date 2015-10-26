@@ -331,13 +331,13 @@ class KernProcessor(object):
         self.group_group = {}
         self.predefined_exceptions = {}
 
-        self.RTLglyph_glyph = {}
-        self.RTLglyph_glyph_exceptions = {}
-        self.RTLglyph_group = {}
-        self.RTLglyph_group_exceptions = {}
-        self.RTLgroup_glyph_exceptions = {}
-        self.RTLgroup_group = {}
-        self.RTLpredefined_exceptions = {}
+        self.rtl_glyph_glyph = {}
+        self.rtl_glyph_glyph_exceptions = {}
+        self.rtl_glyph_group = {}
+        self.rtl_glyph_group_exceptions = {}
+        self.rtl_group_glyph_exceptions = {}
+        self.rtl_group_group = {}
+        self.rtl_predefined_exceptions = {}
 
         self.pairs_unprocessed = []
         self.pairs_processed = []
@@ -493,7 +493,7 @@ class KernProcessor(object):
             if glyph in self.grouped_left:
                 # it is a glyph_to_group exception!
                 if isRTLpair:
-                    self.RTLglyph_group_exceptions[glyph, group] = self.kerning[glyph, group]
+                    self.rtl_glyph_group_exceptions[glyph, group] = self.kerning[glyph, group]
                 else:
                     self.glyph_group_exceptions[glyph, group] = self.kerning[glyph, group]
                 self.pairs_processed.append((glyph, group))
@@ -504,7 +504,7 @@ class KernProcessor(object):
                     if pair in glyph_2_glyph:
                         # that pair is a glyph_to_glyph exception!
                         if isRTLpair:
-                            self.RTLglyph_glyph_exceptions[pair] = self.kerning[pair]
+                            self.rtl_glyph_glyph_exceptions[pair] = self.kerning[pair]
                         else:
                             self.glyph_glyph_exceptions[pair] = self.kerning[pair]
                         self.pairs_processed.append(pair)
@@ -516,7 +516,7 @@ class KernProcessor(object):
                         continue
 
                     if isRTLpair:
-                        self.RTLglyph_group[glyph, group] = self.kerning[glyph, group]
+                        self.rtl_glyph_group[glyph, group] = self.kerning[glyph, group]
                     else:
                         self.glyph_group[glyph, group] = self.kerning[glyph, group]
                     self.pairs_processed.append((glyph, group))
@@ -539,7 +539,7 @@ class KernProcessor(object):
                 if rightGroup in self.grouped_right:
                     # it is a group_to_glyph exception!
                     if isRTLpair:
-                        self.RTLgroup_glyph_exceptions[leftGroup, rightGroup] = self.kerning[leftGroup, rightGroup]
+                        self.rtl_group_glyph_exceptions[leftGroup, rightGroup] = self.kerning[leftGroup, rightGroup]
                     else:
                         self.group_glyph_exceptions[leftGroup, rightGroup] = self.kerning[leftGroup, rightGroup]
                     self.pairs_processed.append((leftGroup, rightGroup))
@@ -555,7 +555,7 @@ class KernProcessor(object):
                 continue
 
             if isRTLpair:
-                self.RTLgroup_group[leftGroup, rightGroup] = self.kerning[leftGroup, rightGroup]
+                self.rtl_group_group[leftGroup, rightGroup] = self.kerning[leftGroup, rightGroup]
                 RTLexplodedPairList.extend(self._explode(lgroup_glyphs, rgroup_glyphs))
             else:
                 self.group_group[leftGroup, rightGroup] = self.kerning[leftGroup, rightGroup]
@@ -574,7 +574,7 @@ class KernProcessor(object):
             self.pairs_processed.append(pair)
 
         for pair in self.RTLexceptionPairs:
-            self.RTLglyph_glyph_exceptions[pair] = self.kerning[pair]
+            self.rtl_glyph_glyph_exceptions[pair] = self.kerning[pair]
             self.pairs_processed.append(pair)
 
 
@@ -584,7 +584,7 @@ class KernProcessor(object):
         # by a tag in their group name. This should be changed one day (to a glyph
         # note, for instance).
         for pair in glyph_2_glyph:
-            if not pair in self.glyph_glyph_exceptions and not pair in self.RTLglyph_glyph_exceptions:
+            if not pair in self.glyph_glyph_exceptions and not pair in self.rtl_glyph_glyph_exceptions:
                 self.glyph_glyph[pair] = self.kerning[pair]
                 self.pairs_processed.append(pair)
 
@@ -606,6 +606,7 @@ class run(object):
         self.writeTrimmed = writeTrimmed
         self.writeSubtables = writeSubtables
 
+        # This does not do anything really. Remove or fix
         self.processedPairs = 0
         self.trimmedPairs = 0
 
@@ -614,6 +615,7 @@ class run(object):
             self.header.append('# PS Name: %s' % self.f.font_name)
 
             flK = FLKerningData(self.f)
+
             self.MM = flK._isMMfont()
             self.kerning = flK.kerning
             self.groups = flK.groups
@@ -650,6 +652,7 @@ class run(object):
         the function can filter kerning pairs whose absolute value does not
         exceed a given threshold.
 
+        # Docstrings are hard to organize. In progress!
         # >>>kD_RTL_MM = {
         # >>>    ('@VAV_1ST_HEB', '@TSADI_HEB'): '<22 15 26 19>',
         # >>>    ('@TSADI_HEB', '@TET_2ND_HEB'): '<4 -17 0 -17>',
@@ -760,8 +763,7 @@ class run(object):
 
         output = []
         kp = KernProcessor(self.groups, self.kerning, self.groupOrder)
-        # print kp.pairs_processed
-        print kp.pairs_unprocessed
+
         # ----------------
         # kerning groups:
         # ----------------
@@ -796,17 +798,17 @@ class run(object):
 
         RTLorder = [
             # dictName                       # minKern       # comment                               # enum
-            (kp.RTLpredefined_exceptions,    0,              '\n# RTL pre-defined exceptions:',      True),
-            (kp.RTLglyph_glyph,              self.minKern,   '\n# RTL glyph, glyph:',                False),
-            (kp.RTLglyph_glyph_exceptions,   0,              '\n# RTL glyph, glyph exceptions:',     False),
-            (kp.RTLglyph_group_exceptions,   0,              '\n# RTL glyph, group exceptions:',     True),
-            (kp.RTLgroup_glyph_exceptions,   0,              '\n# RTL group, glyph exceptions:',     True),
+            (kp.rtl_predefined_exceptions,    0,              '\n# RTL pre-defined exceptions:',      True),
+            (kp.rtl_glyph_glyph,              self.minKern,   '\n# RTL glyph, glyph:',                False),
+            (kp.rtl_glyph_glyph_exceptions,   0,              '\n# RTL glyph, glyph exceptions:',     False),
+            (kp.rtl_glyph_group_exceptions,   0,              '\n# RTL glyph, group exceptions:',     True),
+            (kp.rtl_group_glyph_exceptions,   0,              '\n# RTL group, glyph exceptions:',     True),
         ]
 
         RTLorderExtension = [
             # in case no subtables are desired
-            (kp.RTLglyph_group,              self.minKern,   '\n# RTL glyph, group:',                False),
-            (kp.RTLgroup_group,              self.minKern,   '\n# RTL group, group/glyph:',          False)
+            (kp.rtl_glyph_group,              self.minKern,   '\n# RTL glyph, group:',                False),
+            (kp.rtl_group_group,              self.minKern,   '\n# RTL group, group/glyph:',          False)
         ]
 
 
@@ -825,7 +827,7 @@ class run(object):
         if self.writeSubtables:
             self.subtablesCreated = 0
 
-            # glyph_to_class_subtables_old = MakeSubtables(kp.glyph_group, subtableTrigger='second').subtables
+            # glyph_to_class_subtables = MakeSubtables(kp.glyph_group, subtableTrigger='second').subtables
             # print len(glyph_to_class_subtables_old)
             glyph_to_class_subtables = MakeMeasuredSubtables(kp.glyph_group, kp.kerning, kp.groups).subtables
             # print glyph_to_class_subtables
@@ -840,13 +842,13 @@ class run(object):
 
 
         # Checking if RTL pairs exist
-        RTLpairsExist = False
+        rtlPairsExist = False
         for dictName, minKern, comment, enum in RTLorderExtension + RTLorder:
             if len(dictName.keys()):
-                RTLpairsExist = True
+                rtlPairsExist = True
                 break
 
-        if RTLpairsExist:
+        if rtlPairsExist:
 
             lookupRTLopen = '\n\nlookup RTL_kerning {\nlookupflag RightToLeft IgnoreMarks;\n'
             lookupRTLclose = '\n\n} RTL_kerning;\n'
@@ -863,11 +865,11 @@ class run(object):
             if self.writeSubtables:
                 self.RTLsubtablesCreated = 0
 
-                RTL_glyph_class_subtables = MakeSubtables(kp.RTLglyph_group, subtableTrigger='second', RTL=True).subtables
-                output.extend(self._buildSubtableOutput(RTL_glyph_class_subtables, '\n# RTL glyph, group:', RTL=True))
+                rtl_glyph_class_subtables = MakeSubtables(kp.rtl_glyph_group, subtableTrigger='second', RTL=True).subtables
+                output.extend(self._buildSubtableOutput(rtl_glyph_class_subtables, '\n# RTL glyph, group:', RTL=True))
 
-                RTL_class_class_subtables = MakeSubtables(kp.RTLgroup_group, RTL=True).subtables
-                output.extend(self._buildSubtableOutput(RTL_class_class_subtables, '\n# RTL group, glyph and group, group:', RTL=True))
+                rtl_class_class_subtables = MakeSubtables(kp.rtl_group_group, RTL=True).subtables
+                output.extend(self._buildSubtableOutput(rtl_class_class_subtables, '\n# RTL group, glyph and group, group:', RTL=True))
 
 
             output.append(lookupRTLclose)
@@ -900,74 +902,79 @@ class run(object):
 class MakeMeasuredSubtables(object):
 
     def __init__(self, kernDict, kerning, groups):
-    # def __init__(self, kernDict, groups, subtableTrigger='first', RTL=False):
 
         self.kernDict = kernDict
-        self.kerning = kerning
-        self.groups = groups
         self.subtables = []
+        self.numberOfKernedGlyphs = self.getNumberOfKernedGlyphs(kerning, groups)
 
-        coverageTableSize = 2 + (2 * self.numberOfKernedGlyphs())
+        coverageTableSize = 2 + (2 * self.numberOfKernedGlyphs)
         # maxSubtableSize = 2 ** 16
-        maxSubtableSize = 2 ** 10
+        maxSubtableSize = 2 ** 12
+
+        measuredSubtables = []
+        leftItems = sorted(set([left for left, right in self.kernDict.keys()]))
 
         groupedGlyphsLeft = set([])
         groupedGlyphsRight = set([])
         usedGroupsLeft = set([])
         usedGroupsRight = set([])
 
-        leftItems = sorted(set([left for left, right in self.kernDict.keys()]))
-        allSubtables = []
-        subtable = set([])
+        subtable = []
 
         for item in leftItems:
-            pairs = [pair for pair in self.kernDict.keys() if pair[0] == item]
+            itemPair = [pair for pair in self.kernDict.keys() if pair[0] == item]
 
-            for left, right in pairs:
+            for left, right in itemPair:
                 groupedGlyphsLeft.update(groups.get(left, [left]))
                 groupedGlyphsRight.update(groups.get(right, [right]))
-                usedGroupsLeft.update([left])
-                usedGroupsRight.update([right])
+                usedGroupsLeft.add(left)
+                usedGroupsRight.add(right)
 
                 leftClassSize = 6 + (2 * len(groupedGlyphsLeft))
                 rightClassSize = 6 + (2 * len(groupedGlyphsRight))
                 subtableMetadataSize = coverageTableSize + leftClassSize + rightClassSize
                 subtableSize = 16 + len(usedGroupsLeft) * len(usedGroupsRight) * 2
 
-                if subtableMetadataSize + subtableSize < maxSubtableSize:
-                    subtable.update([item])
-                else:
-                    allSubtables.append(subtable)
-                    subtable = set([])
-                    subtable.update([item])
+            if subtableMetadataSize + subtableSize < maxSubtableSize:
+                subtable.append(item)
 
-                    groupedGlyphsLeft = set([])
-                    groupedGlyphsRight = set([])
-                    usedGroupsLeft = set([])
-                    usedGroupsRight = set([])
+            else:
+                measuredSubtables.append(subtable)
 
+                subtable = []
+                subtable.append(item)
+                groupedGlyphsLeft = set([])
+                groupedGlyphsRight = set([])
+                usedGroupsLeft = set([])
+                usedGroupsRight = set([])
 
-        # print len(allSubtables)
-        for subtable in allSubtables:
+        # don't forget the last subtable:
+        measuredSubtables.append(subtable)
+
+        for leftItemList in measuredSubtables:
             stDict = {}
-            for leftItem in subtable:
-                for pair in self.getKerningWithLeftItem(leftItem):
-                    stDict[pair] = self.kerning.get(pair)
+            for leftItem in leftItemList:
+                for pair in [pair for pair in self.kernDict.keys() if pair[0] == leftItem]:
+                    stDict[pair] = kerning.get(pair)
             self.subtables.append(stDict)
 
 
-    def getKerningWithLeftItem(self, item):
-        return sorted([pair for pair in self.kernDict.keys() if pair[0] == item])
 
-
-    def numberOfKernedGlyphs(self):
+    def getNumberOfKernedGlyphs(self, kerning, groups):
         leftList = []
         rightList = []
-        for (left, right), value in self.kerning.items():
-            leftList.extend(self.groups.get(left, [left]))
-            rightList.extend(self.groups.get(right, [right]))
-        allGlyphs = set(leftList) | set(rightList)
-        return len(allGlyphs)
+        for left, right in kerning.keys():
+            leftList.extend(groups.get(left, [left]))
+            rightList.extend(groups.get(right, [right]))
+
+        # This previous approach counts every glyph only once,
+        # which I think might be wrong:
+
+        allKernedGlyphs = set(leftList) | set(rightList)
+        return len(allKernedGlyphs)
+        # (Assume that a glyph must be counted twice when kerned
+        # on both sides).
+        # return len(set(leftList)) + len(set(rightList))
 
 
 class MakeSubtables(object):
@@ -1029,6 +1036,8 @@ class MakeSubtables(object):
 
 
         if subtableTrigger == 'second':
+            # subtabletrigger is only necessary because of the language-based subtabling.
+
             # Create dictionary of all glyphs on the left side, and the language
             # tags of classes those glyphs are kerned against (e.g. _LAT, _GRK)
             kernPartnerLanguageTags = {}
@@ -1137,6 +1146,6 @@ if __name__ == '__main__':
         fPath = arguments[-1]
         fPath = fPath.rstrip('/')
         f = defcon.Font(fPath)
-        # print KernProcessor()
+        # print dir(KernProcessor())
         run(f, os.path.dirname(f.path))
         # MakeMeasuredSubtables(f.kerning, f.groups)
