@@ -16,6 +16,8 @@ dissolveSingleGroups = True
 kLeftTag = ['_LEFT','_1ST', '_L_']
 kRightTag = ['_RIGHT','_2ND', '_R_']
 
+kRTLGroupName = 'RTL_KERNING'
+
 kArabicTag = '_ARA'
 kHebrewTag = '_HEB'
 kRTLTag = '_RTL'
@@ -96,32 +98,6 @@ def checkPairForTag(tag, pair):
         return True
     else:
         return False
-
-
-def isRTL(pair):
-
-    '''
-    >>> isRTL(('a', 'c'))
-    False
-    >>> isRTL(('@MMK_L_t', '@MMK_R_sups_round'))
-    False
-    >>> isRTL(('x', '@MMK_R_ARA_alef'))
-    True
-    >>> isRTL(('@MMK_L_ARA_T_UC_LEFT', '@MMK_R_LAT_YSTROKE_UC_RIGHT'))
-    True
-    >>> isRTL(('@MMK_L_CYR_VEBULG_LC_LEFT', '@MMK_R_HEB_ZE_LC_RIGHT'))
-    True
-    >>> isRTL(('@MMK_L_HEB_DASH', '@MMK_R_HEB_XI_LC_RIGHT'))
-    True
-
-    '''
-
-    RTLkerningTagsList = [kArabicTag , kHebrewTag, kRTLTag]
-
-    for tag in RTLkerningTagsList:
-        if any([tag in item for item in pair]):
-            return True
-    return False
 
 
 def isRTLGroup(groupName):
@@ -364,6 +340,36 @@ class KernProcessor(object):
         return sorted(set(groupList))
 
 
+    def _isRTL(self, pair):
+
+        '''
+        >>> kp = KernProcessor()
+        >>> kp._isRTL(('a', 'c'))
+        False
+        >>> kp._isRTL(('@MMK_L_t', '@MMK_R_sups_round'))
+        False
+        >>> kp._isRTL(('x', '@MMK_R_ARA_alef'))
+        True
+        >>> kp._isRTL(('@MMK_L_ARA_T_UC_LEFT', '@MMK_R_LAT_YSTROKE_UC_RIGHT'))
+        True
+        >>> kp._isRTL(('@MMK_L_CYR_VEBULG_LC_LEFT', '@MMK_R_HEB_ZE_LC_RIGHT'))
+        True
+        >>> kp._isRTL(('@MMK_L_HEB_DASH', '@MMK_R_HEB_XI_LC_RIGHT'))
+        True
+
+        '''
+
+        RTLkerningTagsList = [kArabicTag , kHebrewTag, kRTLTag]
+        RTLGlyphs = self.groups.get(kRTLGroupName, [])
+
+        for tag in RTLkerningTagsList:
+            if any([tag in item for item in pair]):
+                return True
+            if all([glyphName in RTLGlyphs for glyphName in pair]):
+                return True
+        return False
+
+
     def _dissolveSingleGroups(self, groups, kerning):
         '''
         Finds any groups with a single-item glyph list, which are not RTL groups.
@@ -480,7 +486,7 @@ class KernProcessor(object):
         # ---------------------
         for (glyph, group) in glyph_2_group:
             groupList = self.groups[group]
-            isRTLpair = isRTL((glyph, group))
+            isRTLpair = self._isRTL((glyph, group))
             if glyph in self.grouped_left:
                 # it is a glyph_to_group exception!
                 if isRTLpair:
@@ -518,7 +524,7 @@ class KernProcessor(object):
         RTLexplodedPairList = []
 
         for (leftGroup, rightGroup) in group_2_group:
-            isRTLpair = isRTL((leftGroup, rightGroup))
+            isRTLpair = self._isRTL((leftGroup, rightGroup))
             lgroup_glyphs = self.groups[leftGroup]
 
             try:
@@ -576,7 +582,10 @@ class KernProcessor(object):
         # note, for instance).
         for pair in glyph_2_glyph:
             if not pair in self.glyph_glyph_exceptions and not pair in self.rtl_glyph_glyph_exceptions:
-                self.glyph_glyph[pair] = self.kerning[pair]
+                if self._isRTL(pair):
+                    self.rtl_glyph_glyph[pair] = self.kerning[pair]
+                else:
+                    self.glyph_glyph[pair] = self.kerning[pair]
                 self.pairs_processed.append(pair)
 
 
@@ -848,10 +857,10 @@ class run(object):
             if self.writeSubtables:
                 self.RTLsubtablesCreated = 0
 
-                rtl_glyph_class_subtables = MakeSubtables(kp.rtl_glyph_group, subtableTrigger='second', RTL=True).subtables
+                rtl_glyph_class_subtables = MakeMeasuredSubtables(kp.rtl_glyph_group, kp.kerning, kp.groups).subtables
                 output.extend(self._buildSubtableOutput(rtl_glyph_class_subtables, '\n# RTL glyph, group:', RTL=True))
 
-                rtl_class_class_subtables = MakeSubtables(kp.rtl_group_group, RTL=True).subtables
+                rtl_class_class_subtables = MakeMeasuredSubtables(kp.rtl_group_group, kp.kerning, kp.groups).subtables
                 output.extend(self._buildSubtableOutput(rtl_class_class_subtables, '\n# RTL group, glyph and group, group:', RTL=True))
 
 
