@@ -3,15 +3,15 @@ import sys
 import time
 import itertools
 
-kDefaultFileName = "kern.fea"
+kDefaultFileName = 'kern.fea'
 
 kDefaultMinKern = 3
 # Inclusive; this means that pairs which equal this absolute value will
 # NOT be ignored/trimmed. Anything in the below that value will be trimmed.
 
 kDefaultWriteTrimmed = False
-# If 'False', trimmed pairs will not be processed and therefore
-# not be written to the output file.
+# If 'False', trimmed pairs will not be processed and
+# therefore not be written to the output file.
 
 kDefaultWriteSubtables = True
 dissolveSingleGroups = True
@@ -29,7 +29,7 @@ kIgnorePairTag = '.cxt'
 
 ###################################################
 
-__copyright__ = __license__ = """
+__copyright__ = __license__ = '''
 Copyright (c) 2006-2014 Adobe Systems Incorporated. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -49,13 +49,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-"""
+'''
 
-__doc__ = """
+__doc__ = '''
 
 WriteKernFeaturesFDK.py v4 - Oct 2015
 
-"""
+'''
 
 
 class WhichApp(object):
@@ -73,7 +73,7 @@ class WhichApp(object):
         self.inRF = False
         self.inFL = False
         self.inDC = False
-        self.appName = "noApp"
+        self.appName = 'noApp'
 
         if not any((self.inRF, self.inFL, self.inDC)):
             try:
@@ -127,9 +127,9 @@ class FLKerningData(object):
         flClassStrings = [cString for cString in self.f.classes if cString[0] == '_']
         for cString in flClassStrings:
 
-            FLclassName = cString.split(":")[0]  # FL class name, e.g. _L_LC_LEFT
+            FLclassName = cString.split(':')[0]  # FL class name, e.g. _L_LC_LEFT
             OTgroupName = '@%s' % FLclassName[1:]  # OT group name, e.g. @L_LC_LEFT
-            markedGlyphList = cString.split(":")[1].split()
+            markedGlyphList = cString.split(':')[1].split()
             cleanGlyphList = [gName.strip("'") for gName in markedGlyphList]  # strips out the keyglyph marker
 
             for gName in markedGlyphList:
@@ -138,7 +138,7 @@ class FLKerningData(object):
                     break
                 else:
                     keyGlyphName = markedGlyphList[0]
-                    print "\tWARNING: Kerning class %s has no explicit key glyph.\n\tUsing first glyph found (%s)." % (FLclassName, keyGlyphName)
+                    print '\tWARNING: Kerning class %s has no explicit key glyph.\n\tUsing first glyph found (%s).' % (FLclassName, keyGlyphName)
 
             self.groupOrder.append(OTgroupName)
             self.groupToKeyglyph[OTgroupName] = keyGlyphName
@@ -685,7 +685,7 @@ class run(object):
             self.groupOrder = sorted(self.groups.keys())
 
         if not self.kerning:
-            print "\tERROR: The font has no kerning!"
+            print '\tERROR: The font has no kerning!'
             return
 
         self.header.append('# MinKern: +/- %s inclusive' % self.minKern)
