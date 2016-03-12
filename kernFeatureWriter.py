@@ -1,3 +1,7 @@
+import os
+import sys
+import time
+import itertools
 
 kDefaultFileName = "kern.fea"
 
@@ -12,8 +16,8 @@ kDefaultWriteTrimmed = False
 kDefaultWriteSubtables = True
 dissolveSingleGroups = True
 
-kLeftTag = ['_LEFT','_1ST', '_L_']
-kRightTag = ['_RIGHT','_2ND', '_R_']
+kLeftTag = ['_LEFT', '_1ST', '_L_']
+kRightTag = ['_RIGHT', '_2ND', '_R_']
 
 kRTLGroupName = 'RTL_KERNING'
 
@@ -25,36 +29,33 @@ kIgnorePairTag = '.cxt'
 
 ###################################################
 
-__copyright__ = __license__ =  """
+__copyright__ = __license__ = """
 Copyright (c) 2006-2014 Adobe Systems Incorporated. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
 the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so,subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 """
 
 __doc__ = """
+
 WriteKernFeaturesFDK.py v4 - Oct 2015
+
 """
-
-import os
-import sys
-import time
-import itertools
-
 
 
 class WhichApp(object):
@@ -99,12 +100,10 @@ class WhichApp(object):
                 pass
 
 
-
 class FLKerningData(object):
 
     def __init__(self, font=None):
         self.f = font
-
         if font:
             self._readFLGroups()
             self._splitFLGroups()
@@ -112,14 +111,13 @@ class FLKerningData(object):
             self.rightKeyGlyphs = self._filterKeyGlyphs(self.rightGroups)
             self._readFLKerning()
 
-
     def _isMMfont(self):
         'Checks if the FontLab font is a Multiple Master font.'
+
         if self.f[0].layers_number > 1:
             return True
         else:
             return False
-
 
     def _readFLGroups(self):
         self.groupToKeyglyph = {}
@@ -129,10 +127,10 @@ class FLKerningData(object):
         flClassStrings = [cString for cString in self.f.classes if cString[0] == '_']
         for cString in flClassStrings:
 
-            FLclassName     = cString.split(":")[0]      # FL class name, e.g. _L_LC_LEFT
-            OTgroupName     = '@%s' % FLclassName[1:]    # OT group name, e.g. @L_LC_LEFT
+            FLclassName = cString.split(":")[0]  # FL class name, e.g. _L_LC_LEFT
+            OTgroupName = '@%s' % FLclassName[1:]  # OT group name, e.g. @L_LC_LEFT
             markedGlyphList = cString.split(":")[1].split()
-            cleanGlyphList  = [gName.strip("'") for gName in markedGlyphList] # strips out the keyglyph marker
+            cleanGlyphList = [gName.strip("'") for gName in markedGlyphList]  # strips out the keyglyph marker
 
             for gName in markedGlyphList:
                 if gName[-1] == "'":  # finds keyglyph
@@ -145,7 +143,6 @@ class FLKerningData(object):
             self.groupOrder.append(OTgroupName)
             self.groupToKeyglyph[OTgroupName] = keyGlyphName
             self.groups[OTgroupName] = cleanGlyphList
-
 
     def _splitFLGroups(self):
         '''
@@ -177,7 +174,6 @@ class FLKerningData(object):
                 self.leftGroups.append(groupName)
                 self.rightGroups.append(groupName)
 
-
     def _filterKeyGlyphs(self, groupList):
         '''
         Returns a dictionary
@@ -192,7 +188,6 @@ class FLKerningData(object):
             filteredKeyGlyphs[keyGlyphName] = groupName
 
         return filteredKeyGlyphs
-
 
     def _readFLKerning(self):
         '''
@@ -218,7 +213,6 @@ class FLKerningData(object):
 
                 pair = self.leftKeyGlyphs.get(gNameLeft, gNameLeft), self.rightKeyGlyphs.get(gNameRight, gNameRight)
                 self.kerning[pair] = kernValue
-
 
 
 class KernProcessor(object):
@@ -258,9 +252,8 @@ class KernProcessor(object):
 
         if self.kerning and len(self.kerning.keys()):
             usedGroups = self._getUsedGroups(self.kerning)
-            self.groupOrder = [ groupName for groupName in groupOrder if groupName in usedGroups ]
+            self.groupOrder = [groupName for groupName in groupOrder if groupName in usedGroups]
             self._sanityCheck(self.kerning)
-
 
     def _isGroup(self, itemName):
         '''
@@ -279,7 +272,6 @@ class KernProcessor(object):
             return True
         else:
             return False
-
 
     def _isRTL(self, pair):
         '''
@@ -302,7 +294,7 @@ class KernProcessor(object):
         '''
 
         RTLGlyphs = self.groups.get(kRTLGroupName, [])
-        RTLkerningTags = [kArabicTag , kHebrewTag, kGenericRTLTag]
+        RTLkerningTags = [kArabicTag, kHebrewTag, kGenericRTLTag]
 
         if set(self.groups.get(pair[0], [pair[0]]) + self.groups.get(pair[1], [pair[1]])) <= set(RTLGlyphs):
             return True
@@ -310,9 +302,7 @@ class KernProcessor(object):
         for tag in RTLkerningTags:
             if any([tag in item for item in pair]):
                 return True
-
         return False
-
 
     def _isRTLGroup(self, groupName):
 
@@ -330,14 +320,12 @@ class KernProcessor(object):
         True
 
         '''
-
-        RTLkerningTags = [kArabicTag , kHebrewTag, kGenericRTLTag]
+        RTLkerningTags = [kArabicTag, kHebrewTag, kGenericRTLTag]
 
         for tag in RTLkerningTags:
             if any([tag in groupName]):
                 return True
         return False
-
 
     def _getUsedGroups(self, kerning):
         '''
@@ -351,7 +339,6 @@ class KernProcessor(object):
             if self._isGroup(right):
                 groupList.append(right)
         return sorted(set(groupList))
-
 
     def _getAllGroupedGlyphs(self, groupFilterList=None, side=None):
         '''
@@ -378,7 +365,6 @@ class KernProcessor(object):
         else:
             return sorted(set(grouped_left)), sorted(set(grouped_right))
 
-
     def _dissolveSingleGroups(self, groups, kerning):
         '''
         Finds any groups with a single-item glyph list, which are not RTL groups.
@@ -404,12 +390,11 @@ class KernProcessor(object):
                 dissolvedRight = singleGroups.get(right, [right])[0]
                 dissolvedKerning[(dissolvedLeft, dissolvedRight)] = value
 
-            remainingGroups = dict([(groupName, glyphList) for groupName, glyphList in groups.items() if not groupName in singleGroups])
+            remainingGroups = dict([(groupName, glyphList) for groupName, glyphList in groups.items() if groupName not in singleGroups])
             return remainingGroups, dissolvedKerning
 
         else:
             return groups, kerning
-
 
     def _sanityCheck(self, kerning):
         '''
@@ -423,7 +408,6 @@ class KernProcessor(object):
             print 'Kerning pairs provided: %s' % totalKernPairs
             print 'Kern entries generated: %s' % processedPairs + unprocessedPairs
             print 'Pairs not processed: %s' % (totalKernPairs - (processedPairs + unprocessedPairs))
-
 
     def _explode(self, leftGlyphList, rightGlyphList):
         '''
@@ -440,7 +424,6 @@ class KernProcessor(object):
 
         return list(itertools.product(leftGlyphList, rightGlyphList))
 
-
     def _findExceptions(self):
         '''
         Process kerning to find which pairs are exceptions,
@@ -449,7 +432,8 @@ class KernProcessor(object):
 
         for pair in self.kerning.keys()[::-1]:
 
-            # Skip pairs in which the name of the left glyph contains the ignore tag.
+            # Skip pairs in which the name of the
+            # left glyph contains the ignore tag.
             if kIgnorePairTag in pair[0]:
                 del self.kerning[pair]
                 continue
@@ -459,11 +443,9 @@ class KernProcessor(object):
                 self.predefined_exceptions[pair] = self.kerning[pair]
                 del self.kerning[pair]
 
-
         glyph_2_glyph = sorted([pair for pair in self.kerning.keys() if not self._isGroup(pair[0]) and not self._isGroup(pair[1])])
         glyph_2_group = sorted([pair for pair in self.kerning.keys() if not self._isGroup(pair[0]) and self._isGroup(pair[1])])
         group_2_group = sorted([pair for pair in self.kerning.keys() if self._isGroup(pair[0])])
-
 
         # glyph to group pairs:
         # ---------------------
@@ -501,7 +483,6 @@ class KernProcessor(object):
                         self.glyph_group[glyph, group] = self.kerning[glyph, group]
                     self.pairs_processed.append((glyph, group))
 
-
         # group to group/glyph pairs:
         # ---------------------------
         explodedPairList = []
@@ -524,11 +505,10 @@ class KernProcessor(object):
                     else:
                         self.group_glyph_exceptions[leftGroup, rightGroup] = self.kerning[leftGroup, rightGroup]
                     self.pairs_processed.append((leftGroup, rightGroup))
-                    continue # It is an exception, so move on to the next pair
+                    continue  # It is an exception, so move on to the next pair
 
                 else:
                     rgroup_glyphs = rightGroup
-
 
             # skip the pair if the value is zero
             if self.kerning[leftGroup, rightGroup] == 0:
@@ -544,7 +524,6 @@ class KernProcessor(object):
                 # list of all possible pair combinations for the @class @class kerning pairs of the font.
             self.pairs_processed.append((leftGroup, rightGroup))
 
-
         self.exceptionPairs = set(explodedPairList) & set(glyph_2_glyph)
         self.RTLexceptionPairs = set(RTLexplodedPairList) & set(glyph_2_glyph)
         # Finds the intersection of the exploded pairs with the glyph_2_glyph pairs collected above.
@@ -558,20 +537,18 @@ class KernProcessor(object):
             self.rtl_glyph_glyph_exceptions[pair] = self.kerning[pair]
             self.pairs_processed.append(pair)
 
-
         # glyph to glyph pairs:
         # ---------------------
         # RTL glyph-to-glyph pairs can only be identified if its glyphs are
         # in the @RTL_KERNING group.
 
         for pair in glyph_2_glyph:
-            if not pair in self.glyph_glyph_exceptions and not pair in self.rtl_glyph_glyph_exceptions:
+            if pair not in self.glyph_glyph_exceptions and pair not in self.rtl_glyph_glyph_exceptions:
                 if self._isRTL(pair):
                     self.rtl_glyph_glyph[pair] = self.kerning[pair]
                 else:
                     self.glyph_glyph[pair] = self.kerning[pair]
                 self.pairs_processed.append(pair)
-
 
 
 class MakeMeasuredSubtables(object):
@@ -583,7 +560,17 @@ class MakeMeasuredSubtables(object):
         self.numberOfKernedGlyphs = self._getNumberOfKernedGlyphs(kerning, groups)
 
         coverageTableSize = 2 + (2 * self.numberOfKernedGlyphs)
-        maxSubtableSize = 2 ** 16
+        # maxSubtableSize = 2 ** 16
+        maxSubtableSize = 2 ** 14
+        # If Extension is not used, coverage and class subtables are
+        # pushed to very end of GPOS block.
+        #
+        # Order is: script list, lookup list, feature list, then
+        # table that contains lookups.
+
+        # GPOS table size
+        # All GPOS lookups need to be considered
+        # Look up size of all GPOS lookups
 
         measuredSubtables = []
         leftItems = sorted(set([left for left, right in self.kernDict.keys()]))
@@ -613,6 +600,7 @@ class MakeMeasuredSubtables(object):
                 subtable.append(item)
 
             else:
+                # print subtableMetadataSize + subtableSize
                 measuredSubtables.append(subtable)
 
                 subtable = []
@@ -626,15 +614,12 @@ class MakeMeasuredSubtables(object):
         if len(subtable):
             measuredSubtables.append(subtable)
 
-
         for leftItemList in measuredSubtables:
             stDict = {}
             for leftItem in leftItemList:
                 for pair in [pair for pair in self.kernDict.keys() if pair[0] == leftItem]:
                     stDict[pair] = kerning.get(pair)
             self.subtables.append(stDict)
-
-
 
     def _getNumberOfKernedGlyphs(self, kerning, groups):
         leftList = []
@@ -645,12 +630,16 @@ class MakeMeasuredSubtables(object):
 
         # This previous approach counts every glyph only once,
         # which I think might be wrong:
-
+        # Coverage table includes left side glyphs only.
+        # Could measure only left side in order to get size of coverage table.
         allKernedGlyphs = set(leftList) | set(rightList)
         return len(allKernedGlyphs)
         # (Assume that a glyph must be counted twice when kerned
         # on both sides).
         # return len(set(leftList)) + len(set(rightList))
+
+        # every time you get to 48 k add UseExtension keyword
+        # mark is a gpos feature too.
 
 
 class run(object):
@@ -671,7 +660,6 @@ class run(object):
         # This does not do anything really. Remove or fix
         self.processedPairs = 0
         self.trimmedPairs = 0
-
 
         if self.inFL:
             self.header.append('# PS Name: %s' % self.f.font_name)
@@ -696,7 +684,6 @@ class run(object):
             self.groups = self.f.groups
             self.groupOrder = sorted(self.groups.keys())
 
-
         if not self.kerning:
             print "\tERROR: The font has no kerning!"
             return
@@ -706,7 +693,6 @@ class run(object):
 
         outputData = self._makeOutputData()
         self.writeDataToFile(outputData, outputFileName)
-
 
     def _dict2pos(self, pairValueDict, min=0, enum=False, RTL=False, writeTrimmed=kDefaultWriteTrimmed):
         '''
@@ -738,10 +724,10 @@ class run(object):
                 kernValue = value
                 valueString = value
 
-            posLine =  'pos %s %s;' % (' '.join(pair), valueString)
+            posLine = 'pos %s %s;' % (' '.join(pair), valueString)
             enumLine = 'enum %s' % posLine
 
-            if self.MM: # no filtering happening in MM.
+            if self.MM:  # no filtering happening in MM.
                 if enum:
                     data.append(enumLine)
                 else:
@@ -762,7 +748,6 @@ class run(object):
         data.sort()
 
         return '\n'.join(data)
-
 
     def _buildSubtableOutput(self, subtableList, comment, RTL=False):
         subtableOutput = []
@@ -789,7 +774,6 @@ class run(object):
 
         return subtableOutput
 
-
     def _makeOutputData(self):
         'Building the output data.'
 
@@ -803,7 +787,6 @@ class run(object):
         for groupName in kp.groupOrder:
             glyphList = kp.groups[groupName]
             output.append('%s = [%s];' % (groupName, ' '.join(glyphList)))
-
 
         # ------------------
         # LTR kerning pairs:
@@ -843,18 +826,15 @@ class run(object):
             (kp.rtl_group_group,              self.minKern,   '\n# RTL group, group/glyph:',          False)
         ]
 
-
         if not self.writeSubtables:
             LTRorder.extend(LTRorderExtension)
             RTLorder.extend(RTLorderExtension)
-
 
         for dictName, minKern, comment, enum in LTRorder:
             if len(dictName):
                 output.append(comment)
                 output.append(self._dict2pos(dictName, minKern, enum))
                 self.processedPairs += len(dictName)
-
 
         if self.writeSubtables:
             self.subtablesCreated = 0
@@ -864,7 +844,6 @@ class run(object):
 
             class_to_class_subtables = MakeMeasuredSubtables(kp.group_group, kp.kerning, kp.groups).subtables
             output.extend(self._buildSubtableOutput(class_to_class_subtables, '\n# group, glyph and group, group:'))
-
 
         # Checking if RTL pairs exist
         rtlPairsExist = False
@@ -886,7 +865,6 @@ class run(object):
                     output.append(self._dict2pos(dictName, minKern, enum, RTL=True))
                     self.processedPairs += len(dictName)
 
-
             if self.writeSubtables:
                 self.RTLsubtablesCreated = 0
 
@@ -899,8 +877,6 @@ class run(object):
             output.append(lookupRTLclose)
 
         return output
-
-
 
     def writeDataToFile(self, data, fileName):
 
@@ -922,12 +898,11 @@ class run(object):
             print '\tOutput file written to %s' % outputPath
 
 
-
-
 if __name__ == '__main__':
     arguments = sys.argv
 
     if '-t' in arguments:
+
         import doctest
         doctest.testmod()
 
@@ -937,4 +912,3 @@ if __name__ == '__main__':
         fPath = fPath.rstrip('/')
         f = defcon.Font(fPath)
         run(f, os.path.dirname(f.path))
-
