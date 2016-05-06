@@ -140,7 +140,9 @@ def ExtractHints(inlines, glyph):
 			if token[0]=='%':
 				break
 			try:
-				value=string.atoi(token)
+				value=string.atof(token)
+				if int(value) == value:
+					value = int(value)
 				stack.append(value)
 			except ValueError:
 				if token=="div":
@@ -304,7 +306,9 @@ def MakeGlyphNodesFromBez(glyphName, bezData):
 		arg = bezTokens[i]
 		i = i + 1
 		try:
-			argnum = int(arg)
+			argnum = string.atof(arg)
+			if int(argnum) == argnum:
+				argnum = int(argnum)
 			gArgumentStack.append(argnum)
 			continue
 		except ValueError:
