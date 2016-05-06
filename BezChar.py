@@ -2,12 +2,12 @@
 ######################################################################
 
 __copyright__ =  """
-Copyright 2014 Adobe Systems Incorporated (http://www.adobe.com/). All Rights Reserved.
+Copyright 2016 Adobe Systems Incorporated (http://www.adobe.com/). All Rights Reserved.
 This software is licensed as OpenSource, under the Apache License, Version 2.0. This license is available at: http://opensource.org/licenses/Apache-2.0.
 """
 
 __doc__ = """
-BezChar.py v1.3 May 18 2009
+BezChar.py v1.4 May 2 2016
 
 This module converts between a FontLab glyph and a bez file data string. Used
 by the OutlineCheck and AutoHint scripts, to convert FL glyphs to bez programs 
@@ -167,22 +167,22 @@ def ExtractHints(inlines, glyph):
 					pass
 				elif token=="ed":
 					pass
-				elif token=="rmt":
+				elif token in ["mt", "rmt"]:
 					stack=stack[:-2]
 					nodeindex=nodeindex+1
 				elif token=="hmt":
 					stack=stack[:-1]
 					nodeindex=nodeindex+1
-				elif token=="rdt":
+				elif token in ["dt", "rdt"]:
 					stack=stack[:-2]
 					nodeindex=nodeindex+1
-				elif token=="rct":
+				elif token in ["ct", "cv", "rct", "rcv"]:
+					stack=stack[:-6]
 					nodeindex=nodeindex+1
 				elif token=="rcv":
 					nodeindex=nodeindex+1
 				elif token=="vmt":
 					stack=stack[:-1]
-					stack=stack[:-6]
 					nodeindex=nodeindex+1
 				elif token=="hvct":
 					stack=stack[:-4]
@@ -321,11 +321,14 @@ def MakeGlyphNodesFromBez(glyphName, bezData):
 			gArgumentStack = []
 			continue
 
-		lineType = ""
+		lineType = None
 
 		if arg[-2:] == "mt": #It's a move to command.
 			lineType = nMOVE
-			if arg == "rmt":
+			if arg == "mt":
+				x0 = CurX = gArgumentStack[-2]
+				y0 = CurY = gArgumentStack[-1]
+			elif arg == "rmt":
 				x0 = CurX + gArgumentStack[-2]
 				y0 = CurY + gArgumentStack[-1]
 			elif arg == "hmt":
@@ -337,7 +340,14 @@ def MakeGlyphNodesFromBez(glyphName, bezData):
 				
 		elif (arg[-2:] == "ct") or (arg[-2:] == "cv") : #It's a curve-to command.
 			lineType = nCURVE
-			if 	(arg == "rct") or (arg == "rcv"):
+			if 	(arg == "ct") or (arg == "cv"):
+				x1 = CurX = gArgumentStack[0]
+				y1 = CurY = gArgumentStack[1]
+				x2 = x1 = gArgumentStack[2]
+				y2 = y1 = gArgumentStack[3]
+				x0 = x2 = gArgumentStack[4]
+				y0 = y2 = gArgumentStack[5]
+			elif 	(arg == "rct") or (arg == "rcv"):
 				# (x1,y1) is first bezier control point, (x2,y2) is second  bezier control point point, (x0,y0) is final point.
 				x1 = CurX + gArgumentStack[0]
 				y1 = CurY + gArgumentStack[1]
@@ -362,7 +372,10 @@ def MakeGlyphNodesFromBez(glyphName, bezData):
 
 		elif (arg[-2:] == "dt"): #It's a line-to command.
 			lineType = nLINE
-			if arg == "rdt":
+			if arg == "dt":
+				x0 = CurX = gArgumentStack[-2]
+				y0 = CurY = gArgumentStack[-1]
+			elif arg == "rdt":
 				x0 = CurX + gArgumentStack[-2]
 				y0 = CurY + gArgumentStack[-1]
 			elif arg == "hdt":
@@ -404,7 +417,7 @@ def MakeGlyphNodesFromBez(glyphName, bezData):
 				print "An unknown command <" + arg + ">!"
 
 		gArgumentStack = []
-		if lineType:
+		if lineType in [nCURVE, nLINE, nMOVE]:
 			p= Point(x0, y0)
 			n = Node(lineType, p)
 			if lineType == nCURVE:
