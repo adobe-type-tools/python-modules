@@ -500,7 +500,7 @@ def ConvertFLGlyphToBez(glyph, layer=1):
 
 	
 
-def GetACFontInfoFromFLFont(font):
+def GetACFontInfoFromFLFont(font, FlexOK):
 	# The AC library needs the global font hint zones and standard stem widths. Collect it
 	# into a text string.
 	# The text format is arbitrary, inherited from very old software, but there is no real need to change it.
@@ -515,7 +515,7 @@ def GetACFontInfoFromFLFont(font):
 	fontinfo.append(fontName ) # FontName
 
 	fontinfo.append("FlexOK")
-	fontinfo.append("true")
+	fontinfo.append(FlexOK)
 	
 	if hasattr(font, "blue_values") and (len(font.blue_values) > 0)  and (len(font.blue_values[0]) > 0):
 		fontinfo.append("BaselineOvershoot")
