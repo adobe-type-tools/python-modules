@@ -26,7 +26,7 @@ kIndianBelowMarks = "blwm"
 ###################################################
 
 __copyright__ = __license__ =  """
-Copyright (c) 2010-2015 Adobe Systems Incorporated. All rights reserved.
+Copyright (c) 2010-2016 Adobe Systems Incorporated. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -48,7 +48,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 __doc__ = """
-WriteMarkFeaturesFDK.py v2.2.2 - Oct 12 2015
+WriteMarkFeaturesFDK.py v2.2.3 - Jun 16 2016
 
 Contains a Python class (markDataClass) which, when provided with a FontLab font and a path to a folder,
 will output a file named "mark.fea", containing a features-file syntax definition of the font's
@@ -99,6 +99,7 @@ v2.1   - Apr 26 2013 - RTL tags were changed to minimize conflicts with anchor n
 v2.2   - May 01 2013 - Fixed bug in processing FontLab classes.
 v2.2.1 - Aug 16 2013 - Changed names of output files.
 v2.2.2 - Oct 12 2015 - Improved nameless anchor check.
+v2.2.3 - Jun 16 2016 - Skip template glyphs.
 """
 
 import os, time, re
@@ -366,7 +367,8 @@ class MarkDataClass(object):
 			glyphs = []
 			glyphOrder = self.f.lib["public.glyphOrder"] # self.f.keys() can't be used because its order is not stable
 			for name in glyphOrder:
-				glyphs.append(self.f[name])
+				if name in self.f.keys(): # skip template glyphs
+					glyphs.append(self.f[name])
 		for g in glyphs:
 			gName = g.name
 			if gName not in (self.marksClassList + self.allLigaturesList):
