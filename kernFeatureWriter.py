@@ -3,29 +3,39 @@ import sys
 import time
 import itertools
 
-kDefaultFileName = 'kern.fea'
 
-kDefaultMinKern = 3
-# Inclusive; this means that pairs which equal this absolute value will
-# NOT be ignored/trimmed. Anything in the below that value will be trimmed.
+###################################################
 
-kDefaultWriteTrimmed = False
+
+default_fileName = 'kern.fea'
+# The default output filename
+
+default_minKernValue = 3
+# Default mimimum kerning value. This value is _inclusive_, which
+# means that pairs that equal this absolute value will NOT be
+# ignored/trimmed. Anything below that value will be trimmed.
+
+option_writeTrimmed = False
 # If 'False', trimmed pairs will not be processed and
 # therefore not be written to the output file.
 
-kDefaultWriteSubtables = True
-dissolveSingleGroups = True
+option_writeSubtables = True
+# Write subtables -- yes or no?
 
-kLeftTag = ['_LEFT', '_1ST', '_L_']
-kRightTag = ['_RIGHT', '_2ND', '_R_']
+option_dissolveSingleGroups = True
+# If 'True', single-element groups are written as glyphs.
 
-kRTLGroupName = 'RTL_KERNING'
 
-kArabicTag = '_ARA'
-kHebrewTag = '_HEB'
-kGenericRTLTag = '_RTL'
-kExceptionTag = 'EXC_'
-kIgnorePairTag = '.cxt'
+group_RTL = 'RTL_KERNING'
+
+tags_left = ['_LEFT', '_1ST', '_L_']
+tags_right = ['_RIGHT', '_2ND', '_R_']
+
+tag_ara = '_ARA'
+tag_heb = '_HEB'
+tag_RTL = '_RTL'
+tag_exception = 'EXC_'
+tag_ignore = '.cxt'
 
 ###################################################
 
@@ -159,8 +169,8 @@ class FLKerningData(object):
         ['@DALET_2ND_HEB', '@PAREN_RIGHT_HEB', '@PERCENT', '@T_LC_RIGHT_LAT', '@X_UC_LAT']
         '''
 
-        leftTagsList = kLeftTag
-        rightTagsList = kRightTag
+        leftTagsList = tags_left
+        rightTagsList = tags_right
 
         self.leftGroups = []
         self.rightGroups = []
@@ -238,7 +248,7 @@ class KernProcessor(object):
         self.pairs_unprocessed = []
         self.pairs_processed = []
 
-        if groups and dissolveSingleGroups:
+        if groups and option_dissolveSingleGroups:
             self.groups, self.kerning = self._dissolveSingleGroups(groups, kerning)
 
         else:
@@ -293,8 +303,8 @@ class KernProcessor(object):
         True
         '''
 
-        RTLGlyphs = self.groups.get(kRTLGroupName, [])
-        RTLkerningTags = [kArabicTag, kHebrewTag, kGenericRTLTag]
+        RTLGlyphs = self.groups.get(group_RTL, [])
+        RTLkerningTags = [tag_ara, tag_heb, tag_RTL]
 
         if set(self.groups.get(pair[0], [pair[0]]) + self.groups.get(pair[1], [pair[1]])) <= set(RTLGlyphs):
             return True
@@ -320,7 +330,7 @@ class KernProcessor(object):
         True
 
         '''
-        RTLkerningTags = [kArabicTag, kHebrewTag, kGenericRTLTag]
+        RTLkerningTags = [tag_ara, tag_heb, tag_RTL]
 
         for tag in RTLkerningTags:
             if any([tag in groupName]):
@@ -367,7 +377,10 @@ class KernProcessor(object):
 
     def _dissolveSingleGroups(self, groups, kerning):
         '''
-        Finds any groups with a single-item glyph list, which are not RTL groups.
+        Find any groups with a single-item glyph list,
+        (which are not RTL groups) which can be dissolved
+        into single, or group-to-glyph/glyph-to-group pairs.
+        The intention is avoiding an overload of the group-group subtable.
 
         >>> groups = {'@ALEF_1ST_ARA': ['arAlef', 'arAlef.f', 'arAlef.wide', 'arAlef.fwide'], '@MMK_L_SIX_FITTED_NUM': ['six.fitted'], '@MMK_R_FOUR_FITTED_NUM': ['four.fitted'], '@MMK_L_LAT_BSMALL_LC_LEFT': ['Bsmall'], '@MMK_R_LAT_X_UC_RIGHT': ['X', 'Xdieresis', 'Xdotaccent'], '@MMK_L_PERIOD': ['period', 'ellipsis'], '@MMK_R_FOUR_SC_NUM_RIGHT': ['four.sc'], '@MMK_L_CYR_IUKRAN_LC_LEFT': ['i.ukran', 'yi'], '@MMK_R_CYR_HA_LC_RIGHT': ['ha', 'hadescender']}
         >>> kerning = {('@MMK_L_SIX_FITTED_NUM', '@MMK_R_FOUR_FITTED_NUM'): 10, ('@MMK_L_LAT_BSMALL_LC_LEFT', '@MMK_R_LAT_X_UC_RIGHT'): 20, ('@MMK_L_PERIOD', '@MMK_R_FOUR_SC_NUM_RIGHT'): 10, ('@MMK_L_CYR_IUKRAN_LC_LEFT', '@MMK_R_CYR_HA_LC_RIGHT'): 10}
@@ -406,7 +419,7 @@ class KernProcessor(object):
         if totalKernPairs != processedPairs + unprocessedPairs:
             print 'Something went wrong...'
             print 'Kerning pairs provided: %s' % totalKernPairs
-            print 'Kern entries generated: %s' % processedPairs + unprocessedPairs
+            print 'Kern entries generated: %s' % (processedPairs + unprocessedPairs)
             print 'Pairs not processed: %s' % (totalKernPairs - (processedPairs + unprocessedPairs))
 
     def _explode(self, leftGlyphList, rightGlyphList):
@@ -434,12 +447,12 @@ class KernProcessor(object):
 
             # Skip pairs in which the name of the
             # left glyph contains the ignore tag.
-            if kIgnorePairTag in pair[0]:
+            if tag_ignore in pair[0]:
                 del self.kerning[pair]
                 continue
 
             # Looking for pre-defined exception pairs, and filtering them out.
-            if any([kExceptionTag in item for item in pair]):
+            if any([tag_exception in item for item in pair]):
                 self.predefined_exceptions[pair] = self.kerning[pair]
                 del self.kerning[pair]
 
@@ -644,7 +657,8 @@ class MakeMeasuredSubtables(object):
 
 class run(object):
 
-    def __init__(self, font, folderPath, minKern=kDefaultMinKern, writeSubtables=kDefaultWriteSubtables, outputFileName=kDefaultFileName):
+    def __init__(
+        self, font, folderPath, minKern=default_minKernValue, writeSubtables=option_writeSubtables, outputFileName=default_fileName):
 
         self.header = ['# Created: %s' % time.ctime()]
 
@@ -694,7 +708,7 @@ class run(object):
         outputData = self._makeOutputData()
         self.writeDataToFile(outputData, outputFileName)
 
-    def _dict2pos(self, pairValueDict, min=0, enum=False, RTL=False, writeTrimmed=kDefaultWriteTrimmed):
+    def _dict2pos(self, pairValueDict, min=0, enum=False, RTL=False, writeTrimmed=option_writeTrimmed):
         '''
         Turns a dictionary to a list of kerning pairs. In a single master font,
         the function can filter kerning pairs whose absolute value does not
