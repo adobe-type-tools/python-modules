@@ -5,15 +5,9 @@
 ###################################################
 
 kKernFeatureFileName = "kern.fea"
-
-kDefaultMinKern = 3
-# Inclusive; this means that pairs which equal this absolute value will
-# NOT be ignored/trimmed. Anything in the below that value will be trimmed.
-
-kDefaultWriteTrimmed = False
-# If 'False', trimmed pairs will not be processed and therefore
-# not be written to the output file.
-
+kDefaultMinKern = 3  #inclusive; this means that pairs which EQUAL this ABSOLUTE value will NOT be ignored/trimmed. Anything below WILL.
+kDefaultWriteTrimmed = False  #if 'False', trimmed pairs will not be processed and, therefore, will not be written to the 'kern.fea' file.
+					  #for a different default behavior change the value to 'True'.
 kDefaultWriteSubtables = True
 
 kLeftTag = ['_LEFT','_1ST', '_L_']
@@ -22,12 +16,13 @@ kRightTag = ['_RIGHT','_2ND', '_R_']
 kLatinTag = '_LAT'
 kGreekTag = '_GRK'
 kCyrillicTag = '_CYR'
-kArmenianTag = '_AM'
 kArabicTag = '_ARA'
 kHebrewTag = '_HEB'
 
+
 kNumberTag = '_NUM'
 kFractionTag = '_FRAC'
+
 kExceptionTag = 'EXC_'
 
 kIgnorePairTag = '.cxt'
@@ -57,7 +52,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 __doc__ = """
-WriteKernFeaturesFDK.py v3.6 - Apr 02 2014
+WriteKernFeaturesFDK.py v3.7 - Oct 12 2015
 
 Contains a class (KernDataClass) which, when provided with a UFO or FontLab font, will output
 a file named "kern.fea", containing a features-file syntax definition of the font's kerning.
@@ -80,7 +75,7 @@ should be followed:
 	Cyrillic glyph classes must contain the string "_CYR"
 
 	Exception classes must start with the string "EXC_" and the key glyph of the class (marked by a single
-	quote [']) can NOT be the same as the key glyph of another kerning class.
+		quote [']) can NOT be the same as the key glyph of another kerning class.
 
 	Examples of kerning classes (in FontLab syntax):
 		_A_LC_RIGHT: a' a.end aacute acircumflex adieresis agrave ae
@@ -141,6 +136,7 @@ v3.3.2 - Aug 16 2013 - Changed names of output files.
 v3.4   - Jan 22 2014 - Fixed the sorting of group-glyph pairs; they must be placed among group-group pairs, otherwise subtable breaks may prevent pairs (that have the same left group) downstream from working.
 v3.5   - Jan 27 2014 - Skip the pairs involving groups that have a value of zero; retaining these pairs has no impact on LTR kerning, but it's damaging for RTL kerning because zero value pairs trigger the start of a new subtable.
 v3.6   - Apr 02 2014 - Write only classes involved in kerning.
+v3.7   - Oct 12 2015 - Make it work with defcon's ufo3 branch.
 
 """
 
@@ -309,7 +305,7 @@ class KernDataClass(object):
 			# self.groupOrder.sort(key=lambda x: (x.split('_')[1], len(x)))
 
 			self.analyzeGroups()
-			self.kerning = self.f.kerning
+			self.kerning = self.stripPublicPrefix(self.f.kerning)
 
 
 		self.header.append('# MinKern: +/- %s inclusive' % self.minKern)
@@ -329,6 +325,17 @@ class KernDataClass(object):
 		self.writeDataToFile()
 
 
+	def stripPublicPrefix(self, kerningDict):
+		newKerningDict = {}
+		for (first, second), value in kerningDict.items():
+			if 'public.kern1.' in first:
+				first = first.replace('public.kern1.', '')
+			if 'public.kern2.' in second:
+				second = second.replace('public.kern2.', '')
+			newKerningDict[(first, second)] = value
+		return newKerningDict
+
+
 	def findGroupsUsedInKerning(self):
 		'''
 		Finds all groups used in kerning, and filters all other groups.
@@ -338,6 +345,10 @@ class KernDataClass(object):
 		'''
 		kerningGroupDict = {}
 		for (first, second), value in self.f.kerning.items():
+			if 'public.kern1.' in first:
+				first = first.replace('public.kern1.', '')
+			if 'public.kern2.' in second:
+				second = second.replace('public.kern2.', '')
 			if self.isGroup(first):
 				kerningGroupDict.setdefault(first, self.f.groups[first])
 			if self.isGroup(second):
@@ -399,7 +410,7 @@ class KernDataClass(object):
 
 	def returnGroupTag(self, groupName):
 		'Returns group tag (e.g. _CYR, _EXC, _LAT) for a given group name (e.g. @A_LC_LEFT_LAT)'
-		tags = [kLatinTag, kGreekTag, kCyrillicTag, kArmenianTag, kArabicTag, kHebrewTag, kNumberTag, kFractionTag, kExceptionTag]
+		tags = [kLatinTag, kGreekTag, kCyrillicTag, kArabicTag, kHebrewTag, kNumberTag, kFractionTag, kExceptionTag]
 		foundTag = None
 
 		for tag in tags:
@@ -725,7 +736,7 @@ class KernDataClass(object):
 
 			# glyph-class subtables
 			# ---------------------
-			glyph_to_class_subtables = MakeSubtables(self.glyph_group_dict, subtableTrigger='second').subtables
+			glyph_to_class_subtables = MakeSubtables(self.glyph_group_dict, checkSide='second').subtables
 			self.output.append( '\n# glyph, group:' )
 
 			for table in glyph_to_class_subtables:
@@ -801,7 +812,7 @@ class KernDataClass(object):
 
 			# RTL glyph-class subtables
 			# -------------------------
-			RTL_glyph_class_subtables = MakeSubtables(self.RTLglyph_group_dict, subtableTrigger='second', RTL=True).subtables
+			RTL_glyph_class_subtables = MakeSubtables(self.RTLglyph_group_dict, checkSide='second', RTL=True).subtables
 			self.output.append( '\n# RTL glyph, group:' )
 
 			for table in RTL_glyph_class_subtables:
@@ -871,10 +882,10 @@ class KernDataClass(object):
 
 
 class MakeSubtables(KernDataClass):
-	def __init__(self, kernDict, subtableTrigger='first', RTL=False):
+	def __init__(self, kernDict, checkSide='first', RTL=False):
 		self.kernDict  = kernDict
 		self.RTL       = RTL		# Is the kerning RTL or not?
-		self.subtableTrigger = subtableTrigger	# Which side of the pair is triggering the subtable decision?
+		self.checkSide = checkSide	# Which side of the pair is triggering the subtable decision?
 									# "first" would be the left side for LTR, right for RTL.
 									# "second" would be the right side for LTR, left for RTL.
 
@@ -885,7 +896,6 @@ class MakeSubtables(KernDataClass):
 			kLatinTag: {},
 			kGreekTag: {},
 			kCyrillicTag: {},
-			kArmenianTag: {},
 			kArabicTag: {},
 			kHebrewTag: {},
 			kNumberTag: {},
@@ -899,12 +909,17 @@ class MakeSubtables(KernDataClass):
 			'other': self.otherPairs_dict
 		}
 
-		self.subtableOrder = [kLatinTag, kGreekTag, kCyrillicTag, kArmenianTag, kArabicTag, kHebrewTag, kNumberTag, kFractionTag, 'other']
+		self.subtableOrder = [kLatinTag, kGreekTag, kCyrillicTag, kArabicTag, kHebrewTag, kNumberTag, kFractionTag, 'other']
 		# The order in which subtables are written
+
+		if RTL:
+			self.subtables = [self.RTLtagDict[i] for i in self.subtableOrder if i in self.RTLtagDict]
+		else:
+			self.subtables = [self.LTRtagDict[i] for i in self.subtableOrder]
 
 
 		'Split class-to-class kerning into subtables.'
-		if self.subtableTrigger == 'first':
+		if self.checkSide == 'first':
 			# Creates 'traditional' subtables, for class-to-class, and class-to-glyph kerning.
 			for pair in self.kernDict.keys()[::-1]:
 				first, second, tagDict = self.analyzePair(pair)
@@ -918,10 +933,9 @@ class MakeSubtables(KernDataClass):
 				self.otherPairs_dict[pair] = self.kernDict[pair]
 
 
-		if self.subtableTrigger == 'second':
+		if self.checkSide == 'second':
 
-			# Create dictionary of all glyphs on the left side, and the language
-			# tags of classes those glyphs are kerned against (e.g. _LAT, _GRK)
+			# Create dictionary of all glyphs on the left side, and the language tags of classes those glyphs are kerned against (e.g. _LAT, _GRK)
 			kernPartnerLanguageTags = {}
 			for pair in self.kernDict:
 				first, second, tagDict = self.analyzePair(pair)
@@ -936,50 +950,12 @@ class MakeSubtables(KernDataClass):
 				for tag in tagDict:
 					if self.checkGroupForTag(tag, second) and len(kernPartnerLanguageTags[first]) == 1:
 						# Using the previously created kernPartnerLanguageTags
-						# If any glyph is kerned against more than one language system,
-						# it has to go to the 'otherPairs_dict' subtable.
+						# If any glyph is kerned against more than one language system, it has to go to the 'otherPairs_dict' subtable.
 						tagDict[tag][pair] = self.kernDict[pair]
 						del self.kernDict[pair]
 
-			'This splits the glyph-to-class part into subtables of 1000 left-side items.'
-			if len(self.kernDict) < 1000:
-				self.otherPairs_dict.update(self.kernDict)
-
-			else:
-				# find all the first elements in a kerning pair, since the subtable
-				# split can only happen between chunks of left elements
-				firstItems = sorted(set([first for first, second in self.kernDict.keys()]))
-
-				# lambda function to split a list into sublists
-				splitList = lambda A, n=100 : [A[i:i+n] for i in range(0, len(A), n)]
-				subTableList = splitList(firstItems)
-
-				for chunk in subTableList:
-					subtableIndex = subTableList.index(chunk)
-					pairlist = sorted([(left, right) for (left, right) in self.kernDict.keys() if left in chunk])
-
-					if subtableIndex == 0:
-						# for the first item in the list, no modification
-						# of the subtable list order is necessary.
-						for pair in pairlist:
-							self.otherPairs_dict[pair] = self.kernDict[pair]
-							del self.kernDict[pair]
-
-					else:
-						subtableName = 'other_%s' % subtableIndex
-						self.LTRtagDict[subtableName] = {}
-						self.subtableOrder.append(subtableName)
-
-						for pair in pairlist:
-							self.LTRtagDict[subtableName][pair] = self.kernDict[pair]
-							del self.kernDict[pair]
-
-
-		if RTL:
-			self.subtables = [self.RTLtagDict[i] for i in self.subtableOrder if i in self.RTLtagDict]
-		else:
-			self.subtables = [self.LTRtagDict[i] for i in self.subtableOrder]
-
+			for pair in self.kernDict:
+				self.otherPairs_dict[pair] = self.kernDict[pair]
 
 
 	def analyzePair(self, pair):
