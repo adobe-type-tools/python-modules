@@ -40,7 +40,7 @@ tag_ignore = '.cxt'
 ###################################################
 
 __copyright__ = __license__ = '''
-Copyright (c) 2006-2014 Adobe Systems Incorporated. All rights reserved.
+Copyright (c) 2006-2016 Adobe Systems Incorporated. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -62,8 +62,27 @@ THE SOFTWARE.
 '''
 
 __doc__ = '''
+kernFeatureWriter.py 1.0 - Sept 2016
 
-WriteKernFeaturesFDK.py v4 - Oct 2015
+Rewrite of WriteFeaturesKernFDK.py, which will eventually be replaced by
+this module. The main motivation for this were problems with kerning
+subtable overflow.
+
+Main improvements of this script compared to WriteFeaturesKernFDK.py:
+-   can be called from the command line, with a UFO file as an argument
+-   automatic subtable measuring
+-   has the ability to dissolve single-glyph groups into glyph-pairs
+    (this feature was written for subtable optimization)
+-   can identify glyph-to-glyph RTL kerning (requirement: all RTL glyphs
+    are part of a catch-all @RTL_KERNING group)
+
+To do:
+-   Write proper tests for individual functions.
+    Some doctests were written, but not enough for all scenarios
+-   Measure the `mark` feature, which also contributes to the size of the
+    GPOS table (and therefore indirectly influences kerning overflow).
+-   Test kerning integrity, to make sure referenced glyphs actually exist
+    (and building binaries doesn't fail).
 
 '''
 
@@ -955,4 +974,3 @@ if __name__ == '__main__':
         if not hasattr(f, 'kerningGroupConversionRenameMaps'):
             f.kerningGroupConversionRenameMaps = None
         run(f, os.path.dirname(f.path))
-
