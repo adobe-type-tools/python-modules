@@ -49,6 +49,15 @@ WriteFeaturesKernFDK.KernDataClass(f, instanceFolder, minKern, writeTrimmed, wri
 
 ```
 
+----
+
+The new `kernFeatureWriter.py` module is currently in development. It produces the same results as the old `WriteFeaturesKernFDK` module, but can be used in a more seamless way:
+
+```
+python kernFeatureWriter.py font.ufo
+```
+
+The main motivation for writing this new module were problems with kerning subtable overflow.  
 
 ### mark feature writer module
 
