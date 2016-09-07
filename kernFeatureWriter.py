@@ -694,8 +694,11 @@ class run(object):
             self.header.append('# PS Name: %s' % self.f.info.postscriptFontName)
 
             self.MM = False
-            self.kerning = self.f.kerning
-            self.groups = self.f.groups
+            if self.f.kerningGroupConversionRenameMaps:
+                self.kerning, self.groups = self._remapGroupNames(self.f)
+            else:
+                self.kerning = self.f.kerning
+                self.groups = self.f.groups
             self.groupOrder = sorted(self.groups.keys())
 
         if not self.kerning:
@@ -707,6 +710,30 @@ class run(object):
 
         outputData = self._makeOutputData()
         self.writeDataToFile(outputData, outputFileName)
+
+    def _remapGroupNames(self, font):
+        '''
+        In UFO3 the group names have public prefixes. Remove these by using the
+        kerningGroupConversionRenameMaps dictionary.
+        '''
+        noPrefixToPrefixDict = font.kerningGroupConversionRenameMaps['side1']
+        noPrefixToPrefixDict.update(font.kerningGroupConversionRenameMaps['side2'])
+        prefixToNoPrefixDict = {v: k for k, v in noPrefixToPrefixDict.items()}
+
+        remapedGroupsDict = {}
+        for prefixedGroupName in font.groups.keys():
+            if prefixedGroupName in prefixToNoPrefixDict:
+                remapedGroupsDict[prefixToNoPrefixDict[prefixedGroupName]] = font.groups[prefixedGroupName]
+
+        remapedKerningDict = {}
+        for (first, second), value in font.kerning.items():
+            if first in prefixToNoPrefixDict:
+                first = prefixToNoPrefixDict[first]
+            if second in prefixToNoPrefixDict:
+                second = prefixToNoPrefixDict[second]
+            remapedKerningDict[(first, second)] = value
+
+        return remapedKerningDict, remapedGroupsDict
 
     def _dict2pos(self, pairValueDict, min=0, enum=False, RTL=False, writeTrimmed=option_writeTrimmed):
         '''
@@ -925,4 +952,7 @@ if __name__ == '__main__':
         fPath = arguments[-1]
         fPath = fPath.rstrip('/')
         f = defcon.Font(fPath)
+        if not hasattr(f, 'kerningGroupConversionRenameMaps'):
+            f.kerningGroupConversionRenameMaps = None
         run(f, os.path.dirname(f.path))
+
