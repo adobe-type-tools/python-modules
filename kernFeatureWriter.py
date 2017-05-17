@@ -1,11 +1,8 @@
 import os
 import time
+import pprint
 import itertools
 import argparse
-
-
-###################################################
-
 
 default_fileName = 'kern.fea'
 # The default output filename
@@ -253,7 +250,8 @@ class KernProcessor(object):
         if groups:
             self.grouped_left = self._getAllGroupedGlyphs(side='left')
             self.grouped_right = self._getAllGroupedGlyphs(side='right')
-            self._findExceptions()
+
+        self._findExceptions()
 
         if self.kerning and len(self.kerning.keys()):
             usedGroups = self._getUsedGroups(self.kerning)
@@ -406,7 +404,8 @@ class KernProcessor(object):
 
     def _sanityCheck(self, kerning):
         '''
-        Checks if the number of kerning pairs input equals the number of kerning entries output.
+        Checks if the number of kerning pairs input
+        equals the number of kerning entries output.
         '''
         totalKernPairs = len(self.kerning.keys())
         processedPairs = len(self.pairs_processed)
@@ -568,6 +567,7 @@ class MakeMeasuredSubtables(object):
         self.numberOfKernedGlyphs = self._getNumberOfKernedGlyphs(kerning, groups)
 
         coverageTableSize = 2 + (2 * self.numberOfKernedGlyphs)
+        print coverageTableSize
         # maxSubtableSize = 2 ** 16
         maxSubtableSize = 2 ** 14
         # If Extension is not used, coverage and class subtables are
@@ -707,7 +707,8 @@ class run(object):
         self.header.append('# exported from %s' % appTest.appName)
 
         outputData = self._makeOutputData()
-        self.writeDataToFile(outputData, outputFileName)
+        if outputData:
+            self.writeDataToFile(outputData, outputFileName)
 
     def _remapGroupNames(self, font):
         '''
@@ -822,7 +823,6 @@ class run(object):
         # ---------------
         # list of groups:
         # ---------------
-
         for groupName in kp.groupOrder:
             glyphList = kp.groups[groupName]
             output.append('%s = [%s];' % (groupName, ' '.join(glyphList)))
@@ -830,64 +830,67 @@ class run(object):
         # ------------------
         # LTR kerning pairs:
         # ------------------
-
         LTRorder = [
-            # dictName                   # minKern       # comment                           # enum
-            (kp.predefined_exceptions,   0,              '\n# pre-defined exceptions:',      True),
-            (kp.glyph_glyph,             self.minKern,   '\n# glyph, glyph:',                False),
-            (kp.glyph_glyph_exceptions,  0,              '\n# glyph, glyph exceptions:',     False),
-            (kp.glyph_group_exceptions,  0,              '\n# glyph, group exceptions:',     True),
-            (kp.group_glyph_exceptions,  0,              '\n# group, glyph exceptions:',     True),
+            # container_dict            # minKern     # comment                       # enum
+            (kp.predefined_exceptions,  0,            '\n# pre-defined exceptions:',  True),
+            (kp.glyph_glyph,            self.minKern, '\n# glyph, glyph:',            False),
+            (kp.glyph_glyph_exceptions, 0,            '\n# glyph, glyph exceptions:', False),
+            (kp.glyph_group_exceptions, 0,            '\n# glyph, group exceptions:', True),
+            (kp.group_glyph_exceptions, 0,            '\n# group, glyph exceptions:', True),
         ]
 
         LTRorderExtension = [
             # in case no subtables are desired
-            (kp.glyph_group,             self.minKern,   '\n# glyph, group:',                False),
-            (kp.group_group,             self.minKern,   '\n# group, group/glyph:',          False),
+            (kp.glyph_group,            self.minKern, '\n# glyph, group:',            False),
+            (kp.group_group,            self.minKern, '\n# group, group/glyph:',      False),
         ]
 
         # ------------------
         # RTL kerning pairs:
         # ------------------
-
         RTLorder = [
-            # dictName                       # minKern       # comment                               # enum
-            (kp.rtl_predefined_exceptions,    0,              '\n# RTL pre-defined exceptions:',      True),
-            (kp.rtl_glyph_glyph,              self.minKern,   '\n# RTL glyph, glyph:',                False),
-            (kp.rtl_glyph_glyph_exceptions,   0,              '\n# RTL glyph, glyph exceptions:',     False),
-            (kp.rtl_glyph_group_exceptions,   0,              '\n# RTL glyph, group exceptions:',     True),
-            (kp.rtl_group_glyph_exceptions,   0,              '\n# RTL group, glyph exceptions:',     True),
+            # container_dict                # minKern     # comment                           # enum
+            (kp.rtl_predefined_exceptions,  0,            '\n# RTL pre-defined exceptions:',  True),
+            (kp.rtl_glyph_glyph,            self.minKern, '\n# RTL glyph, glyph:',            False),
+            (kp.rtl_glyph_glyph_exceptions, 0,            '\n# RTL glyph, glyph exceptions:', False),
+            (kp.rtl_glyph_group_exceptions, 0,            '\n# RTL glyph, group exceptions:', True),
+            (kp.rtl_group_glyph_exceptions, 0,            '\n# RTL group, glyph exceptions:', True),
         ]
 
         RTLorderExtension = [
             # in case no subtables are desired
-            (kp.rtl_glyph_group,              self.minKern,   '\n# RTL glyph, group:',                False),
-            (kp.rtl_group_group,              self.minKern,   '\n# RTL group, group/glyph:',          False)
+            (kp.rtl_glyph_group,            self.minKern, '\n# RTL glyph, group:',            False),
+            (kp.rtl_group_group,            self.minKern, '\n# RTL group, group/glyph:',      False)
         ]
 
         if not self.writeSubtables:
             LTRorder.extend(LTRorderExtension)
             RTLorder.extend(RTLorderExtension)
 
-        for dictName, minKern, comment, enum in LTRorder:
-            if len(dictName):
+        for container_dict, minKern, comment, enum in LTRorder:
+            if container_dict:
                 output.append(comment)
-                output.append(self._dict2pos(dictName, minKern, enum))
-                self.processedPairs += len(dictName)
+                output.append(
+                    self._dict2pos(container_dict, minKern, enum))
+                self.processedPairs += len(container_dict)
 
         if self.writeSubtables:
             self.subtablesCreated = 0
 
-            glyph_to_class_subtables = MakeMeasuredSubtables(kp.glyph_group, kp.kerning, kp.groups).subtables
-            output.extend(self._buildSubtableOutput(glyph_to_class_subtables, '\n# glyph, group:'))
+            glyph_to_class_subtables = MakeMeasuredSubtables(
+                kp.glyph_group, kp.kerning, kp.groups).subtables
+            output.extend(self._buildSubtableOutput(
+                glyph_to_class_subtables, '\n# glyph, group:'))
 
-            class_to_class_subtables = MakeMeasuredSubtables(kp.group_group, kp.kerning, kp.groups).subtables
-            output.extend(self._buildSubtableOutput(class_to_class_subtables, '\n# group, glyph and group, group:'))
+            class_to_class_subtables = MakeMeasuredSubtables(
+                kp.group_group, kp.kerning, kp.groups).subtables
+            output.extend(self._buildSubtableOutput(
+                class_to_class_subtables, '\n# group, glyph and group, group:'))
 
         # Checking if RTL pairs exist
         rtlPairsExist = False
-        for dictName, minKern, comment, enum in RTLorderExtension + RTLorder:
-            if len(dictName.keys()):
+        for container_dict, minKern, comment, enum in RTLorderExtension + RTLorder:
+            if container_dict.keys():
                 rtlPairsExist = True
                 break
 
@@ -898,20 +901,25 @@ class run(object):
 
             output.append(lookupRTLopen)
 
-            for dictName, minKern, comment, enum in RTLorder:
-                if len(dictName):
+            for container_dict, minKern, comment, enum in RTLorder:
+                if container_dict:
                     output.append(comment)
-                    output.append(self._dict2pos(dictName, minKern, enum, RTL=True))
-                    self.processedPairs += len(dictName)
+                    output.append(
+                        self._dict2pos(container_dict, minKern, enum, RTL=True))
+                    self.processedPairs += len(container_dict)
 
             if self.writeSubtables:
                 self.RTLsubtablesCreated = 0
 
-                rtl_glyph_class_subtables = MakeMeasuredSubtables(kp.rtl_glyph_group, kp.kerning, kp.groups).subtables
-                output.extend(self._buildSubtableOutput(rtl_glyph_class_subtables, '\n# RTL glyph, group:', RTL=True))
+                rtl_glyph_class_subtables = MakeMeasuredSubtables(
+                    kp.rtl_glyph_group, kp.kerning, kp.groups).subtables
+                output.extend(self._buildSubtableOutput(
+                    rtl_glyph_class_subtables, '\n# RTL glyph, group:', RTL=True))
 
-                rtl_class_class_subtables = MakeMeasuredSubtables(kp.rtl_group_group, kp.kerning, kp.groups).subtables
-                output.extend(self._buildSubtableOutput(rtl_class_class_subtables, '\n# RTL group, glyph and group, group:', RTL=True))
+                rtl_class_class_subtables = MakeMeasuredSubtables(
+                    kp.rtl_group_group, kp.kerning, kp.groups).subtables
+                output.extend(self._buildSubtableOutput(
+                    rtl_class_class_subtables, '\n# RTL group, glyph and group, group:', RTL=True))
 
             output.append(lookupRTLclose)
 
@@ -995,8 +1003,8 @@ if __name__ == '__main__':
 
             run(f, f_dir,
                 minKern=args.min,
-                writeSubtables=args.sub,
+                writeSubtables=args.subtables,
                 outputFileName=args.out
-            )
+                )
         else:
             print f_path, 'does not exist.'
