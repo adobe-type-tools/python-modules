@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import itertools
+import argparse
 
 
 ###################################################
@@ -677,8 +678,11 @@ class MakeMeasuredSubtables(object):
 class run(object):
 
     def __init__(
-        self, font, folderPath, minKern=default_minKernValue, writeSubtables=option_writeSubtables, outputFileName=default_fileName):
-
+        self, font, folderPath,
+        minKern=default_minKernValue,
+        writeSubtables=option_writeSubtables,
+        outputFileName=default_fileName
+    ):
         self.header = ['# Created: %s' % time.ctime()]
 
         appTest = WhichApp()
@@ -960,17 +964,66 @@ class run(object):
 
 if __name__ == '__main__':
     arguments = sys.argv
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawTextHelpFormatter,
+        # formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        'input_file',
+        help='input font file')
 
-    if '-t' in arguments:
+    parser.add_argument(
+        '-out', metavar='OUTPUT_NAME', action='store',
+        default=default_fileName,
+        help='change the output file name\n(default: %s)' % default_fileName)
+
+    parser.add_argument(
+        '-min',
+        action='store', metavar='VALUE', default=3,
+        help='minimum kerning value\n(default: %s)' % default_minKernValue)
+
+    parser.add_argument(
+        '-sub', '--subtables', action='store_true',
+        help='write subtables\n(default: %s)' % option_writeSubtables)
+
+    parser.add_argument(
+        '-trm', '--w_trimmed', action='store_true',
+        help='write trimmed pairs to fea file (as comments)\n(default: %s)' % option_writeTrimmed)
+
+    parser.add_argument(
+        '-dis', '--dissolve', action='store_true',
+        help='dissolve single-element groups to glyph names\n(default: %s)' % option_dissolveSingleGroups)
+
+    parser.add_argument(
+        '-t', '--test', action='store_true', help='test mode')
+
+    parser.add_argument(
+        '-x', action='store_true', help='test args')
+
+    args = parser.parse_args()
+    # print args
+
+    if args.test:
 
         import doctest
         doctest.testmod()
 
     else:
+        f_path = os.path.normpath(args.input_file)
+        f_dir = os.path.dirname(f_path)
         import defcon
-        fPath = arguments[-1]
-        fPath = fPath.rstrip('/')
-        f = defcon.Font(fPath)
-        if not hasattr(f, 'kerningGroupConversionRenameMaps'):
-            f.kerningGroupConversionRenameMaps = None
-        run(f, os.path.dirname(f.path))
+        if os.path.exists(f_path):
+
+            f = defcon.Font(f_path)
+
+            if not hasattr(f, 'kerningGroupConversionRenameMaps'):
+                f.kerningGroupConversionRenameMaps = None
+
+            run(f, f_dir,
+                minKern=args.min,
+                writeSubtables=args.sub,
+                outputFileName=args.out
+                )
+        else:
+            print f_path, 'does not exist.'
