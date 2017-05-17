@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 import itertools
 import argparse
@@ -930,7 +929,7 @@ class run(object):
         with open(outputPath, 'w') as outfile:
             outfile.write('\n'.join(self.header))
             outfile.write('\n\n')
-            if len(data):
+            if data:
                 outfile.write('\n'.join(data))
                 outfile.write('\n')
 
@@ -939,7 +938,7 @@ class run(object):
 
 
 if __name__ == '__main__':
-    arguments = sys.argv
+
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -956,7 +955,7 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '-min',
-        action='store', metavar='VALUE', default=3,
+        action='store', metavar='VALUE', default=default_minKernValue,
         help='minimum kerning value\n(default: %s)' % default_minKernValue)
 
     parser.add_argument(
@@ -998,6 +997,6 @@ if __name__ == '__main__':
                 minKern=args.min,
                 writeSubtables=args.sub,
                 outputFileName=args.out
-                )
+            )
         else:
             print f_path, 'does not exist.'
