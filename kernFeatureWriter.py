@@ -12,14 +12,20 @@ default_minKernValue = 3
 # means that pairs that equal this absolute value will NOT be
 # ignored/trimmed. Anything below that value will be trimmed.
 
+default_subtableSize = 2 ** 14
+# The maximum possible subtable size is 2 ** 16 = 65536.
+# Since every other GPOS feature counts against that size,
+# it needs to be quite a bit smaller.
+# 2 ** 14 has been a good value for Source Serif.
+
 option_writeTrimmed = False
 # If 'False', trimmed pairs will not be processed and
 # therefore not be written to the output file.
 
-option_writeSubtables = True
+option_writeSubtables = False
 # Write subtables -- yes or no?
 
-option_dissolveSingleGroups = True
+option_dissolveSingleGroups = False
 # If 'True', single-element groups are written as glyphs.
 
 
@@ -560,16 +566,20 @@ class KernProcessor(object):
 
 class MakeMeasuredSubtables(object):
 
-    def __init__(self, kernDict, kerning, groups):
+    def __init__(
+        self, kernDict, kerning, groups,
+        maxSubtableSize=default_subtableSize
+    ):
 
         self.kernDict = kernDict
         self.subtables = []
         self.numberOfKernedGlyphs = self._getNumberOfKernedGlyphs(kerning, groups)
 
         coverageTableSize = 2 + (2 * self.numberOfKernedGlyphs)
-        print coverageTableSize
-        # maxSubtableSize = 2 ** 16
-        maxSubtableSize = 2 ** 14
+        # maxSubtableSize = 2 ** 14
+
+        print 'coverage table size:', coverageTableSize
+        print '  max subtable size:', maxSubtableSize
         # If Extension is not used, coverage and class subtables are
         # pushed to very end of GPOS block.
         #
@@ -656,7 +666,9 @@ class run(object):
         self, font, folderPath,
         minKern=default_minKernValue,
         writeSubtables=option_writeSubtables,
-        outputFileName=default_fileName
+        outputFileName=default_fileName,
+        writeTrimmed=option_writeTrimmed,
+        subtableSize=default_subtableSize,
     ):
         self.header = ['# Created: %s' % time.ctime()]
 
@@ -668,6 +680,8 @@ class run(object):
 
         self.minKern = minKern
         self.writeSubtables = writeSubtables
+        self.subtableSize = subtableSize
+        self.writeTrimmed = writeTrimmed
 
         # This does not do anything really. Remove or fix
         self.processedPairs = 0
@@ -734,7 +748,7 @@ class run(object):
 
         return remapedKerningDict, remapedGroupsDict
 
-    def _dict2pos(self, pairValueDict, min=0, enum=False, RTL=False, writeTrimmed=option_writeTrimmed):
+    def _dict2pos(self, pairValueDict, min=0, enum=False, RTL=False):
         '''
         Turns a dictionary to a list of kerning pairs. In a single master font,
         the function can filter kerning pairs whose absolute value does not
@@ -778,7 +792,7 @@ class run(object):
                     data.append(enumLine)
                 else:
                     if abs(kernValue) < min:
-                        if writeTrimmed:
+                        if self.writeTrimmed:
                             data.append('# %s' % posLine)
                         trimmed += 1
                     else:
@@ -810,8 +824,9 @@ class run(object):
                     if self.subtablesCreated > 1:
                         subtableOutput.append(subtableBreak)
 
-                subtableOutput.append(self._dict2pos(table, self.minKern, RTL=RTL))
-
+                subtableOutput.append(
+                    self._dict2pos(table, self.minKern, RTL=RTL))
+        print '%s subtables created' % self.subtablesCreated
         return subtableOutput
 
     def _makeOutputData(self):
@@ -878,12 +893,14 @@ class run(object):
             self.subtablesCreated = 0
 
             glyph_to_class_subtables = MakeMeasuredSubtables(
-                kp.glyph_group, kp.kerning, kp.groups).subtables
+                kp.glyph_group, kp.kerning, kp.groups,
+                self.subtableSize).subtables
             output.extend(self._buildSubtableOutput(
                 glyph_to_class_subtables, '\n# glyph, group:'))
 
             class_to_class_subtables = MakeMeasuredSubtables(
-                kp.group_group, kp.kerning, kp.groups).subtables
+                kp.group_group, kp.kerning, kp.groups,
+                self.subtableSize).subtables
             output.extend(self._buildSubtableOutput(
                 class_to_class_subtables, '\n# group, glyph and group, group:'))
 
@@ -912,12 +929,14 @@ class run(object):
                 self.RTLsubtablesCreated = 0
 
                 rtl_glyph_class_subtables = MakeMeasuredSubtables(
-                    kp.rtl_glyph_group, kp.kerning, kp.groups).subtables
+                    kp.rtl_glyph_group, kp.kerning, kp.groups,
+                    self.subtableSize).subtables
                 output.extend(self._buildSubtableOutput(
                     rtl_glyph_class_subtables, '\n# RTL glyph, group:', RTL=True))
 
                 rtl_class_class_subtables = MakeMeasuredSubtables(
-                    kp.rtl_group_group, kp.kerning, kp.groups).subtables
+                    kp.rtl_group_group, kp.kerning, kp.groups,
+                    self.subtableSize).subtables
                 output.extend(self._buildSubtableOutput(
                     rtl_class_class_subtables, '\n# RTL group, glyph and group, group:', RTL=True))
 
@@ -963,12 +982,18 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '-min',
-        action='store', metavar='VALUE', default=default_minKernValue,
+        action='store', metavar='VALUE',
+        default=default_minKernValue, type=int,
         help='minimum kerning value\n(default: %s)' % default_minKernValue)
 
     parser.add_argument(
         '-sub', '--subtables', action='store_true',
         help='write subtables\n(default: %s)' % option_writeSubtables)
+
+    parser.add_argument(
+        '-sts', metavar='VALUE', action='store',
+        default=default_subtableSize, type=int,
+        help='specify max subtable size\n(default: %s)' % default_subtableSize)
 
     parser.add_argument(
         '-trm', '--w_trimmed', action='store_true',
@@ -986,9 +1011,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     if args.test:
-
-        import doctest
-        doctest.testmod()
+        pprint.pprint(args.__dict__)
+        # import doctest
+        # doctest.testmod()
 
     else:
         f_path = os.path.normpath(args.input_file)
@@ -1004,7 +1029,9 @@ if __name__ == '__main__':
             run(f, f_dir,
                 minKern=args.min,
                 writeSubtables=args.subtables,
-                outputFileName=args.out
+                outputFileName=args.out,
+                writeTrimmed=args.w_trimmed,
+                subtableSize=args.sts,
                 )
         else:
             print f_path, 'does not exist.'
