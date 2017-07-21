@@ -738,20 +738,20 @@ class run(object):
         noPrefixToPrefixDict.update(font.kerningGroupConversionRenameMaps['side2'])
         prefixToNoPrefixDict = {v: k for k, v in noPrefixToPrefixDict.items()}
 
-        remapedGroupsDict = {}
+        remappedGroupsDict = {}
         for prefixedGroupName in font.groups.keys():
             if prefixedGroupName in prefixToNoPrefixDict:
-                remapedGroupsDict[prefixToNoPrefixDict[prefixedGroupName]] = font.groups[prefixedGroupName]
+                remappedGroupsDict[prefixToNoPrefixDict[prefixedGroupName]] = font.groups[prefixedGroupName]
 
-        remapedKerningDict = {}
+        remappedKerningDict = {}
         for (first, second), value in font.kerning.items():
             if first in prefixToNoPrefixDict:
                 first = prefixToNoPrefixDict[first]
             if second in prefixToNoPrefixDict:
                 second = prefixToNoPrefixDict[second]
-            remapedKerningDict[(first, second)] = value
+            remappedKerningDict[(first, second)] = value
 
-        return remapedKerningDict, remapedGroupsDict
+        return remappedKerningDict, remappedGroupsDict
 
     def _dict2pos(self, pairValueDict, min=0, enum=False, RTL=False):
         '''
