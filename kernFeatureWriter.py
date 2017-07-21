@@ -224,7 +224,11 @@ class FLKerningData(object):
 
 
 class KernProcessor(object):
-    def __init__(self, groups=None, kerning=None, groupOrder=None):
+    def __init__(
+        self,
+        groups=None, kerning=None,
+        groupOrder=None, option_dissolve=False
+    ):
 
         # kerning dicts containing pair-value combinations
         self.glyph_glyph = {}
@@ -246,7 +250,7 @@ class KernProcessor(object):
         self.pairs_unprocessed = []
         self.pairs_processed = []
 
-        if groups and option_dissolveSingleGroups:
+        if groups and option_dissolve:
             self.groups, self.kerning = self._dissolveSingleGroups(groups, kerning)
 
         else:
@@ -394,7 +398,6 @@ class KernProcessor(object):
 
         '''
         singleGroups = dict([(groupName, glyphList) for groupName, glyphList in groups.items() if len(glyphList) == 1 and not self._isRTLGroup(groupName)])
-
         if singleGroups:
             dissolvedKerning = {}
             for (left, right), value in kerning.items():
@@ -669,6 +672,7 @@ class run(object):
         outputFileName=default_fileName,
         writeTrimmed=option_writeTrimmed,
         subtableSize=default_subtableSize,
+        dissolveGroups=option_dissolveSingleGroups,
     ):
         self.header = ['# Created: %s' % time.ctime()]
 
@@ -682,6 +686,7 @@ class run(object):
         self.writeSubtables = writeSubtables
         self.subtableSize = subtableSize
         self.writeTrimmed = writeTrimmed
+        self.dissolveGroups = dissolveGroups
 
         # This does not do anything really. Remove or fix
         self.processedPairs = 0
@@ -833,7 +838,12 @@ class run(object):
         'Building the output data.'
 
         output = []
-        kp = KernProcessor(self.groups, self.kerning, self.groupOrder)
+        kp = KernProcessor(
+            self.groups,
+            self.kerning,
+            self.groupOrder,
+            self.dissolveGroups
+        )
 
         # ---------------
         # list of groups:
@@ -1032,6 +1042,7 @@ if __name__ == '__main__':
                 outputFileName=args.out,
                 writeTrimmed=args.w_trimmed,
                 subtableSize=args.sts,
+                dissolveGroups=args.dissolve,
                 )
         else:
             print f_path, 'does not exist.'
