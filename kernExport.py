@@ -29,7 +29,6 @@ class ClassKerningToUFO(object):
     def __init__(self, font, prefixOption=None):
 
         self.f = font
-        self.destFont = self.getUFO()
 
         self.leftKeyGlyphs = {}
         self.rightKeyGlyphs = {}
@@ -53,38 +52,6 @@ class ClassKerningToUFO(object):
 
         self.run()
 
-    def goodbye(self):
-        print 'Unhappy End.'
-
-    def getUFO(self):
-        UFOfound = False
-        assumedUFO = self.f.file_name.replace('.vfb', '.ufo')
-
-        if os.path.exists(assumedUFO):
-            print 'UFO found at %s.' % assumedUFO
-            foundFont = defconFont(assumedUFO)
-            UFOfound = True
-
-        else:
-            try:
-                from robofab.interface.all.dialogs import GetFile
-            except ImportError:
-                print 'No Robofab installed, this script ends here; also the World!!!'
-                self.goodbye()
-
-            userPick = GetFile('Select corresponding UFO file:')
-            if not userPick:
-                print 'No UFO picked.'
-                self.goodbye()
-
-            else:
-                if os.path.splitext(userPick)[1].lower() == '.ufo':
-                    foundFont = defconFont(userPick)
-                    UFOfound = True
-
-        if UFOfound:
-            return foundFont
-
     def getClass(self, glyphName, side):
         ''''
         Replaces a glyph name by its class name,
@@ -103,30 +70,37 @@ class ClassKerningToUFO(object):
             else:
                 return glyphName
 
-    def readFontKerning(self):
-        print 'analyzing kerning ...'
+    def readFontKerning(self, master_idx=0):
+        print('analyzing kerning ...')
         glyphs = self.f.glyphs
         for gIdx in range(len(glyphs)):
             gName = str(glyphs[gIdx].name)
             gKerning = glyphs[gIdx].kerning
             for gKern in gKerning:
                 gNameRightglyph = str(glyphs[gKern.key].name)
-                kernValue = int(gKern.value)
+                kernValue = int(gKern.values[master_idx])
 
-                pair = self.getClass(gName,'left'), self.getClass(gNameRightglyph,'right')
+                pair = (self.getClass(gName, 'left'),
+                        self.getClass(gNameRightglyph, 'right'))
                 self.kerning[pair] = kernValue
 
     def analyzeKernClasses(self):
-        print 'analyzing classes ...'
+        if self.classes_already_analyzed:
+            return
+        print('analyzing classes ...')
         classes = {}
         for ci, className in enumerate(self.f.classes):
-            if className[0] == '_':  # it is a kerning class
+            # it is a kerning class
+            if className[0] == '_':
 
-                if (self.f.GetClassLeft(ci), self.f.GetClassRight(ci)) == (1,0):
+                if ((self.f.GetClassLeft(ci),
+                     self.f.GetClassRight(ci)) == (1, 0)):
                     classes[className] = "LEFT"
-                elif (self.f.GetClassLeft(ci), self.f.GetClassRight(ci)) == (0,1):
+                elif ((self.f.GetClassLeft(ci),
+                       self.f.GetClassRight(ci)) == (0, 1)):
                     classes[className] = "RIGHT"
-                elif (self.f.GetClassLeft(ci), self.f.GetClassRight(ci)) == (1,1):
+                elif ((self.f.GetClassLeft(ci),
+                       self.f.GetClassRight(ci)) == (1, 1)):
                     classes[className] = "BOTH"
                 else:
                     classes[className] = "NONE"
@@ -134,18 +108,25 @@ class ClassKerningToUFO(object):
         for c in classes:
             repFound = False
             sep = ":"
-            className = c.split(sep)[0]  # FL class name, e.g. _L_LC_LEFT
+            # FL class name, e.g. _L_LC_LEFT
+            className = c.split(sep)[0]
             leftName = '%s%s' % (self.leftPrefix, className[1:])
             rightName = '%s%s' % (self.rightPrefix, className[1:])
             glyphList = c.split(sep)[1].split()
-            cleanGlyphList = [i.strip("'") for i in glyphList]  # strips out the keyglyph marker
+            # strips out the keyglyph marker
+            cleanGlyphList = [i.strip("'") for i in glyphList]
 
             if '_EXC_' in className:
                 # Exception classes: (complicated invention sometimes used when
                 # generating kern features from FL, messes up the handling in
                 # MetricsMachine, therefore included as reference groups only.)
                 self.groups[className] = cleanGlyphList
-                print "%s is an exception class. Adding to UFO as reference group." % (className)
+                print("\tWARNING: %s is an exception class. Adding to UFO as "
+                      "reference group." % (className))
+
+            elif not glyphList:
+                print("\tWARNING: Kerning class %s is empty. "
+                      "Skipping." % className)
 
             else:
                 for g in glyphList:
@@ -155,8 +136,10 @@ class ClassKerningToUFO(object):
                         break
                     else:
                         rep = glyphList[0]
-                if repFound == False:
-                    print "\tWARNING: Kerning class %s has no explicit key glyph.\n\tAssuming it is the first glyph found (%s).\n" % (className, glyphList[0])
+                if not repFound:
+                    print("\tWARNING: Kerning class %s has no explicit key "
+                          "glyph. Assuming it is the first glyph found: "
+                          "%s" % (className, glyphList[0]))
 
                 if classes[c] == 'LEFT':
                     self.leftKeyGlyphs[rep] = leftName
@@ -170,31 +153,89 @@ class ClassKerningToUFO(object):
                     self.rightKeyGlyphs[rep] = rightName
                     self.groups[rightName] = cleanGlyphList
                 else:
-                    print "\tWARNING: Kerning class %s is not assigned to any side (No checkbox active). Skipping.\n" % className
+                    print("\tWARNING: Kerning class %s is not assigned to any "
+                          "side (No checkbox active). Skipping." % className)
+
+    def getUFOs(self):
+        # number of masters
+        masters_count = self.f[0].layers_number
+
+        # font is single master
+        # allow picking the matching UFO, if none is found
+        if masters_count == 1:
+            foundFont = []
+            assumedUFO = self.f.file_name.replace('.vfb', '.ufo')
+
+            if os.path.exists(assumedUFO):
+                print('UFO found at %s' % assumedUFO)
+                foundFont.append(defconFont(assumedUFO))
+
+            else:
+                try:
+                    from robofab.interface.all.dialogs import GetFile
+                    userPick = GetFile('Select corresponding UFO file:')
+                except ImportError as err:
+                    print('%s was found.' % err)
+                    print('Get it at '
+                          'https://github.com/robofab-developers/robofab')
+                    print('')
+                    userPick = None
+
+                if userPick:
+                    if os.path.splitext(userPick)[1].lower() == '.ufo':
+                        print('UFO selected at %s' % userPick)
+                        foundFont.append(defconFont(userPick))
+                    else:
+                        print('\tERROR: The file selected was not a UFO.')
+
+            return foundFont
+
+        # font is multiple masters
+        # all matching UFOs must exist
+        else:
+            assumedUFOs = []
+            for i in range(masters_count):
+                assumedUFOs.append(self.f.file_name.replace('.vfb',
+                                                            '_%s.ufo' % i))
+
+            # validate the paths
+            if not all([os.path.exists(ufo_path) for ufo_path in assumedUFOs]):
+                for ufo_path in assumedUFOs:
+                    if not os.path.exists(ufo_path):
+                        print('\tERROR: %s not found.' % ufo_path)
+                return []
+            else:
+                print('UFOs found at')
+                print('\t%s' % '\n\t'.join(assumedUFOs))
+                return [defconFont(ufo_path) for ufo_path in assumedUFOs]
 
     def run(self):
-
         glyphset = [g.name for g in self.f.glyphs]
+        ufos_list = self.getUFOs()
+        self.classes_already_analyzed = False
 
-        if not set(glyphset) <= set(self.destFont.keys()):
-            # test if glyphs in font are a subset of the UFO; in case a wrong UFO is picked.
-            print 'Glyphs in VFB and UFO do not match.'
-            self.goodbye()
+        for master_idx, ufo in enumerate(ufos_list):
 
-        else:
+            if not set(glyphset) <= set(ufo.keys()):
+                # test if glyphs in font are a subset of the UFO;
+                # in case a wrong UFO got picked.
+                print('Glyphs in VFB and UFO do not match.')
+                print('Skipped %s' % ufo.path)
 
-            self.analyzeKernClasses()
-            self.readFontKerning()
+            else:
+                self.analyzeKernClasses()
+                self.classes_already_analyzed = True
+                self.readFontKerning(master_idx)
 
-            self.destFont.groups.clear()
-            self.destFont.kerning.clear()
+                ufo.groups.clear()
+                ufo.kerning.clear()
 
-            self.destFont.groups.update(self.groups)
-            self.destFont.kerning.update(self.kerning)
+                ufo.groups.update(self.groups)
+                ufo.kerning.update(self.kerning)
 
-            self.destFont.save()
+                ufo.save()
 
-            print 'done'
+        print('done\n')
 
 
 __doc__ = ClassKerningToUFO.__doc__
