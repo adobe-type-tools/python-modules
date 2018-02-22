@@ -1,5 +1,8 @@
 Python modules
 =========================
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/0c4dd87e3a6a45d6bc8d034d8c84cbf7)](https://app.codacy.com/app/frankrolf/python-modules?utm_source=github.com&utm_medium=referral&utm_content=adobe-type-tools/python-modules&utm_campaign=badger)
+
 These files are used and required by some of the Python scripts available in the other repositories.
 
 For FontLab scripts, put these files in `[...]/FontLab/Studio 5/Macros/System/Modules`.  
