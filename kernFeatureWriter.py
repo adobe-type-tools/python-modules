@@ -134,13 +134,16 @@ class FLKerningData(object):
         self.groups = {}
         self.groupOrder = []
 
-        flClassStrings = [cString for cString in self.f.classes if cString[0] == '_']
-        for cString in flClassStrings:
+        fl_class_names = [cname for cname in self.f.classes if cname[0] == '_']
+        for cString in fl_class_names:
 
-            FLclassName = cString.split(':')[0]  # FL class name, e.g. _L_LC_LEFT
-            OTgroupName = '@%s' % FLclassName[1:]  # OT group name, e.g. @L_LC_LEFT
+            FLclassName = cString.split(':')[0]
+            # FL class name, e.g. _L_LC_LEFT
+            OTgroupName = '@%s' % FLclassName[1:]
+            # OT group name, e.g. @L_LC_LEFT
             markedGlyphList = cString.split(':')[1].split()
-            cleanGlyphList = [gName.strip("'") for gName in markedGlyphList]  # strips out the keyglyph marker
+            cleanGlyphList = [gName.strip("'") for gName in markedGlyphList]
+            # key glyph marker stripped out
 
             for gName in markedGlyphList:
                 if gName[-1] == "'":  # finds keyglyph
@@ -216,12 +219,16 @@ class FLKerningData(object):
                 gNameRight = glyphs[gIndexRight].name
 
                 if self._isMMfont():
-                    kernValue = '<%s>' % ' '.join(map(str, flKerningPair.values))
-                    # flKerningPair.values is an array holding kern values for each master
+                    kernValue = '<%s>' % ' '.join(
+                        map(str, flKerningPair.values))
+                    # flKerningPair.values is an array
+                    # holding kern values for each master
                 else:
                     kernValue = int(flKerningPair.value)
 
-                pair = self.leftKeyGlyphs.get(gNameLeft, gNameLeft), self.rightKeyGlyphs.get(gNameRight, gNameRight)
+                pair = (
+                    self.leftKeyGlyphs.get(gNameLeft, gNameLeft),
+                    self.rightKeyGlyphs.get(gNameRight, gNameRight))
                 self.kerning[pair] = kernValue
 
 
@@ -253,7 +260,8 @@ class KernProcessor(object):
         self.pairs_processed = []
 
         if groups and option_dissolve:
-            self.groups, self.kerning = self._dissolveSingleGroups(groups, kerning)
+            self.groups, self.kerning = self._dissolveSingleGroups(
+                groups, kerning)
 
         else:
             self.groups = groups
@@ -267,7 +275,7 @@ class KernProcessor(object):
 
         if self.kerning and len(self.kerning.keys()):
             usedGroups = self._getUsedGroups(self.kerning)
-            self.groupOrder = [groupName for groupName in groupOrder if groupName in usedGroups]
+            self.groupOrder = [g_name for g_name in groupOrder if g_name in usedGroups]
             self._sanityCheck(self.kerning)
 
     def _isGroup(self, itemName):
@@ -311,7 +319,9 @@ class KernProcessor(object):
         RTLGlyphs = self.groups.get(group_RTL, [])
         RTLkerningTags = [tag_ara, tag_heb, tag_RTL]
 
-        if set(self.groups.get(pair[0], [pair[0]]) + self.groups.get(pair[1], [pair[1]])) <= set(RTLGlyphs):
+        if (
+            set(self.groups.get(pair[0], [pair[0]]) +
+                self.groups.get(pair[1], [pair[1]]))) <= set(RTLGlyphs):
             return True
 
         for tag in RTLkerningTags:
@@ -578,7 +588,8 @@ class MakeMeasuredSubtables(object):
 
         self.kernDict = kernDict
         self.subtables = []
-        self.numberOfKernedGlyphs = self._getNumberOfKernedGlyphs(kerning, groups)
+        self.numberOfKernedGlyphs = self._getNumberOfKernedGlyphs(
+            kerning, groups)
 
         coverageTableSize = 2 + (2 * self.numberOfKernedGlyphs)
         # maxSubtableSize = 2 ** 14
@@ -710,7 +721,8 @@ class run(object):
                 self.header.append('# MM Inst: %s' % self.f.menu_name)
 
         else:
-            self.header.append('# PS Name: %s' % self.f.info.postscriptFontName)
+            self.header.append(
+                '# PS Name: %s' % self.f.info.postscriptFontName)
 
             self.MM = False
             if self.f.kerningGroupConversionRenameMaps:
@@ -768,8 +780,8 @@ class run(object):
 
             if RTL:
                 if self.MM:
-                    # kern value is stored in an array (represented as a string),
-                    # for instance: '<10 20 30 40>'
+                    # kern value is stored in an array represented
+                    # as a string, for instance: '<10 20 30 40>'
 
                     values = value[1:-1].split()
                     values = ['<{0} 0 {0} 0>'.format(kernValue) for kernValue in values]
@@ -944,13 +956,15 @@ class run(object):
                     kp.rtl_glyph_group, kp.kerning, kp.groups,
                     self.subtableSize).subtables
                 output.extend(self._buildSubtableOutput(
-                    rtl_glyph_class_subtables, '\n# RTL glyph, group:', RTL=True))
+                    rtl_glyph_class_subtables,
+                    '\n# RTL glyph, group:', RTL=True))
 
                 rtl_class_class_subtables = MakeMeasuredSubtables(
                     kp.rtl_group_group, kp.kerning, kp.groups,
                     self.subtableSize).subtables
                 output.extend(self._buildSubtableOutput(
-                    rtl_class_class_subtables, '\n# RTL group, glyph and group, group:', RTL=True))
+                    rtl_class_class_subtables,
+                    '\n# RTL group, glyph and group, group:', RTL=True))
 
             output.append(lookupRTLclose)
 
