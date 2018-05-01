@@ -133,7 +133,7 @@ class FLKerningData(object):
     def _readFLGroups(self):
         self.groupToKeyglyph = {}
         self.groups = {}
-        self.groupOrder = []
+        self.group_order = []
 
         fl_class_names = [cname for cname in self.f.classes if cname[0] == '_']
         for cString in fl_class_names:
@@ -158,7 +158,7 @@ class FLKerningData(object):
                             FLclassName, keyGlyphName)
                     )
 
-            self.groupOrder.append(OTgroupName)
+            self.group_order.append(OTgroupName)
             self.groupToKeyglyph[OTgroupName] = keyGlyphName
             self.groups[OTgroupName] = cleanGlyphList
 
@@ -241,7 +241,7 @@ class KernProcessor(object):
     def __init__(
         self,
         groups=None, kerning=None,
-        groupOrder=None, option_dissolve=False
+        option_dissolve=False
     ):
 
         # kerning dicts containing pair-value combinations
@@ -264,26 +264,89 @@ class KernProcessor(object):
         self.pairs_unprocessed = []
         self.pairs_processed = []
 
-        if groups and option_dissolve:
-            self.groups, self.kerning = self._dissolveSingleGroups(
-                groups, kerning)
+        used_group_names = self._get_used_groups(kerning)
+        used_groups = {
+            g_name: groups.get(g_name) for g_name in used_group_names
+        }
+
+        if used_groups and option_dissolve:
+            dissolved_groups, dissolved_kerning = self._dissolveSingleGroups(
+                used_groups, kerning)
+            self.groups = self._remap_groups(dissolved_groups)
+            self.kerning = self._remap_kerning(dissolved_kerning)
 
         else:
-            self.groups = groups
-            self.kerning = kerning
+            self.groups = self._remap_groups(used_groups)
+            self.kerning = self._remap_kerning(kerning)
 
-        if groups:
+        if used_groups:
             self.grouped_left = self._getAllGroupedGlyphs(side='left')
             self.grouped_right = self._getAllGroupedGlyphs(side='right')
 
         self._findExceptions()
 
         if self.kerning and len(self.kerning.keys()):
-            usedGroups = self._getUsedGroups(self.kerning)
-            self.groupOrder = [
-                g_name for g_name in groupOrder if g_name in usedGroups
-            ]
+            self.group_order = sorted(
+                [gr_name for gr_name in self.groups])
             self._sanityCheck(self.kerning)
+
+    def _remap_group_name(self, group_name):
+        '''
+        Remaps a single group name from public.kern style to @MMK style
+        '''
+        if 'public.kern1.' in group_name:
+            stripped_name = group_name.replace('public.kern1.', '')
+            if stripped_name.startswith('@MMK_L_'):
+                # UFO2 files contain the @ in the XML, Defon reads it as
+                # 'public.kernX.@MMK'
+                return stripped_name
+            else:
+                # UFO3 files just contain the public.kern notation
+                return group_name.replace('public.kern1.', '@MMK_L_')
+
+        elif 'public.kern2.' in group_name:
+            stripped_name = group_name.replace('public.kern2.', '')
+            if stripped_name.startswith('@MMK_R_'):
+                return stripped_name
+            else:
+                return group_name.replace('public.kern2.', '@MMK_R_')
+        else:
+            return group_name
+
+    def _remap_group_order(self, group_list):
+        '''
+        Remaps group order list
+        '''
+        remapped_group_order = [
+            self._remap_group_name(g_name) for g_name in group_list
+        ]
+        return remapped_group_order
+
+    def _remap_groups(self, groups):
+        '''
+        Remaps groups dictionary to not contain
+        public.kern prefixes.
+        '''
+        remapped_groups = {}
+        for group_name, glyph_list in groups.items():
+            remapped_group_name = self._remap_group_name(group_name)
+            remapped_groups[remapped_group_name] = glyph_list
+
+        return remapped_groups
+
+    def _remap_kerning(self, kerning):
+        '''
+        Remaps kerning dictionary to not contain
+        public.kern prefixes.
+        '''
+        remapped_kerning = {}
+        for (left, right), value in kerning.items():
+            remapped_pair = (
+                self._remap_group_name(left),
+                self._remap_group_name(right))
+            remapped_kerning[remapped_pair] = value
+
+        return remapped_kerning
 
     def _isGroup(self, itemName):
         '''
@@ -294,6 +357,8 @@ class KernProcessor(object):
         True
         >>> kp._isGroup('@someGroupName')
         True
+        >>> kp._isGroup('public.kern1.whatever')
+        True
         >>> kp._isGroup('a.ss01')
         False
         '''
@@ -302,8 +367,7 @@ class KernProcessor(object):
             return True
         if itemName.split('.')[0] == 'public':
             return True
-        else:
-            return False
+        return False
 
     def _isRTL(self, pair):
         '''
@@ -361,7 +425,7 @@ class KernProcessor(object):
                 return True
         return False
 
-    def _getUsedGroups(self, kerning):
+    def _get_used_groups(self, kerning):
         '''
         Returns all groups which are actually used in kerning,
         by iterating through the kerning pairs.
@@ -474,7 +538,7 @@ class KernProcessor(object):
         and which are just normal pairs.
         '''
 
-        for pair in self.kerning.keys()[::-1]:
+        for pair in list(self.kerning.keys())[::-1]:
 
             # Skip pairs in which the name of the
             # left glyph contains the ignore tag.
@@ -749,12 +813,12 @@ class run(object):
         if self.inFL:
             self.header.append('# PS Name: %s' % self.f.font_name)
 
-            flK = FLKerningData(self.f)
+            fl_K = FLKerningData(self.f)
 
-            self.MM = flK._isMMfont()
-            self.kerning = flK.kerning
-            self.groups = flK.groups
-            self.groupOrder = flK.groupOrder
+            self.MM = fl_K._isMMfont()
+            self.kerning = fl_K.kerning
+            self.groups = fl_K.groups
+            self.group_order = fl_K.group_order
 
             if self.MM:
                 outputFileName = 'mm' + outputFileName
@@ -766,12 +830,9 @@ class run(object):
                 '# PS Name: %s' % self.f.info.postscriptFontName)
 
             self.MM = False
-            if self.f.kerningGroupConversionRenameMaps:
-                self.kerning, self.groups = self._remapGroupNames(self.f)
-            else:
-                self.kerning = self.f.kerning
-                self.groups = self.f.groups
-            self.groupOrder = sorted(self.groups.keys())
+            self.kerning = self.f.kerning
+            self.groups = self.f.groups
+            self.group_order = sorted(self.groups.keys())
 
         if not self.kerning:
             print('\tERROR: The font has no kerning!')
@@ -783,30 +844,6 @@ class run(object):
         outputData = self._makeOutputData()
         if outputData:
             self.writeDataToFile(outputData, outputFileName)
-
-    def _remapGroupNames(self, font):
-        '''
-        In UFO3 the group names have public prefixes. Remove these by using the
-        kerningGroupConversionRenameMaps dictionary.
-        '''
-        noPrefixToPrefixDict = font.kerningGroupConversionRenameMaps['side1']
-        noPrefixToPrefixDict.update(font.kerningGroupConversionRenameMaps['side2'])
-        prefixToNoPrefixDict = {v: k for k, v in noPrefixToPrefixDict.items()}
-
-        remappedGroupsDict = {}
-        for prefixedGroupName in font.groups.keys():
-            if prefixedGroupName in prefixToNoPrefixDict:
-                remappedGroupsDict[prefixToNoPrefixDict[prefixedGroupName]] = font.groups[prefixedGroupName]
-
-        remappedKerningDict = {}
-        for (first, second), value in font.kerning.items():
-            if first in prefixToNoPrefixDict:
-                first = prefixToNoPrefixDict[first]
-            if second in prefixToNoPrefixDict:
-                second = prefixToNoPrefixDict[second]
-            remappedKerningDict[(first, second)] = value
-
-        return remappedKerningDict, remappedGroupsDict
 
     def _dict2pos(self, pairValueDict, min=0, enum=False, RTL=False):
         '''
@@ -899,14 +936,13 @@ class run(object):
         kp = KernProcessor(
             self.groups,
             self.kerning,
-            self.groupOrder,
             self.dissolveGroups
         )
 
         # ---------------
         # list of groups:
         # ---------------
-        for groupName in kp.groupOrder:
+        for groupName in kp.group_order:
             glyphList = kp.groups[groupName]
             output.append('%s = [%s];' % (groupName, ' '.join(glyphList)))
 
@@ -1110,9 +1146,6 @@ if __name__ == '__main__':
         if os.path.exists(f_path):
 
             f = defcon.Font(f_path)
-
-            if not hasattr(f, 'kerningGroupConversionRenameMaps'):
-                f.kerningGroupConversionRenameMaps = None
 
             run(f, f_dir,
                 minKern=args.min,
