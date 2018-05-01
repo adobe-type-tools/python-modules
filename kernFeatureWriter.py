@@ -123,7 +123,7 @@ class FLKerningData(object):
             self._readFLKerning()
 
     def _isMMfont(self):
-        'Checks if the FontLab font is a Multiple Master font.'
+        '''Checks if the FontLab font is a Multiple Master font.'''
 
         if self.f[0].layers_number > 1:
             return True
@@ -845,7 +845,7 @@ class run(object):
         if outputData:
             self.writeDataToFile(outputData, outputFileName)
 
-    def _dict2pos(self, pairValueDict, min=0, enum=False, RTL=False):
+    def _dict2pos(self, pairValueDict, minimum=0, enum=False, RTL=False):
         '''
         Turns a dictionary to a list of kerning pairs. In a single master font,
         the function can filter kerning pairs whose absolute value does not
@@ -891,7 +891,7 @@ class run(object):
                 if enum:
                     data.append(enumLine)
                 else:
-                    if abs(kernValue) < min:
+                    if abs(kernValue) < minimum:
                         if self.writeTrimmed:
                             data.append('# %s' % posLine)
                         trimmed += 1
@@ -1031,8 +1031,9 @@ class run(object):
 
         if rtlPairsExist:
 
-            lookupRTLopen = '\n\nlookup RTL_kerning {\n'
-            'lookupflag RightToLeft IgnoreMarks;\n'
+            lookupRTLopen = (
+                '\n\nlookup RTL_kerning {\n'
+                'lookupflag RightToLeft IgnoreMarks;\n')
             lookupRTLclose = '\n\n} RTL_kerning;\n'
 
             output.append(lookupRTLopen)
