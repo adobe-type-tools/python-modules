@@ -136,7 +136,6 @@ class WhichApp(object):
         if not any((self.inRF, self.inFL, self.inDC)):
             try:
                 import mojo.roboFont
-                # print 'in Robofont'
                 self.inRF = True
                 self.appName = 'Robofont'
             except ImportError:
@@ -145,7 +144,6 @@ class WhichApp(object):
         if not any((self.inRF, self.inFL, self.inDC)):
             try:
                 import flsys
-                # print 'In FontLab, dork!'
                 self.inFL = True
                 self.appName = 'FontLab'
             except ImportError:
@@ -154,7 +152,6 @@ class WhichApp(object):
         if not any((self.inRF, self.inFL, self.inDC)):
             try:
                 import defcon
-                # print 'defcon'
                 self.inDC = True
                 self.appName = 'Defcon'
             except ImportError:
@@ -233,13 +230,13 @@ class MarkDataClass(object):
         self.header.append('# exported from %s\n\n' % self.appName)
 
         if not len(self.marksClassList):
-            print "\tERROR: %s class could not be found or is empty!" % kCombMarksClassName
+            print("\tERROR: %s class could not be found or is empty!" % kCombMarksClassName)
             return
 
         self.validateCombMarksClassContents()
         self.validateLigatureClassesContents()
         if len(self.invalidGlyphNamesList):
-            print "\tERROR: The glyph(s) listed below could not be found! Please check the combining marks (and ligatures) classes.\n\t%s\n" % ("\n\t".join(self.invalidGlyphNamesList))
+            print("\tERROR: The glyph(s) listed below could not be found! Please check the combining marks (and ligatures) classes.\n\t%s\n" % ("\n\t".join(self.invalidGlyphNamesList)))
             return
 
         if len(self.repeatedGlyphNamesList):
@@ -251,7 +248,7 @@ class MarkDataClass(object):
 
         self.collectAnchorDataFromCombMarks()
         if not len(self.anchorsDataInCombMarksDict):
-            print "\tERROR: No valid anchors were found in combining mark glyphs!"
+            print("\tERROR: No valid anchors were found in combining mark glyphs!")
             return
 
         self.buildMarkRelatedLines()  # builds the markClass lines and the glyph classes lines
@@ -263,8 +260,8 @@ class MarkDataClass(object):
 
         self.collectAnchorDataFromBaseGlyphs()
         if not len(self.anchorsDataInBaseGlyphsDict):
-            print "\tWARNING: No valid anchors were found in base glyphs!"
-            print
+            print("\tWARNING: No valid anchors were found in base glyphs!")
+            print()
 
         if len(self.ligatureClassesDict):
             self.collectAnchorDataFromLigatureGlyphs()
@@ -272,7 +269,7 @@ class MarkDataClass(object):
         self.buildMarkLookups()
 
         if len(self.anchorNamesNotTrimmed):
-            print "\tNOTE: These anchor names were not trimmed:\n\t\t%s" % "\n\t\t".join(self.anchorNamesNotTrimmed)
+            print("\tNOTE: These anchor names were not trimmed:\n\t\t%s" % "\n\t\t".join(self.anchorNamesNotTrimmed))
 
         if self.writeClassesFile:
             self.writeMarkClassesFile()
@@ -308,7 +305,7 @@ class MarkDataClass(object):
                 tempGlist.append(gName)
             else:
                 self.repeatedGlyphNamesList.append(gName)
-                print "\tERROR: The glyph named %s is repeated in the class named %s" % (gName, kCombMarksClassName)
+                print("\tERROR: The glyph named %s is repeated in the class named %s" % (gName, kCombMarksClassName))
 
     def validateLigatureClassesContents(self):
         tempAllGlist = []
@@ -323,10 +320,10 @@ class MarkDataClass(object):
                         tempAllGlist.append(gName)
                     else:
                         self.repeatedGlyphNamesList.append(gName)
-                        print "\tERROR: The glyph named %s is used in more than one ligature class." % (gName)
+                        print("\tERROR: The glyph named %s is used in more than one ligature class." % (gName))
                 else:
                     self.repeatedGlyphNamesList.append(gName)
-                    print "\tERROR: The glyph named %s is repeated in the class named %s" % (gName, kLigaturesClassName % element)
+                    print("\tERROR: The glyph named %s is repeated in the class named %s" % (gName, kLigaturesClassName % element))
 
     def addAllLigaturesToList(self):
         for element in self.ligatureClassesDict:
@@ -363,11 +360,11 @@ class MarkDataClass(object):
             for anchorIndex in range(len(g.anchors)):
                 anchorName = g.anchors[anchorIndex].name
                 if len(anchorName) == 0:
-                    print "\tERROR: Glyph %s has a nameless anchor." % gName
+                    print("\tERROR: Glyph %s has a nameless anchor." % gName)
                     continue
                 if anchorName[0] == '_': # Consider only mark-related anchors (Anchors without undercore are for use in 'mkmk' feature)
                     if anchorName in markAnchorsNames:
-                        print "\tERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName)
+                        print("\tERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName))
                     else:
                         markAnchorsNames.append(anchorName)
                         point = g.anchors[anchorIndex]
@@ -392,11 +389,11 @@ class MarkDataClass(object):
                 for anchorIndex in range(len(g.anchors)):
                     anchorName = g.anchors[anchorIndex].name
                     if not anchorName:
-                        print "\tERROR: Glyph %s has a nameless anchor." % gName
+                        print("\tERROR: Glyph %s has a nameless anchor." % gName)
                         continue
                     if (anchorName[0] != '_') and (kIgnoreAnchorTag not in anchorName): # Consider only base-related anchors (the ones NOT prefixed with the underscore)
                         if anchorName in markNamesLog:
-                            print "\tERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName)
+                            print("\tERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName))
                         else:
                             markNamesLog.append(anchorName)
                             point = g.anchors[anchorIndex]
@@ -413,11 +410,11 @@ class MarkDataClass(object):
                 for anchorIndex in range(len(g.anchors)):
                     anchorName = g.anchors[anchorIndex].name
                     if len(anchorName) == 0:
-                        print "\tERROR: Glyph %s has a nameless anchor." % gName
+                        print("\tERROR: Glyph %s has a nameless anchor." % gName)
                         continue
                     if (anchorName[0] != '_') and (kIgnoreAnchorTag not in anchorName):  # Consider only base-related anchors (the ones NOT prefixed with the underscore)
                         if anchorName in markNamesLog:
-                            print "\tERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName)
+                            print("\tERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName))
                         else:
                             markNamesLog.append(anchorName)
                             point = g.anchors[anchorIndex]
@@ -476,7 +473,7 @@ class MarkDataClass(object):
                 self.baseRelatedBasePosLinesList.extend(baseLinesList)
                 self.baseRelatedBasePosLinesList.append('} MARK_BASE_%s;\n\n\n' % markType)
             else:
-                print "\tWARNING: The anchor %s is not used in any of the base glyphs." % markType
+                print("\tWARNING: The anchor %s is not used in any of the base glyphs." % markType)
 
             # Do ligature lookups
             if len(self.anchorsDataInLigaturesDict):
@@ -489,7 +486,7 @@ class MarkDataClass(object):
                     self.ligatureRelatedBasePosLinesList.extend(ligatureLinesList)
                     self.ligatureRelatedBasePosLinesList.append('} MARK_LIGATURE_%s;\n\n\n' % markType)
                 else:
-                    print "\tWARNING: The anchor %s is not used in any of the ligature glyphs." % markType
+                    print("\tWARNING: The anchor %s is not used in any of the ligature glyphs." % markType)
 
     def buildBaseRelatedLines(self, markTypeName):
         anchorGroupList = self.anchorsDataInBaseGlyphsDict.keys()  # ['aboveAR,1675,697', 'below,367,-30', ... ]
@@ -539,7 +536,7 @@ class MarkDataClass(object):
             anchorPositionsList.sort()
 
             if elementCount != len(anchorPositionsList):
-                print "\tNOT IMPLEMENTED WARNING: Number of elements in ligature %s does not match the number of anchors of the type %s." % (gName, anchorName)
+                print("\tNOT IMPLEMENTED WARNING: Number of elements in ligature %s does not match the number of anchors of the type %s." % (gName, anchorName))
                 continue
 
             elementsAnchorsAndMarkClassesList = []
@@ -572,7 +569,7 @@ class MarkDataClass(object):
         return classesLinesList
 
     def writeMarkClassesFile(self):
-        print '\tSaving %s file...' % kMarkClassesFileName
+        print('\tSaving %s file...' % kMarkClassesFileName)
         filePath = os.path.join(self.folder, kMarkClassesFileName)
         outfile = open(filePath, 'w')
         outfile.write("\n".join(self.header))
@@ -580,7 +577,7 @@ class MarkDataClass(object):
         outfile.close()
 
     def writeMarkFeatureFile(self):
-        print '\tSaving %s file...' % kMarkFeatureFileName
+        print('\tSaving %s file...' % kMarkFeatureFileName)
         filePath = os.path.join(self.folder, kMarkFeatureFileName)
         outfile = open(filePath, 'w')
         outfile.write("\n".join(self.header))
@@ -592,8 +589,8 @@ class MarkDataClass(object):
         fileHeader = "\n".join(self.header) + self.classesNote
 
         if self.indianScriptsFormat:
-            print '\tSaving %s and %s files...' % (
-                kAbvmFeatureFileName, kBlwmFeatureFileName)
+            print('\tSaving %s and %s files...' % (
+                kAbvmFeatureFileName, kBlwmFeatureFileName))
             abvmFilePath = os.path.join(self.folder, kAbvmFeatureFileName)
             blwmFilePath = os.path.join(self.folder, kBlwmFeatureFileName)
             abvmfile = open(abvmFilePath, 'w')
@@ -647,11 +644,11 @@ class MarkDataClass(object):
             for anchorIndex in range(len(g.anchors)):
                 anchorName = g.anchors[anchorIndex].name
                 if len(anchorName) == 0:
-                    print "\tERROR: Glyph %s has a nameless anchor." % gName
+                    print("\tERROR: Glyph %s has a nameless anchor." % gName)
                     continue
                 if anchorName[0] != '_': # Anchors without undercore are for use in 'mkmk' feature
                     if anchorName in markAnchorsNames:
-                        print "\tERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName)
+                        print("\tERROR: Glyph %s has more than one anchor named %s." % (gName, anchorName))
                     else:
                         markAnchorsNames.append(anchorName)
                         point = g.anchors[anchorIndex]
@@ -682,7 +679,7 @@ class MarkDataClass(object):
 
 
     def writeMkmkFeatureFile(self):
-        print '\tSaving %s file...' % kMkmkFeatureFileName
+        print('\tSaving %s file...' % kMkmkFeatureFileName)
         filePath = os.path.join(self.folder, kMkmkFeatureFileName)
         outfile = open(filePath, 'w')
         outfile.write("\n".join(self.header))
@@ -690,7 +687,7 @@ class MarkDataClass(object):
         fileHeader = "\n".join(self.header) + self.classesNote
 
         if self.indianScriptsFormat:
-            print '\tAdding mark-to-mark lookups to %s and %s files...' % (kAbvmFeatureFileName, kBlwmFeatureFileName)
+            print('\tAdding mark-to-mark lookups to %s and %s files...' % (kAbvmFeatureFileName, kBlwmFeatureFileName))
             abvmFilePath = os.path.join(self.folder, kAbvmFeatureFileName)
             blwmFilePath = os.path.join(self.folder, kBlwmFeatureFileName)
             abvmfile = open(abvmFilePath, 'a') # append the data instead of writting a new file; the file is expected to contain lookups for 'pos base' already
@@ -727,7 +724,7 @@ class MarkDataClass(object):
         fileHeader = fileHeader.strip()
 
         if fileContents == fileHeader:
-            print "\tFile %s is empty. Deleted." % os.path.basename(filePath)
+            print("\tFile %s is empty. Deleted." % os.path.basename(filePath))
             if os.path.exists(filePath):
                 os.remove(filePath)
 
