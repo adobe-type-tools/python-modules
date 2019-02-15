@@ -221,10 +221,10 @@ class MarkDataClass(object):
             self.header.append('# PS Name: %s' % self.f.info.postscriptFontName)
             self.header.append('# MM Inst: %s' % self.f.info.styleMapFamilyName)
 
-            if self.f.groups.has_key(kCombMarksClassName):
-                self.marksClassList = self.f.groups[kCombMarksClassName]
+            if self.f.groups.get(kCombMarksClassName, None):
+                self.marksClassList = list(self.f.groups[kCombMarksClassName])
             for compNum in self.ligatureComponentsList:
-                if self.f.groups.has_key(kLigaturesClassName % compNum):
+                if self.f.groups.get(kLigaturesClassName % compNum, None):
                     self.ligatureClassesDict[compNum] = self.f.groups[kLigaturesClassName % compNum]
 
         self.header.append('# exported from %s\n\n' % self.appName)
@@ -442,7 +442,7 @@ class MarkDataClass(object):
                                     break  # no need to finish the loop since a match was found
 
     def buildMarkRelatedLines(self):
-        anchorGroupList = self.anchorsDataInCombMarksDict.keys()
+        anchorGroupList = list(self.anchorsDataInCombMarksDict.keys())
         anchorGroupList.sort()
         for anchor in anchorGroupList:
             anchorName, anchorX, anchorY = anchor.split(',')
@@ -489,7 +489,7 @@ class MarkDataClass(object):
                     print("\tWARNING: The anchor %s is not used in any of the ligature glyphs." % markType)
 
     def buildBaseRelatedLines(self, markTypeName):
-        anchorGroupList = self.anchorsDataInBaseGlyphsDict.keys()  # ['aboveAR,1675,697', 'below,367,-30', ... ]
+        anchorGroupList = list(self.anchorsDataInBaseGlyphsDict.keys())  # ['aboveAR,1675,697', 'below,367,-30', ... ]
         anchorGroupList.sort()
         glyphClassLinesList = []
         basePosLinesList = []
@@ -659,7 +659,7 @@ class MarkDataClass(object):
 
 
     def buildMkmkRelatedLines(self):
-        anchorGroupList = self.anchorsDataInCombMkmksDict.keys()
+        anchorGroupList = list(self.anchorsDataInCombMkmksDict.keys())
         anchorGroupList.sort()
         for anchorName in anchorGroupList:
             if anchorName[-3:] in kRTLtagsList: rtlFlag = 'RightToLeft ' # Check the last two characters of the anchor's name

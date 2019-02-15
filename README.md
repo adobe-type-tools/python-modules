@@ -76,7 +76,7 @@ Example code for a Python file that uses the `WriteFeaturesMarkFDK` module from 
     import sys
 
     import WriteFeaturesMarkFDK
-    from robofab.world import RFont
+    from fontParts.fontshell import RFont
 
     fontPath = sys.argv[-1]
     font = RFont(fontPath)
