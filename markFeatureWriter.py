@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 '''
-First draft of a modernized mark feature writer module.
-This work is incomplete (i.e. argparse needs to be hooked up).
+Current draft Modernized mark feature writer module.
+This work is incomplete (i.e. support for Indic mark features still
+needs to be added).
 The anchor_name_no_underscore process is odd and was added to patch a bug.
 '''
 
@@ -10,10 +11,8 @@ from __future__ import print_function
 import os
 import sys
 import math
-# import argparse
+import argparse
 from defcon import Font
-
-TRIM_TAGS = True
 
 
 class AnchorMate(object):
@@ -27,22 +26,17 @@ class AnchorMate(object):
         self.pos_name_dict = {}
 
 
-def write_output(directory, file_name, data):
-    f_path = os.path.join(directory, file_name)
+def write_output(directory, file, data):
+    f_path = os.path.join(directory, file)
     with open(f_path, 'w') as of:
         of.write(data)
-    print('writing {}'.format(file_name))
-
-
-def italic_x_offset(y_dist, angle):
-    if angle:
-        angle = math.radians(angle)
-        x_offset = math.tan(-angle) * y_dist
-        return int(round(x_offset))
-    return 0
+    print('writing {}'.format(file))
 
 
 def sort_gnames(glyph_list):
+    '''
+    Sort list of glyph names based on the glyph order
+    '''
     glyph_list.sort(key=lambda x: GLYPH_ORDER.index(x))
     return glyph_list
 
@@ -66,7 +60,7 @@ def make_one_mark_class(anchor_name, a_mate):
         pos_x, pos_y = position
         if len(g_names) > 1:
             sorted_g_names = sort_gnames(g_names)
-            group_name = '@mgC{}_{}_{}'.format(
+            group_name = '@mGC{}_{}_{}'.format(
                 anchor_name,
                 str(pos_x).replace('-', 'n'),
                 str(pos_y).replace('-', 'n'))
@@ -86,10 +80,10 @@ def make_one_mark_class(anchor_name, a_mate):
     return mgroup_definitions, mgroup_attachments, single_attachments
 
 
-def make_mark_class_output(list_of_lists):
+def make_mark_class_content(list_of_lists):
     '''
     The make_one_mark_class method returns a tuple of three lists per anchor,
-    which may have data or not. Here those lists are assembled into a neatly,
+    which may have data or not. Here those lists are assembled into a neatly
     organized text string ready for writing in a file.
     '''
     top = []
@@ -105,13 +99,14 @@ def make_mark_class_output(list_of_lists):
             bot.extend(single_att)
 
     output = []
-    output.extend(top)
+    output.extend(sorted(top))
     output.extend([''])
-    output.extend(mid)
+    output.extend(sorted(mid))
     output.extend([''])
-    output.extend(bot)
+    output.extend(sorted(bot))
     output.extend([''])
-    return '\n'.join(output)
+    # return '\n'.join(output)
+    return output
 
 
 def make_mark_feature_lookup(anchor_name, a_mate):
@@ -125,6 +120,8 @@ def make_mark_feature_lookup(anchor_name, a_mate):
         pos_to_gname.append((position, sort_gnames(g_list)))
 
     pos_to_gname.sort(key=lambda x: GLYPH_ORDER.index(x[1][0]))
+    # data looks like this:
+    # [((235, 506), ['tonos']), ((269, 506), ['dieresistonos'])]
 
     mgroup_definitions = []
     mgroup_attachments = []
@@ -139,7 +136,8 @@ def make_mark_feature_lookup(anchor_name, a_mate):
             group_name = '@bGC_{}_{}'.format(
                 sorted_g_names[0], anchor_name_no_underscore)
             group_list = ' '.join(sorted_g_names)
-            mgroup_definitions.append('\t{} = [ {} ];'.format(
+            # mgroup_definitions.append('\t{} = [ {} ];'.format(
+            mgroup_definitions.append('\t{} = [{}];'.format(
                 group_name, group_list))
             mgroup_attachments.append(
                 '\tpos base {} <anchor {} {}> mark @MC_{};'.format(
@@ -177,7 +175,8 @@ def make_mkmk_feature_lookup(anchor_name, a_mate):
     for position, g_list in a_mate.pos_name_dict.items():
         pos_to_gname.append((position, sort_gnames(g_list)))
 
-    pos_to_gname.sort(key=lambda x: GLYPH_ORDER.index(x[1][0]))
+    # pos_to_gname.sort(key=lambda x: GLYPH_ORDER.index(x[1][0]))
+    pos_to_gname.sort(key=lambda x: x[1][0])
     mkmk_attachments = []
 
     for position, g_names in pos_to_gname:
@@ -198,7 +197,85 @@ def make_mkmk_feature_lookup(anchor_name, a_mate):
 
 if __name__ == '__main__':
 
-    ufo_path = sys.argv[-1]
+    parser = argparse.ArgumentParser(
+        description=(
+            'Mark Feature Writer\r'
+        ),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    parser.add_argument(
+        'input_file',
+        help='input UFO file')
+
+    parser.add_argument(
+        '-t', '--trim_tags',
+        action='store_true',
+        default=False,
+        help='trim casing tags from anchor names?')
+
+    parser.add_argument(
+        '-c', '--write_classes',
+        action='store_true',
+        default=False,
+        help='write mark classes to extra file?')
+
+    parser.add_argument(
+        '-m', '--write_mkmk',
+        action='store_true',
+        default=False,
+        help='write mark-to-mark feature file?')
+
+    parser.add_argument(
+        '-i', '--indic_format',
+        action='store_true',
+        default=False,
+        help='write Indic mark format?')
+
+    parser.add_argument(
+        '--mark_file',
+        action='store',
+        metavar='NAME',
+        default='mark.fea',
+        help='name for mark feature file')
+
+    parser.add_argument(
+        '--mkmk_file',
+        action='store',
+        metavar='NAME',
+        default='mkmk.fea',
+        help='name for mkmk feature file')
+
+    parser.add_argument(
+        '--mkclass_file',
+        action='store',
+        metavar='NAME',
+        default='markclasses.fea',
+        help='name for mark classes file')
+
+    parser.add_argument(
+        '--abvm_file',
+        action='store',
+        metavar='NAME',
+        default='abvm.fea',
+        help='name for above mark feature file')
+
+    parser.add_argument(
+        '--blwm_file',
+        action='store',
+        metavar='NAME',
+        default='blwm.fea',
+        help='name for below mark feature file')
+
+    parser.add_argument(
+        '--mkgrp_name',
+        action='store',
+        metavar='GROUP NAME',
+        default='COMBINING_MARKS',
+        help='name for group containing all mark glyphs')
+
+    args = parser.parse_args()
+    ufo_path = args.input_file
     ufo_dir = os.path.dirname(
         os.path.normpath(ufo_path)
     )
@@ -206,9 +283,16 @@ if __name__ == '__main__':
     f = Font(ufo_path)
 
     GLYPH_ORDER = f.lib['public.glyphOrder']
-
+    MARK_GROUP_NAME = args.mkgrp_name
     combining_anchor_dict = {}
-    combining_marks = [f[g_name] for g_name in f.groups.get('COMBINING_MARKS')]
+    combining_marks_group = f.groups.get(MARK_GROUP_NAME, [])
+    if not combining_marks_group:
+        print(
+            f'No group named "{MARK_GROUP_NAME}" found. '
+            'Please add it to your UFO file (and combing marks to it).')
+        sys.exit()
+
+    combining_marks = [f[g_name] for g_name in combining_marks_group]
 
     mkmk_anchor_dict = {}
     mkmk_marks = [g for g in combining_marks if not all(
@@ -219,11 +303,13 @@ if __name__ == '__main__':
         g for g in f if
         g.anchors and
         g not in combining_marks and
-        g.width != 0]
+        g.width != 0 and
+        not all([anchor.name.startswith('_') for anchor in g.anchors])
+    ]
 
     for g in combining_marks:
         for anchor in g.anchors:
-            if TRIM_TAGS:
+            if args.trim_tags:
                 anchor_name = trim_anchor_name(anchor.name)
             else:
                 anchor_name = anchor.name
@@ -235,7 +321,7 @@ if __name__ == '__main__':
 
     for g in base_glyphs:
         for anchor in g.anchors:
-            if TRIM_TAGS:
+            if args.trim_tags:
                 anchor_name = trim_anchor_name(anchor.name)
             else:
                 anchor_name = anchor.name
@@ -247,7 +333,7 @@ if __name__ == '__main__':
 
     for g in mkmk_marks:
         for anchor in g.anchors:
-            if TRIM_TAGS:
+            if args.trim_tags:
                 anchor_name = trim_anchor_name(anchor.name)
             else:
                 anchor_name = anchor.name
@@ -256,27 +342,22 @@ if __name__ == '__main__':
             am = mkmk_anchor_dict.setdefault(anchor_name, AnchorMate(anchor))
             am.pos_name_dict.setdefault(position, []).append(g.name)
 
-    # markclasses.fea
-    mark_class_content = []
+    # mark classes file
+    mark_class_list = []
     for anchor_name, a_mate in sorted(combining_anchor_dict.items()):
         if anchor_name.startswith('_'):
             mc = make_one_mark_class(anchor_name, a_mate)
-            mark_class_content.append(mc)
+            mark_class_list.append(mc)
+    mark_class_content = make_mark_class_content(mark_class_list)
 
-    mark_class_output = make_mark_class_output(mark_class_content)
-    write_output(ufo_dir, 'markclasses.fea', mark_class_output)
-
-    # mark.fea
+    # mark feature file
     mark_feature_content = []
     for anchor_name, a_mate in sorted(base_glyph_anchor_dict.items()):
         mark_lookup = make_mark_feature_lookup(anchor_name, a_mate)
         mark_feature_content.append(mark_lookup)
         mark_feature_content.append('\n')
 
-    mark_feature_output = '\n'.join(mark_feature_content)
-    write_output(ufo_dir, 'mark.fea', mark_feature_output)
-
-    # mkmk.fea
+    # mkmk feature file
     mkmk_feature_content = []
     for anchor_name, a_mate in sorted(mkmk_anchor_dict.items()):
         if not anchor_name.startswith('_'):
@@ -284,5 +365,37 @@ if __name__ == '__main__':
             mkmk_feature_content.append(mkmk_lookup)
             mkmk_feature_content.append('\n')
 
-    mkmk_feature_output = '\n'.join(mkmk_feature_content)
-    write_output(ufo_dir, 'mkmk.fea', mkmk_feature_output)
+    consolidated_content = []
+    if args.write_classes:
+        mark_class_output = '\n'.join(mark_class_content)
+        write_output(ufo_dir, args.mkclass_file, mark_class_output)
+    else:
+        consolidated_content.extend(mark_class_content)
+
+    if args.write_mkmk:
+        mkmk_feature_output = '\n'.join(mkmk_feature_content)
+        write_output(ufo_dir, args.mkmk_file, mkmk_feature_output)
+    else:
+        consolidated_content.extend(mkmk_feature_content)
+
+    consolidated_content.extend(mark_feature_content)
+    consolidated_output = '\n'.join(consolidated_content)
+    write_output(ufo_dir, args.mark_file, consolidated_output)
+
+
+'''
+constants from contextual mark feature writer, to be included in future
+iterations
+kPREMarkFileName = "mark-pre.fea"
+kPOSTMarkFileName = "mark-post.fea"
+kLigaturesClassName = "LIGATURES_WITH_%d_COMPONENTS"  # The '%d' part is required
+kCasingTagsList = ['LC', 'UC', 'SC', 'AC']  # All the tags must have the same number of characters, and that number must be equal to kCasingTagSize
+kCasingTagSize = 2
+kRTLtagsList = ['_AR', '_HE']  # Arabic, Hebrew
+kIgnoreAnchorTag = "CXT"
+kLigatureComponentOrderTags = ['1ST', '2ND', '3RD', '4TH']  # Add more as necessary to a maximum of 9 (nine)
+
+kIndianAboveMarks = "abvm"
+kIndianBelowMarks = "blwm"
+
+'''
