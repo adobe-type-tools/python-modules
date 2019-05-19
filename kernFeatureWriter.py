@@ -756,7 +756,10 @@ class MakeMeasuredSubtables(object):
         for leftItemList in measuredSubtables:
             stDict = {}
             for leftItem in leftItemList:
-                for pair in [pair for pair in self.kernDict.keys() if pair[0] == leftItem]:
+                for pair in [
+                    pair for pair in self.kernDict.keys() if
+                    pair[0] == leftItem
+                ]:
                     stDict[pair] = kerning.get(pair)
             self.subtables.append(stDict)
 
@@ -1099,42 +1102,63 @@ if __name__ == '__main__':
         help='input font file')
 
     parser.add_argument(
-        '-out', metavar='OUTPUT_NAME', action='store',
+        '-out',
+        metavar='OUTPUT_NAME',
+        action='store',
         default=default_fileName,
-        help='change the output file name\n(default: %s)' % default_fileName)
+        help='change the output file name\n(default: {})'.format(
+            default_fileName))
 
     parser.add_argument(
         '-min',
-        action='store', metavar='VALUE',
-        default=default_minKernValue, type=int,
-        help='minimum kerning value\n(default: %s)' % default_minKernValue)
+        action='store',
+        metavar='VALUE',
+        default=default_minKernValue,
+        type=int,
+        help='minimum kerning value\n(default: {})'.format(
+            default_minKernValue))
 
     parser.add_argument(
-        '-sub', '--subtables', action='store_true',
-        help='write subtables\n(default: %s)' % option_writeSubtables)
+        '-sub', '--subtables',
+        action='store_true',
+        help='write subtables\n(default: {})'.format(
+            option_writeSubtables))
 
     parser.add_argument(
-        '-sts', metavar='VALUE', action='store',
-        default=default_subtableSize, type=int,
-        help='specify max subtable size\n(default: %s)' % default_subtableSize)
+        '-sts',
+        metavar='VALUE',
+        action='store',
+        default=default_subtableSize,
+        type=int,
+        help='specify max subtable size\n(default: {})'.format(
+            default_subtableSize))
 
     parser.add_argument(
-        '-trm', '--w_trimmed', action='store_true',
+        '-trm', '--w_trimmed',
+        action='store_true',
         help='write trimmed pairs to fea file'
-        ' (as comments)\n(default: %s)' % option_writeTrimmed)
+        ' (as comments)\n(default: {})'.format(
+            option_writeTrimmed))
 
     parser.add_argument(
-        '-dis', '--dissolve', action='store_true',
+        '-dis', '--dissolve',
+        action='store_true',
         help='dissolve single-element groups'
-        ' to glyph names\n(default: %s)' % option_dissolveSingleGroups)
+        ' to glyph names\n(default: {})'.format(
+            option_dissolveSingleGroups))
 
     parser.add_argument(
-        '-t', '--test', action='store_true', help='test mode')
+        '-t', '--test',
+        action='store_true',
+        help='test mode')
 
     parser.add_argument(
-        '-x', action='store_true', help='test args')
+        '-x',
+        action='store_true',
+        help='test args')
 
     args = parser.parse_args()
+
     if args.test:
         pprint.pprint(args.__dict__)
         # import doctest
