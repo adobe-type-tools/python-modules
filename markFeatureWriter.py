@@ -26,6 +26,22 @@ default_write_mkmk = False
 default_write_classes = False
 
 
+def write_output(directory, file, data):
+    f_path = os.path.join(directory, file)
+    with open(f_path, 'w') as of:
+        of.write(data)
+    print('writing {}'.format(file))
+
+
+def trim_anchor_name(anchor_name):
+    suffixes = ['UC', 'LC', 'SC']
+    for suffix in suffixes:
+        if anchor_name.endswith(suffix):
+            trimmed_name = anchor_name.replace(suffix, '')
+            return trimmed_name
+    return anchor_name
+
+
 class AnchorMate(object):
     '''
     AnchorMate lifts anchors from one or more glyphs and
@@ -33,7 +49,6 @@ class AnchorMate(object):
     '''
 
     def __init__(self, anchor):
-        # self.name = anchor.name
         self.pos_name_dict = {}
 
 
@@ -76,8 +91,10 @@ class run(object):
         combining_marks_group = f.groups.get(self.mkgrp_name, [])
         if not combining_marks_group:
             print(
-                f'No group named "{self.mkgrp_name}" found. '
-                'Please add it to your UFO file (and combing marks to it).')
+                'No group named "{}" found. '
+                'Please add it to your UFO file '
+                '(and combining marks to it).'.format(self.mkgrp_name)
+            )
             sys.exit()
 
         combining_marks = [f[g_name] for g_name in combining_marks_group]
@@ -98,7 +115,7 @@ class run(object):
         for g in combining_marks:
             for anchor in g.anchors:
                 if self.trim_tags:
-                    anchor_name = self.trim_anchor_name(anchor.name)
+                    anchor_name = trim_anchor_name(anchor.name)
                 else:
                     anchor_name = anchor.name
 
@@ -110,7 +127,7 @@ class run(object):
         for g in base_glyphs:
             for anchor in g.anchors:
                 if self.trim_tags:
-                    anchor_name = self.trim_anchor_name(anchor.name)
+                    anchor_name = trim_anchor_name(anchor.name)
                 else:
                     anchor_name = anchor.name
 
@@ -122,7 +139,7 @@ class run(object):
         for g in mkmk_marks:
             for anchor in g.anchors:
                 if self.trim_tags:
-                    anchor_name = self.trim_anchor_name(anchor.name)
+                    anchor_name = trim_anchor_name(anchor.name)
                 else:
                     anchor_name = anchor.name
 
@@ -158,19 +175,19 @@ class run(object):
         consolidated_content = []
         if self.write_classes:
             mark_class_output = '\n'.join(mark_class_content)
-            self.write_output(ufo_dir, self.mkclass_file, mark_class_output)
+            write_output(ufo_dir, self.mkclass_file, mark_class_output)
         else:
             consolidated_content.extend(mark_class_content)
 
         if self.write_mkmk:
             mkmk_feature_output = '\n'.join(mkmk_feature_content)
-            self.write_output(ufo_dir, self.mkmk_file, mkmk_feature_output)
+            write_output(ufo_dir, self.mkmk_file, mkmk_feature_output)
         else:
             consolidated_content.extend(mkmk_feature_content)
 
         consolidated_content.extend(mark_feature_content)
         consolidated_output = '\n'.join(consolidated_content)
-        self.write_output(ufo_dir, self.mark_file, consolidated_output)
+        write_output(ufo_dir, self.mark_file, consolidated_output)
 
     def sort_gnames(self, glyph_list):
         '''
@@ -178,20 +195,6 @@ class run(object):
         '''
         glyph_list.sort(key=lambda x: self.glyph_order.index(x))
         return glyph_list
-
-    def write_output(self, directory, file, data):
-        f_path = os.path.join(directory, file)
-        with open(f_path, 'w') as of:
-            of.write(data)
-        print('writing {}'.format(file))
-
-    def trim_anchor_name(self, anchor_name):
-        suffixes = ['UC', 'LC', 'SC']
-        for suffix in suffixes:
-            if anchor_name.endswith(suffix):
-                trimmed_name = anchor_name.replace(suffix, '')
-                return trimmed_name
-        return anchor_name
 
     def make_one_mark_class(self, anchor_name, a_mate):
         pos_gname = sorted(a_mate.pos_name_dict.items())
