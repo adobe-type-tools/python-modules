@@ -947,6 +947,9 @@ class run(object):
         # ---------------
         for groupName in kp.group_order:
             glyphList = kp.groups[groupName]
+            if not glyphList:
+                print('\tWARNING: Kerning group %s has no glyphs.' % groupName)
+                continue
             output.append('%s = [%s];' % (groupName, ' '.join(glyphList)))
 
         # ------------------
