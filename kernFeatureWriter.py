@@ -19,7 +19,8 @@ default_subtableSize = 2 ** 14
 # The maximum possible subtable size is 2 ** 16 = 65536.
 # Since every other GPOS feature counts against that size,
 # it needs to be quite a bit smaller.
-# 2 ** 14 has been a good value for Source Serif.
+# 2 ** 14 has been a good value for Source Serif
+# (but failed for master_2, where 2 ** 13 was used)
 
 option_writeTrimmed = False
 # If 'False', trimmed pairs will not be processed and
@@ -27,6 +28,9 @@ option_writeTrimmed = False
 
 option_writeSubtables = False
 # Write subtables -- yes or no?
+
+option_writeTimeStamp = False
+# Write time stamp in .fea file header?
 
 option_dissolveSingleGroups = False
 # If 'True', single-element groups are written as glyphs.
@@ -792,10 +796,14 @@ class run(object):
         writeSubtables=option_writeSubtables,
         outputFileName=default_fileName,
         writeTrimmed=option_writeTrimmed,
+        writeTimeStamp=option_writeTimeStamp,
         subtableSize=default_subtableSize,
         dissolveGroups=option_dissolveSingleGroups,
     ):
-        self.header = ['# Created: %s' % time.ctime()]
+        if writeTimeStamp:
+            self.header = ['# Created: %s' % time.ctime()]
+        else:
+            self.header = []
 
         appTest = WhichApp()
         self.inFL = appTest.inFL
@@ -1144,6 +1152,13 @@ if __name__ == '__main__':
             option_writeTrimmed))
 
     parser.add_argument(
+        '--time',
+        action='store_true',
+        help='write time stamp in header of fea file'
+        '\n(default: {})'.format(
+            option_writeTimeStamp))
+
+    parser.add_argument(
         '-dis', '--dissolve',
         action='store_true',
         help='dissolve single-element groups'
@@ -1180,6 +1195,7 @@ if __name__ == '__main__':
                 writeSubtables=args.subtables,
                 outputFileName=args.out,
                 writeTrimmed=args.w_trimmed,
+                writeTimeStamp=args.time,
                 subtableSize=args.sts,
                 dissolveGroups=args.dissolve,
                 )
