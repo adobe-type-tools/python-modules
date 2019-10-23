@@ -73,8 +73,8 @@ def checkControlKeyPress():
 				notPressed = 0
 		except ImportError:
 			print "Note: to be able to set options for this script, you must install"
-			print "win32all Python module from Mark Hammond. This can be found at:"
-			print "    http://www.python.net/crew/mhammond/win32/Downloads.html"
+			print "PyWin32 (formerly win32all) Python module from Mark Hammond. This can"
+			print "be found at https://github.com/mhammond/pywin32"
 			print "or http://sourceforge.net/, and search for 'Python Windows Extensions."
 	else:
 		import Carbon.Evt
@@ -95,8 +95,8 @@ def checkShiftKeyPress():
 				notPressed = 0
 		except ImportError:
 			print "Note: to be able to set options for this script, you must install"
-			print "win32all Python module from Mark Hammond. This can be found at:"
-			print "    http://www.python.net/crew/mhammond/win32/Downloads.html"
+			print "PyWin32 (formerly win32all) Python module from Mark Hammond. This can"
+			print "be found at https://github.com/mhammond/pywin32"
 			print "or http://sourceforge.net/, and search for 'Python Windows Extensions."
 	else:
 		import Carbon.Evt
@@ -112,13 +112,13 @@ def checkAltKeyPress():
 		try:
 			import win32api
 			import win32con
-			keyState = win32api.GetAsyncKeyState(win32con.VK_SHIFT)
+			keyState = win32api.GetAsyncKeyState(win32con.VK_MENU)
 			if keyState < 0:
 				notPressed = 0
 		except ImportError:
 			print "Note: to be able to set options for this script, you must install"
-			print "win32all Python module from Mark Hammond. This can be found at:"
-			print "    http://www.python.net/crew/mhammond/win32/Downloads.html"
+			print "PyWin32 (formerly win32all) Python module from Mark Hammond. This can"
+			print "be found at https://github.com/mhammond/pywin32"
 			print "or http://sourceforge.net/, and search for 'Python Windows Extensions."
 	else:
 		import Carbon.Evt
