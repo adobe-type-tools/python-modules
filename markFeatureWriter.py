@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 '''
 Current draft for modernized mark feature writer module.
@@ -7,7 +7,6 @@ needs to be added).
 The anchor_name_no_underscore process is odd and was added to patch a bug.
 '''
 
-from __future__ import print_function
 import os
 import sys
 import argparse
