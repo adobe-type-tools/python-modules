@@ -267,6 +267,11 @@ class KernProcessor(object):
         self.pairs_unprocessed = []
         self.pairs_processed = []
 
+        self.reference_groups = {
+            group: glyph_list for (group, glyph_list) in groups.items() if
+            not self._isKerningGroup(group)
+        }
+
         used_group_names = self._get_used_groups(kerning)
         used_groups = {
             g_name: groups.get(g_name) for g_name in used_group_names
@@ -372,6 +377,29 @@ class KernProcessor(object):
             return True
         return False
 
+    def _isKerningGroup(self, groupName):
+        '''
+        Returns True if the first group is a kerning group.
+
+        >>> kp = KernProcessor()
+        >>> kp._isKerningGroup('@_A_LEFT')
+        False
+        >>> kp._isKerningGroup('@someGroupName')
+        False
+        >>> kp._isKerningGroup('public.kern1.whatever')
+        True
+        >>> kp._isKerningGroup('@MMK_L_t')
+        True
+        >>> kp._isKerningGroup('a.ss01')
+        False
+        '''
+
+        if groupName.startswith('@MMK_'):
+            return True
+        if groupName.startswith('public.kern'):
+            return True
+        return False
+
     def _isRTL(self, pair):
         '''
         Checks if a given pair is RTL, by looking for a RTL-specific group
@@ -392,21 +420,22 @@ class KernProcessor(object):
         True
         '''
 
-        RTLGlyphs = self.groups.get(group_RTL, [])
+        RTLGlyphs = self.reference_groups.get(group_RTL, [])
         RTLkerningTags = [tag_ara, tag_heb, tag_RTL]
 
-        if (
-            set(self.groups.get(pair[0], [pair[0]]) +
-                self.groups.get(pair[1], [pair[1]]))) <= set(RTLGlyphs):
+        if set(pair) & set(RTLGlyphs):
+            # Any item in the pair is in the RTL glyph reference group.
+            # This will work for glyph-glyph pairs only.
             return True
 
         for tag in RTLkerningTags:
+            # Group tags indicate presence of RTL item.
+            # This will work for any pair including a RTL group.
             if any([tag in item for item in pair]):
                 return True
         return False
 
     def _isRTLGroup(self, groupName):
-
         '''
         >>> kp = KernProcessor()
         >>> kp._isRTLGroup('a')
