@@ -521,7 +521,7 @@ class MarkDataClass(object):
 
 
     def buildLigatureRelatedLines(self, markTypeName):
-        anchorGroupList = self.anchorsDataInLigaturesDict.keys() # ['aboveAR,arAlefMaksura_AlefMaksura', 'aboveAR,arAlefMaksura_AlefMaksura.f', 'aboveAR,arAlefMaksura_AlefMaksura.fj',
+        anchorGroupList = list(self.anchorsDataInLigaturesDict.keys()) # ['aboveAR,arAlefMaksura_AlefMaksura', 'aboveAR,arAlefMaksura_AlefMaksura.f', 'aboveAR,arAlefMaksura_AlefMaksura.fj',
         anchorGroupList.sort()
         ligaturePosLinesList = []
 
