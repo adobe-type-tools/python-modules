@@ -272,20 +272,21 @@ class KernProcessor(object):
             not self._isKerningGroup(group)
         }
 
-        used_group_names = self._get_used_groups(kerning)
+        sanitized_kerning = self.sanitize_kerning(groups, kerning)
+        used_group_names = self._get_used_groups(sanitized_kerning)
         used_groups = {
             g_name: groups.get(g_name) for g_name in used_group_names
         }
 
         if used_groups and option_dissolve:
             dissolved_groups, dissolved_kerning = self._dissolveSingleGroups(
-                used_groups, kerning)
+                used_groups, sanitized_kerning)
             self.groups = self._remap_groups(dissolved_groups)
             self.kerning = self._remap_kerning(dissolved_kerning)
 
         else:
             self.groups = self._remap_groups(used_groups)
-            self.kerning = self._remap_kerning(kerning)
+            self.kerning = self._remap_kerning(sanitized_kerning)
 
         if used_groups:
             self.grouped_left = self._getAllGroupedGlyphs(side='left')
@@ -297,6 +298,38 @@ class KernProcessor(object):
             self.group_order = sorted(
                 [gr_name for gr_name in self.groups])
             self._sanityCheck(self.kerning)
+
+    def sanitize_kerning(self, groups, kerning):
+        '''
+        Check kerning dict for pairs which reference items that do not exist
+        in the groups dict.
+
+        This solution is not ideal since there is another chance for producing
+        an invalid kerning pair -- by referencing a glyph name which is not in
+        the font. Since the font object is not present in this class, this
+        would be difficult to achieve. Still, this is better than nothing.
+        At least there is some output, and crashing downstream is avoided.
+        '''
+        all_pairs = [pair for pair in kerning.keys()]
+        all_kerned_items = set([item for pair in all_pairs for item in pair])
+        all_kerned_groups = [
+            item for item in all_kerned_items if self._isGroup(item)]
+
+        bad_groups = set(all_kerned_groups) - set(groups.keys())
+        sanitized_kerning = {
+            pair: value for
+            pair, value in kerning.items() if
+            not set(pair).intersection(bad_groups)}
+
+        bad_kerning = sorted([
+            pair for pair in kerning.keys() if
+            pair not in sanitized_kerning.keys()])
+
+        for pair in bad_kerning:
+            print('pair {} {} references non-existent group'.format(
+                *pair))
+
+        return sanitized_kerning
 
     def _remap_group_name(self, group_name):
         '''
