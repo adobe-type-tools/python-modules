@@ -97,6 +97,10 @@ class run(object):
             sys.exit()
 
         combining_marks = [f[g_name] for g_name in combining_marks_group]
+        # find out which attachment anchors exist in combining marks
+        combining_anchor_names = set([
+            a.name for g in combining_marks for a in g.anchors if
+            a.name.startswith('_')])
 
         mkmk_anchor_dict = {}
         mkmk_marks = [g for g in combining_marks if not all(
@@ -131,9 +135,14 @@ class run(object):
                     anchor_name = anchor.name
 
                 position = (anchor.x, anchor.y)
-                am = base_glyph_anchor_dict.setdefault(
-                    anchor_name, AnchorMate(anchor))
-                am.pos_name_dict.setdefault(position, []).append(g.name)
+
+                # only consider anchors that have an attachment equivalent
+                # in the combining mark glyphs
+                attaching_anchor_name = '_' + anchor_name
+                if attaching_anchor_name in combining_anchor_names:
+                    am = base_glyph_anchor_dict.setdefault(
+                        anchor_name, AnchorMate(anchor))
+                    am.pos_name_dict.setdefault(position, []).append(g.name)
 
         for g in mkmk_marks:
             for anchor in g.anchors:
