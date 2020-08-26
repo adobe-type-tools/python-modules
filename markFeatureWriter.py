@@ -41,6 +41,11 @@ def trim_anchor_name(anchor_name):
     return anchor_name
 
 
+def round_coordinate(coordinate):
+    rounded_coordinate = tuple(int(round(v)) for v in coordinate)
+    return rounded_coordinate
+
+
 class AnchorMate(object):
     '''
     AnchorMate lifts anchors from one or more glyphs and
@@ -122,7 +127,7 @@ class run(object):
                 else:
                     anchor_name = anchor.name
 
-                position = (anchor.x, anchor.y)
+                position = round_coordinate((anchor.x, anchor.y))
                 am = combining_anchor_dict.setdefault(
                     anchor_name, AnchorMate(anchor))
                 am.pos_name_dict.setdefault(position, []).append(g.name)
@@ -134,7 +139,7 @@ class run(object):
                 else:
                     anchor_name = anchor.name
 
-                position = (anchor.x, anchor.y)
+                position = round_coordinate((anchor.x, anchor.y))
 
                 # only consider anchors that have an attachment equivalent
                 # in the combining mark glyphs
@@ -151,7 +156,7 @@ class run(object):
                 else:
                     anchor_name = anchor.name
 
-                position = (anchor.x, anchor.y)
+                position = round_coordinate((anchor.x, anchor.y))
                 am = mkmk_anchor_dict.setdefault(
                     anchor_name, AnchorMate(anchor))
                 am.pos_name_dict.setdefault(position, []).append(g.name)
