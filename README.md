@@ -66,7 +66,7 @@ It produces the same results as the old `WriteFeaturesKernFDK.py` module, but it
 
 The main motivation for writing this new module were problems with kerning subtable overflow.  
 
-## mark feature writer module
+## mark feature writer modules
 ### `WriteFeaturesMarkFDK.py`
 Example code for a Python file that uses the `WriteFeaturesMarkFDK` module from the command line:
 
@@ -89,6 +89,20 @@ Example code for a Python file that uses the `WriteFeaturesMarkFDK` module from 
     WriteFeaturesMarkFDK.MarkDataClass(font, os.path.dirname(font.path), trimCasingTags, genMkmkFeature, writeClassesFile, indianScriptsFormat)
 
 ```
+
+### `markFeatureWriter.py`
+
+The `markFeatureWriter.py` module is a re-write of `WriteFeaturesMarkFDK.py`.
+It does not support all the features of the old module (ligature components, contextual marks), but can be used for mark feature writing in basic scenarios. The tool can be used directly from the command line:
+
+```bash
+
+    python markFeatureWriter.py font.ufo
+    python markFeatureWriter.py font.ufo -m
+
+```
+
+----
 
 ## other modules
 
