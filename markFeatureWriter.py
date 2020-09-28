@@ -106,6 +106,10 @@ class run(object):
         combining_anchor_names = set([
             a.name for g in combining_marks for a in g.anchors if
             a.name.startswith('_')])
+        if self.trim_tags:
+            combining_anchor_names = [
+                trim_anchor_name(a_name) for a_name in combining_anchor_names]
+
 
         mkmk_anchor_dict = {}
         mkmk_marks = [g for g in combining_marks if not all(
