@@ -87,7 +87,7 @@ class run(object):
         ufo_dir = os.path.dirname(
             os.path.normpath(ufo_path)
         )
-        print(os.path.dirname(ufo_path))
+
         f = Font(ufo_path)
         self.glyph_order = f.lib['public.glyphOrder']
 
@@ -109,7 +109,6 @@ class run(object):
         if self.trim_tags:
             combining_anchor_names = [
                 trim_anchor_name(a_name) for a_name in combining_anchor_names]
-
 
         mkmk_anchor_dict = {}
         mkmk_marks = [g for g in combining_marks if not all(
@@ -196,13 +195,14 @@ class run(object):
         else:
             consolidated_content.extend(mark_class_content)
 
+        consolidated_content.extend(mark_feature_content)
+
         if self.write_mkmk:
             mkmk_feature_output = '\n'.join(mkmk_feature_content)
             write_output(ufo_dir, self.mkmk_file, mkmk_feature_output)
         else:
             consolidated_content.extend(mkmk_feature_content)
 
-        consolidated_content.extend(mark_feature_content)
         consolidated_output = '\n'.join(consolidated_content)
         write_output(ufo_dir, self.mark_file, consolidated_output)
 
