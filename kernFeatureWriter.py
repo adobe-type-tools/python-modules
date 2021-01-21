@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import time
@@ -14,7 +14,7 @@ default_minKernValue = 3
 # means that pairs that equal this absolute value will NOT be
 # ignored/trimmed. Anything below that value will be trimmed.
 
-default_subtableSize = 2 ** 14
+default_subtableSize = 2 ** 13
 # The maximum possible subtable size is 2 ** 16 = 65536.
 # Since every other GPOS feature counts against that size,
 # it needs to be quite a bit smaller.
