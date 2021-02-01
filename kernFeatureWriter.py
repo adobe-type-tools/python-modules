@@ -1,5 +1,30 @@
 #!/usr/bin/env python3
 
+'''
+kernFeatureWriter.py 1.0 - Sept 2016
+
+Rewrite of WriteFeaturesKernFDK.py, which will eventually be replaced by
+this module. The main motivation for this were problems with kerning
+subtable overflow.
+
+Main improvements of this script compared to WriteFeaturesKernFDK.py:
+-   can be called from the command line, with a UFO file as an argument
+-   automatic subtable measuring
+-   ability to dissolve single-glyph groups into glyph-pairs
+    (this feature was written for subtable optimization)
+-   identify glyph-to-glyph RTL kerning (requirement: all RTL glyphs
+    are part of a catch-all @RTL_KERNING group)
+
+To do:
+-   write proper tests for individual functions.
+    Some doctests were written, but not enough for all scenarios
+-   measure the `mark` feature, which also contributes to the size of the
+    GPOS table (and therefore indirectly influences kerning overflow)
+-   test kerning integrity, to make sure referenced glyphs actually exist
+    (and building binaries doesn't fail).
+
+'''
+
 import os
 import time
 import pprint
@@ -46,41 +71,12 @@ tag_RTL = '_RTL'
 tag_exception = 'EXC_'
 tag_ignore = '.cxt'
 
-__doc__ = '''
-kernFeatureWriter.py 1.0 - Sept 2016
-
-Rewrite of WriteFeaturesKernFDK.py, which will eventually be replaced by
-this module. The main motivation for this were problems with kerning
-subtable overflow.
-
-Main improvements of this script compared to WriteFeaturesKernFDK.py:
--   can be called from the command line, with a UFO file as an argument
--   automatic subtable measuring
--   has the ability to dissolve single-glyph groups into glyph-pairs
-    (this feature was written for subtable optimization)
--   can identify glyph-to-glyph RTL kerning (requirement: all RTL glyphs
-    are part of a catch-all @RTL_KERNING group)
-
-To do:
--   Write proper tests for individual functions.
-    Some doctests were written, but not enough for all scenarios
--   Measure the `mark` feature, which also contributes to the size of the
-    GPOS table (and therefore indirectly influences kerning overflow).
--   Test kerning integrity, to make sure referenced glyphs actually exist
-    (and building binaries doesn't fail).
-
-'''
-
 
 class WhichApp(object):
     '''
-    Testing the environment.
+    Test the environment.
     When running from the command line,
     'Defcon' is the expected environment
-
-    >>> a = WhichApp()
-    >>> a.appName
-    'Defcon'
     '''
 
     def __init__(self):
@@ -126,7 +122,7 @@ class FLKerningData(object):
             self._readFLKerning()
 
     def _isMMfont(self):
-        '''Checks if the FontLab font is a Multiple Master font.'''
+        '''Check if the FontLab font is a Multiple Master font.'''
 
         if self.f[0].layers_number > 1:
             return True
@@ -167,17 +163,9 @@ class FLKerningData(object):
 
     def _splitFLGroups(self):
         '''
-        Splits FontLab kerning classes into left and right sides; based on
+        Split FontLab kerning classes into left and right sides; based on
         the class name. If classes do not have an explicit side-flag, they
         are assigned to both left and right sides.
-
-        >>> fkd = FLKerningData(None)
-        >>> fkd.groups = ['@PE_1ST_HEB', '@E_UC_LEFT_LAT', '@PERCENT', '@DALET_2ND_HEB', '@X_UC_LAT', '@PAREN_RIGHT_HEB', '@ROUND_UC_LEFT_LAT', '@T_LC_RIGHT_LAT']
-        >>> fkd._splitFLGroups()
-        >>> sorted(fkd.leftGroups)
-        ['@E_UC_LEFT_LAT', '@PERCENT', '@PE_1ST_HEB', '@ROUND_UC_LEFT_LAT', '@X_UC_LAT']
-        >>> sorted(fkd.rightGroups)
-        ['@DALET_2ND_HEB', '@PAREN_RIGHT_HEB', '@PERCENT', '@T_LC_RIGHT_LAT', '@X_UC_LAT']
         '''
 
         leftTagsList = tags_left
@@ -197,7 +185,7 @@ class FLKerningData(object):
 
     def _filterKeyGlyphs(self, groupList):
         '''
-        Returns a dictionary
+        Return a dictionary
         {keyGlyph: FLClassName}
         for a given list of group names.
         '''
@@ -212,7 +200,7 @@ class FLKerningData(object):
 
     def _readFLKerning(self):
         '''
-        Reads FontLab kerning and converts it into a UFO-style kerning dict.
+        Read FontLab kerning and converts it into a UFO-style kerning dict.
         '''
 
         self.kerning = {}
@@ -333,7 +321,7 @@ class KernProcessor(object):
 
     def _remap_group_name(self, group_name):
         '''
-        Remaps a single group name from public.kern style to @MMK style
+        Remap a single group name from public.kern style to @MMK style
         '''
         if 'public.kern1.' in group_name:
             stripped_name = group_name.replace('public.kern1.', '')
@@ -356,7 +344,7 @@ class KernProcessor(object):
 
     def _remap_group_order(self, group_list):
         '''
-        Remaps group order list
+        Remap group order list
         '''
         remapped_group_order = [
             self._remap_group_name(g_name) for g_name in group_list
@@ -365,8 +353,7 @@ class KernProcessor(object):
 
     def _remap_groups(self, groups):
         '''
-        Remaps groups dictionary to not contain
-        public.kern prefixes.
+        Remap groups dictionary to not contain public.kern prefixes.
         '''
         remapped_groups = {}
         for group_name, glyph_list in groups.items():
@@ -377,8 +364,7 @@ class KernProcessor(object):
 
     def _remap_kerning(self, kerning):
         '''
-        Remaps kerning dictionary to not contain
-        public.kern prefixes.
+        Remap kerning dictionary to not contain public.kern prefixes.
         '''
         remapped_kerning = {}
         for (left, right), value in kerning.items():
@@ -391,17 +377,7 @@ class KernProcessor(object):
 
     def _isGroup(self, itemName):
         '''
-        Returns True if the first character of a kerning item is "@".
-
-        >>> kp = KernProcessor()
-        >>> kp._isGroup('@_A_LEFT')
-        True
-        >>> kp._isGroup('@someGroupName')
-        True
-        >>> kp._isGroup('public.kern1.whatever')
-        True
-        >>> kp._isGroup('a.ss01')
-        False
+        Return True if the first character of a kerning item is "@".
         '''
 
         if itemName[0] == '@':
@@ -412,19 +388,7 @@ class KernProcessor(object):
 
     def _isKerningGroup(self, groupName):
         '''
-        Returns True if the first group is a kerning group.
-
-        >>> kp = KernProcessor()
-        >>> kp._isKerningGroup('@_A_LEFT')
-        False
-        >>> kp._isKerningGroup('@someGroupName')
-        False
-        >>> kp._isKerningGroup('public.kern1.whatever')
-        True
-        >>> kp._isKerningGroup('@MMK_L_t')
-        True
-        >>> kp._isKerningGroup('a.ss01')
-        False
+        Return True if the first group is a kerning group.
         '''
 
         if groupName.startswith('@MMK_'):
@@ -435,22 +399,8 @@ class KernProcessor(object):
 
     def _isRTL(self, pair):
         '''
-        Checks if a given pair is RTL, by looking for a RTL-specific group
-        tag. Also using the hard-coded list of RTL glyphs.
-
-        >>> kp = KernProcessor({},{},[])
-        >>> kp._isRTL(('a', 'c'))
-        False
-        >>> kp._isRTL(('@MMK_L_t', '@MMK_R_sups_round'))
-        False
-        >>> kp._isRTL(('x', '@MMK_R_ARA_alef'))
-        True
-        >>> kp._isRTL(('@MMK_L_ARA_T_UC_LEFT', '@MMK_R_LAT_YSTROKE_UC_RIGHT'))
-        True
-        >>> kp._isRTL(('@MMK_L_CYR_VEBULG_LC_LEFT', '@MMK_R_HEB_ZE_LC_RIGHT'))
-        True
-        >>> kp._isRTL(('@MMK_L_HEB_DASH', '@MMK_R_HEB_XI_LC_RIGHT'))
-        True
+        Check if a given pair is RTL, by looking for a RTL-specific group
+        tag. Also use the hard-coded list of RTL glyphs.
         '''
 
         RTLGlyphs = self.reference_groups.get(group_RTL, [])
@@ -470,18 +420,7 @@ class KernProcessor(object):
 
     def _isRTLGroup(self, groupName):
         '''
-        >>> kp = KernProcessor()
-        >>> kp._isRTLGroup('a')
-        False
-        >>> kp._isRTLGroup('@MMK_L_t')
-        False
-        >>> kp._isRTLGroup('@MMK_L_ARA_T_UC_LEFT')
-        True
-        >>> kp._isRTLGroup('@MMK_L_HEB_DASH')
-        True
-        >>> kp._isRTLGroup('@MMK_L_whatever_RTL')
-        True
-
+        Check if a given group is a RTL group
         '''
         RTLkerningTags = [tag_ara, tag_heb, tag_RTL]
 
@@ -492,7 +431,7 @@ class KernProcessor(object):
 
     def _get_used_groups(self, kerning):
         '''
-        Returns all groups which are actually used in kerning,
+        Return all groups which are actually used in kerning,
         by iterating through the kerning pairs.
         '''
         groupList = []
@@ -505,7 +444,7 @@ class KernProcessor(object):
 
     def _getAllGroupedGlyphs(self, groupFilterList=None, side=None):
         '''
-        Returns lists of glyphs used in groups on left or right side.
+        Return lists of glyphs used in groups on left or right side.
         This is used to calculate the subtable size for a given list
         of groups (groupFilterList) used within that subtable.
         '''
@@ -534,18 +473,6 @@ class KernProcessor(object):
         (which are not RTL groups) which can be dissolved
         into single, or group-to-glyph/glyph-to-group pairs.
         The intention is avoiding an overload of the group-group subtable.
-
-        >>> groups = {'@ALEF_1ST_ARA': ['arAlef', 'arAlef.f', 'arAlef.wide', 'arAlef.fwide'], '@MMK_L_SIX_FITTED_NUM': ['six.fitted'], '@MMK_R_FOUR_FITTED_NUM': ['four.fitted'], '@MMK_L_LAT_BSMALL_LC_LEFT': ['Bsmall'], '@MMK_R_LAT_X_UC_RIGHT': ['X', 'Xdieresis', 'Xdotaccent'], '@MMK_L_PERIOD': ['period', 'ellipsis'], '@MMK_R_FOUR_SC_NUM_RIGHT': ['four.sc'], '@MMK_L_CYR_IUKRAN_LC_LEFT': ['i.ukran', 'yi'], '@MMK_R_CYR_HA_LC_RIGHT': ['ha', 'hadescender']}
-        >>> kerning = {('@MMK_L_SIX_FITTED_NUM', '@MMK_R_FOUR_FITTED_NUM'): 10, ('@MMK_L_LAT_BSMALL_LC_LEFT', '@MMK_R_LAT_X_UC_RIGHT'): 20, ('@MMK_L_PERIOD', '@MMK_R_FOUR_SC_NUM_RIGHT'): 10, ('@MMK_L_CYR_IUKRAN_LC_LEFT', '@MMK_R_CYR_HA_LC_RIGHT'): 10}
-        >>> kp = KernProcessor()
-        >>> remaingGroups = kp._dissolveSingleGroups(groups, kerning)[0]
-        >>> sorted(remaingGroups.items())
-        [('@ALEF_1ST_ARA', ['arAlef', 'arAlef.f', 'arAlef.wide', 'arAlef.fwide']), ('@MMK_L_CYR_IUKRAN_LC_LEFT', ['i.ukran', 'yi']), ('@MMK_L_PERIOD', ['period', 'ellipsis']), ('@MMK_R_CYR_HA_LC_RIGHT', ['ha', 'hadescender']), ('@MMK_R_LAT_X_UC_RIGHT', ['X', 'Xdieresis', 'Xdotaccent'])]
-
-        >>> remainingKerning = kp._dissolveSingleGroups(groups, kerning)[1]
-        >>> sorted(remainingKerning.items())
-        [(('@MMK_L_CYR_IUKRAN_LC_LEFT', '@MMK_R_CYR_HA_LC_RIGHT'), 10), (('@MMK_L_PERIOD', 'four.sc'), 10), (('Bsmall', '@MMK_R_LAT_X_UC_RIGHT'), 20), (('six.fitted', 'four.fitted'), 10)]
-
         '''
         singleGroups = dict(
             [(group_name, glyphs) for group_name, glyphs in groups.items() if(
@@ -568,7 +495,7 @@ class KernProcessor(object):
 
     def _sanityCheck(self, kerning):
         '''
-        Checks if the number of kerning pairs input
+        Check if the number of kerning pairs input
         equals the number of kerning entries output.
         '''
         totalKernPairs = len(self.kerning.keys())
@@ -584,15 +511,8 @@ class KernProcessor(object):
 
     def _explode(self, leftGlyphList, rightGlyphList):
         '''
-        Returns a list of tuples, containing all possible combinations
+        Return a list of tuples, containing all possible combinations
         of elements in both input lists.
-
-        >>> kp = KernProcessor()
-        >>> input1 = ['a', 'b', 'c']
-        >>> input2 = ['d', 'e', 'f']
-        >>> explosion = kp._explode(input1, input2)
-        >>> sorted(explosion)
-        [('a', 'd'), ('a', 'e'), ('a', 'f'), ('b', 'd'), ('b', 'e'), ('b', 'f'), ('c', 'd'), ('c', 'e'), ('c', 'f')]
         '''
 
         return list(itertools.product(leftGlyphList, rightGlyphList))
@@ -919,7 +839,7 @@ class run(object):
 
     def _dict2pos(self, pairValueDict, minimum=0, enum=False, RTL=False):
         '''
-        Turns a dictionary to a list of kerning pairs. In a single master font,
+        Turn a dictionary to a list of kerning pairs. In a single master font,
         the function can filter kerning pairs whose absolute value does not
         exceed a given threshold.
         '''
@@ -938,7 +858,7 @@ class run(object):
                         '<{0} 0 {0} 0>'.format(kernValue) for
                         kernValue in values]
                     valueString = '<%s>' % ' '.join(values)
-                    # creates an (experimental, but consequent)
+                    # create an (experimental, but consequent)
                     # string like this:
                     # <<10 0 10 0> <20 0 20 0> <30 0 30 0> <40 0 40 0>>
 
@@ -1002,7 +922,7 @@ class run(object):
         return subtableOutput
 
     def _makeOutputData(self):
-        'Building the output data.'
+        # Build the output data.
 
         output = []
         kp = KernProcessor(
@@ -1097,7 +1017,7 @@ class run(object):
                 '\n# group, glyph and group, group:')
             )
 
-        # Checking if RTL pairs exist
+        # Check if RTL pairs exist
         rtlPairsExist = False
         for container_dict, _, _, _ in RTLorderExtension + RTLorder:
             if container_dict.keys():
