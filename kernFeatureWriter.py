@@ -1146,39 +1146,22 @@ if __name__ == '__main__':
         ' to glyph names\n(default: {})'.format(
             option_dissolveSingleGroups))
 
-    parser.add_argument(
-        '-t', '--test',
-        action='store_true',
-        help='test mode')
-
-    parser.add_argument(
-        '-x',
-        action='store_true',
-        help='test args')
-
     args = parser.parse_args()
+    f_path = os.path.normpath(args.input_file)
+    f_dir = os.path.dirname(f_path)
+    import defcon
+    if os.path.exists(f_path):
 
-    if args.test:
-        pprint.pprint(args.__dict__)
-        # import doctest
-        # doctest.testmod()
+        f = defcon.Font(f_path)
 
+        run(f, f_dir,
+            minKern=args.min,
+            writeSubtables=args.subtables,
+            outputFileName=args.out,
+            writeTrimmed=args.w_trimmed,
+            writeTimeStamp=args.time,
+            subtableSize=args.sts,
+            dissolveGroups=args.dissolve,
+            )
     else:
-        f_path = os.path.normpath(args.input_file)
-        f_dir = os.path.dirname(f_path)
-        import defcon
-        if os.path.exists(f_path):
-
-            f = defcon.Font(f_path)
-
-            run(f, f_dir,
-                minKern=args.min,
-                writeSubtables=args.subtables,
-                outputFileName=args.out,
-                writeTrimmed=args.w_trimmed,
-                writeTimeStamp=args.time,
-                subtableSize=args.sts,
-                dissolveGroups=args.dissolve,
-                )
-        else:
-            print(f_path, 'does not exist.')
+        print(f_path, 'does not exist.')
