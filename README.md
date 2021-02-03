@@ -1,7 +1,7 @@
+[![codecov](https://codecov.io/gh/adobe-type-tools/python-modules/branch/master/graph/badge.svg?token=Zeqzh6AHfO)](https://codecov.io/gh/adobe-type-tools/python-modules)
+
 Python modules
 =========================
-
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/adc4c799f1d545cdb8e568057fa59524)](https://app.codacy.com/app/adobe-type-tools/python-modules?utm_source=github.com&utm_medium=referral&utm_content=adobe-type-tools/python-modules&utm_campaign=Badge_Grade_Dashboard)
 
 These files are used and required by some of the Python scripts available in the other repositories.
 
