@@ -25,39 +25,10 @@ To do:
 
 '''
 
+import argparse
+import itertools
 import os
 import time
-import pprint
-import itertools
-import argparse
-
-default_fileName = 'kern.fea'
-# The default output filename
-
-default_minKernValue = 3
-# Default mimimum kerning value. This value is _inclusive_, which
-# means that pairs that equal this absolute value will NOT be
-# ignored/trimmed. Anything below that value will be trimmed.
-
-default_subtableSize = 2 ** 13
-# The maximum possible subtable size is 2 ** 16 = 65536.
-# Since every other GPOS feature counts against that size,
-# it needs to be quite a bit smaller.
-# 2 ** 14 has been a good value for Source Serif
-# (but failed for master_2, where 2 ** 13 was used)
-
-option_writeTrimmed = False
-# If 'False', trimmed pairs will not be processed and
-# therefore not be written to the output file.
-
-option_writeSubtables = False
-# Write subtables -- yes or no?
-
-option_writeTimeStamp = False
-# Write time stamp in .fea file header?
-
-option_dissolveSingleGroups = False
-# If 'True', single-element groups are written as glyphs.
 
 
 group_RTL = 'RTL_KERNING'
@@ -70,6 +41,43 @@ tag_heb = '_HEB'
 tag_RTL = '_RTL'
 tag_exception = 'EXC_'
 tag_ignore = '.cxt'
+
+
+class Defaults(object):
+    """
+    default values
+    These can later be overridden by argparse.
+    """
+
+    def __init__(self):
+
+        # The default output filename
+        self.output_file = 'kern.fea'
+
+        # Default mimimum kerning value. This value is _inclusive_, which
+        # means that pairs that equal this absolute value will NOT be
+        # ignored/trimmed. Anything below that value will be trimmed.
+        self.min_value = 3
+
+        # The maximum possible subtable size is 2 ** 16 = 65536.
+        # Since every other GPOS feature counts against that size, the
+        # subtable size chosen needs to be quite a bit smaller.
+        # 2 ** 14 has been a good value for Source Serif
+        # (but failed for master_2, where 2 ** 13 was used)
+        self.subtable_size = 2 ** 13
+
+        # If 'False', trimmed pairs will not be processed and therefore
+        # not be written to the output file.
+        self.write_trimmed_pairs = False
+
+        # Write subtables -- yes or no?
+        self.write_subtables = False
+
+        # Write time stamp in .fea file header?
+        self.write_timestamp = False
+
+        # If 'True', single-element groups are written as glyphs.
+        self.dissolve_single = False
 
 
 class WhichApp(object):
@@ -669,10 +677,7 @@ class KernProcessor(object):
 
 class MakeMeasuredSubtables(object):
 
-    def __init__(
-        self, kernDict, kerning, groups,
-        maxSubtableSize=default_subtableSize
-    ):
+    def __init__(self, kernDict, kerning, groups, maxSubtableSize):
 
         self.kernDict = kernDict
         self.subtables = []
@@ -718,10 +723,10 @@ class MakeMeasuredSubtables(object):
                 rightClassSize = 6 + (2 * len(groupedGlyphsRight))
                 subtableMetadataSize = (
                     coverageTableSize + leftClassSize + rightClassSize)
-                subtableSize = (
+                subtable_size = (
                     16 + len(usedGroupsLeft) * len(usedGroupsRight) * 2)
 
-            if subtableMetadataSize + subtableSize < maxSubtableSize:
+            if subtableMetadataSize + subtable_size < maxSubtableSize:
                 subtable.append(item)
 
             else:
@@ -771,32 +776,24 @@ class MakeMeasuredSubtables(object):
 
 class run(object):
 
-    def __init__(
-        self, font, folderPath,
-        minKern=default_minKernValue,
-        writeSubtables=option_writeSubtables,
-        outputFileName=default_fileName,
-        writeTrimmed=option_writeTrimmed,
-        writeTimeStamp=option_writeTimeStamp,
-        subtableSize=default_subtableSize,
-        dissolveGroups=option_dissolveSingleGroups,
-    ):
-        if writeTimeStamp:
+    def __init__(self, font, args):
+
+        if args.write_timestamp:
             self.header = ['# Created: %s' % time.ctime()]
         else:
             self.header = []
 
         appTest = WhichApp()
+        output_file = args.output_file
+
         self.inFL = appTest.inFL
-
         self.f = font
-        self.folder = folderPath
-
-        self.minKern = minKern
-        self.writeSubtables = writeSubtables
-        self.subtableSize = subtableSize
-        self.writeTrimmed = writeTrimmed
-        self.dissolveGroups = dissolveGroups
+        self.folder = os.path.dirname(font.path)
+        self.minKern = args.min_value
+        self.write_subtables = args.write_subtables
+        self.subtable_size = args.subtable_size
+        self.write_trimmed_pairs = args.write_trimmed_pairs
+        self.dissolve_single = args.dissolve_single
 
         # This does not do anything really. Remove or fix
         self.processedPairs = 0
@@ -813,7 +810,7 @@ class run(object):
             self.group_order = fl_K.group_order
 
             if self.MM:
-                outputFileName = 'mm' + outputFileName
+                output_file = 'mm' + output_file
             else:
                 self.header.append('# MM Inst: %s' % self.f.menu_name)
 
@@ -833,9 +830,9 @@ class run(object):
         self.header.append('# MinKern: +/- %s inclusive' % self.minKern)
         self.header.append('# exported from %s' % appTest.appName)
 
-        outputData = self._makeOutputData()
+        outputData = self._makeOutputData(args)
         if outputData:
-            self.writeDataToFile(outputData, outputFileName)
+            self.writeDataToFile(outputData, output_file)
 
     def _dict2pos(self, pairValueDict, minimum=0, enum=False, RTL=False):
         '''
@@ -884,7 +881,7 @@ class run(object):
                     data.append(enumLine)
                 else:
                     if abs(kernValue) < minimum:
-                        if self.writeTrimmed:
+                        if self.write_trimmed_pairs:
                             data.append('# %s' % posLine)
                         trimmed += 1
                     else:
@@ -921,14 +918,14 @@ class run(object):
         print('%s subtables created' % self.subtablesCreated)
         return subtableOutput
 
-    def _makeOutputData(self):
+    def _makeOutputData(self, args):
         # Build the output data.
 
         output = []
         kp = KernProcessor(
             self.groups,
             self.kerning,
-            self.dissolveGroups
+            self.dissolve_single
         )
 
         # ---------------
@@ -989,7 +986,7 @@ class run(object):
                 '\n# RTL group, group/glyph:', False)
         ]
 
-        if not self.writeSubtables:
+        if not self.write_subtables:
             LTRorder.extend(LTRorderExtension)
             RTLorder.extend(RTLorderExtension)
 
@@ -1000,18 +997,18 @@ class run(object):
                     self._dict2pos(container_dict, minKern, enum))
                 self.processedPairs += len(container_dict)
 
-        if self.writeSubtables:
+        if self.write_subtables:
             self.subtablesCreated = 0
 
             glyph_to_class_subtables = MakeMeasuredSubtables(
                 kp.glyph_group, kp.kerning, kp.groups,
-                self.subtableSize).subtables
+                self.subtable_size).subtables
             output.extend(self._buildSubtableOutput(
                 glyph_to_class_subtables, '\n# glyph, group:'))
 
             class_to_class_subtables = MakeMeasuredSubtables(
                 kp.group_group, kp.kerning, kp.groups,
-                self.subtableSize).subtables
+                self.subtable_size).subtables
             output.extend(self._buildSubtableOutput(
                 class_to_class_subtables,
                 '\n# group, glyph and group, group:')
@@ -1041,19 +1038,19 @@ class run(object):
                             container_dict, minKern, enum, RTL=True))
                     self.processedPairs += len(container_dict)
 
-            if self.writeSubtables:
+            if self.write_subtables:
                 self.RTLsubtablesCreated = 0
 
                 rtl_glyph_class_subtables = MakeMeasuredSubtables(
                     kp.rtl_glyph_group, kp.kerning, kp.groups,
-                    self.subtableSize).subtables
+                    self.subtable_size).subtables
                 output.extend(self._buildSubtableOutput(
                     rtl_glyph_class_subtables,
                     '\n# RTL glyph, group:', RTL=True))
 
                 rtl_class_class_subtables = MakeMeasuredSubtables(
                     kp.rtl_group_group, kp.kerning, kp.groups,
-                    self.subtableSize).subtables
+                    self.subtable_size).subtables
                 output.extend(self._buildSubtableOutput(
                     rtl_class_class_subtables,
                     '\n# RTL group, glyph and group, group:', RTL=True))
@@ -1082,86 +1079,75 @@ class run(object):
             print('\tOutput file written to %s' % outputPath)
 
 
-if __name__ == '__main__':
+def get_args():
 
+    defaults = Defaults()
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawTextHelpFormatter,
-        # formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
         'input_file',
         help='input font file')
 
     parser.add_argument(
-        '-out',
-        metavar='OUTPUT_NAME',
+        '-o', '--output_file',
         action='store',
-        default=default_fileName,
-        help='change the output file name\n(default: {})'.format(
-            default_fileName))
+        default=defaults.output_file,
+        help='change the output file name')
 
     parser.add_argument(
-        '-min',
+        '-m', '--min_value',
         action='store',
-        metavar='VALUE',
-        default=default_minKernValue,
+        default=defaults.min_value,
+        metavar='INT',
         type=int,
-        help='minimum kerning value\n(default: {})'.format(
-            default_minKernValue))
+        help='minimum kerning value')
 
     parser.add_argument(
-        '-sub', '--subtables',
+        '-s', '--write_subtables',
         action='store_true',
-        help='write subtables\n(default: {})'.format(
-            option_writeSubtables))
+        default=defaults.write_subtables,
+        help='write subtables')
 
     parser.add_argument(
-        '-sts',
-        metavar='VALUE',
+        '--subtable_size',
         action='store',
-        default=default_subtableSize,
+        default=defaults.subtable_size,
+        metavar='INT',
         type=int,
-        help='specify max subtable size\n(default: {})'.format(
-            default_subtableSize))
+        help='specify max subtable size')
 
     parser.add_argument(
-        '-trm', '--w_trimmed',
+        '-t', '--write_trimmed_pairs',
         action='store_true',
-        help='write trimmed pairs to fea file'
-        ' (as comments)\n(default: {})'.format(
-            option_writeTrimmed))
+        default=defaults.write_trimmed_pairs,
+        help='write trimmed pairs to fea file (as comments)')
 
     parser.add_argument(
-        '--time',
+        '--write_timestamp',
         action='store_true',
-        help='write time stamp in header of fea file'
-        '\n(default: {})'.format(
-            option_writeTimeStamp))
+        default=defaults.write_timestamp,
+        help='write time stamp in header of fea file')
 
     parser.add_argument(
-        '-dis', '--dissolve',
+        '--dissolve_single',
         action='store_true',
-        help='dissolve single-element groups'
-        ' to glyph names\n(default: {})'.format(
-            option_dissolveSingleGroups))
+        default=defaults.dissolve_single,
+        help='dissolve single-element groups to glyph names')
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+
+    args = get_args()
     f_path = os.path.normpath(args.input_file)
-    f_dir = os.path.dirname(f_path)
     import defcon
     if os.path.exists(f_path):
 
         f = defcon.Font(f_path)
+        run(f, args)
 
-        run(f, f_dir,
-            minKern=args.min,
-            writeSubtables=args.subtables,
-            outputFileName=args.out,
-            writeTrimmed=args.w_trimmed,
-            writeTimeStamp=args.time,
-            subtableSize=args.sts,
-            dissolveGroups=args.dissolve,
-            )
     else:
         print(f_path, 'does not exist.')
