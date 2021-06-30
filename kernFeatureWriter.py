@@ -56,7 +56,7 @@ class Defaults(object):
 
         # Default mimimum kerning value. This value is _inclusive_, which
         # means that pairs that equal this absolute value will NOT be
-        # ignored/trimmed. Anything below that value will be trimmed.
+        # ignored/trimmed. Anything in range of +/- value will be trimmed.
         self.min_value = 3
 
         # The maximum possible subtable size is 2 ** 16 = 65536.
@@ -76,7 +76,10 @@ class Defaults(object):
         # Write time stamp in .fea file header?
         self.write_timestamp = False
 
-        # If 'True', single-element groups are written as glyphs.
+        # Write single-element groups as glyphs?
+        # (This has no influence on the output kerning data, but helps with
+        # balancing subtables, and potentially makes the number of kerning
+        # pairs involving groups a bit smaller).
         self.dissolve_single = False
 
 
@@ -293,18 +296,18 @@ class KernProcessor(object):
         if self.kerning and len(self.kerning.keys()):
             self.group_order = sorted(
                 [gr_name for gr_name in self.groups])
-            self._sanityCheck(self.kerning)
+            self._sanityCheck()
 
     def sanitize_kerning(self, groups, kerning):
         '''
-        Check kerning dict for pairs which reference items that do not exist
+        Check kerning dict for pairs referencing items that do not exist
         in the groups dict.
 
         This solution is not ideal since there is another chance for producing
         an invalid kerning pair -- by referencing a glyph name which is not in
-        the font. Since the font object is not present in this class, this
-        would be difficult to achieve. Still, this is better than nothing.
-        At least there is some output, and crashing downstream is avoided.
+        the font. The font object is not present in this class, so a comparison
+        would be difficult to achieve. This check is better than nothing for
+        the moment, since crashing downstream is avoided.
         '''
         all_pairs = [pair for pair in kerning.keys()]
         all_kerned_items = set([item for pair in all_pairs for item in pair])
@@ -322,8 +325,8 @@ class KernProcessor(object):
             pair not in sanitized_kerning.keys()])
 
         for pair in bad_kerning:
-            print('pair {} {} references non-existent group'.format(
-                *pair))
+            print(
+                'pair {} {} references non-existent group'.format(*pair))
 
         return sanitized_kerning
 
@@ -501,21 +504,24 @@ class KernProcessor(object):
         else:
             return groups, kerning
 
-    def _sanityCheck(self, kerning):
+    def _sanityCheck(self):
         '''
         Check if the number of kerning pairs input
         equals the number of kerning entries output.
         '''
-        totalKernPairs = len(self.kerning.keys())
-        processedPairs = len(self.pairs_processed)
-        unprocessedPairs = len(self.pairs_unprocessed)
-        if totalKernPairs != processedPairs + unprocessedPairs:
+        num_pairs_total = len(self.kerning.keys())
+        num_pairs_processed = len(self.pairs_processed)
+        num_pairs_unprocessed = len(self.pairs_unprocessed)
+        print(num_pairs_total)
+        print(num_pairs_processed)
+        print(num_pairs_unprocessed)
+        if num_pairs_total != num_pairs_processed + num_pairs_unprocessed:
             print('Something went wrong...')
-            print('Kerning pairs provided: %s' % totalKernPairs)
+            print('Kerning pairs provided: %s' % num_pairs_total)
             print('Kern entries generated: %s' % (
-                processedPairs + unprocessedPairs))
+                num_pairs_processed + num_pairs_unprocessed))
             print('Pairs not processed: %s' % (
-                totalKernPairs - (processedPairs + unprocessedPairs)))
+                num_pairs_total - (num_pairs_processed + num_pairs_unprocessed)))
 
     def _explode(self, leftGlyphList, rightGlyphList):
         '''
@@ -554,8 +560,9 @@ class KernProcessor(object):
                 not self._isGroup(pair[0]) and
                 self._isGroup(pair[1]))]
         )
-        group_2_group = sorted(
-            [pair for pair in self.kerning.keys() if self._isGroup(pair[0])]
+        group_2_item = sorted(
+            [pair for pair in self.kerning.keys() if(
+                self._isGroup(pair[0]))]
         )
 
         # glyph to group pairs:
@@ -602,19 +609,18 @@ class KernProcessor(object):
         explodedPairList = []
         RTLexplodedPairList = []
 
-        for (leftGroup, rightGroup) in group_2_group:
-            isRTLpair = self._isRTL((leftGroup, rightGroup))
+        for (leftGroup, rightItem) in group_2_item:
+            # the right item of the pair may be a group or a glyph
+            isRTLpair = self._isRTL((leftGroup, rightItem))
             l_group_glyphs = self.groups[leftGroup]
-            pair = (leftGroup, rightGroup)
+            pair = (leftGroup, rightItem)
+            value = self.kerning[pair]
 
-            try:
-                r_group_glyphs = self.groups[rightGroup]
-
-            except KeyError:
-                # Because group-glyph pairs are included in the group-group
-                # bucket, the right element of the pair may not be a group.
-                if rightGroup in self.grouped_right:
-                    value = self.kerning[pair]
+            if self._isGroup(rightItem):
+                r_group_glyphs = self.groups[rightItem]
+            else:
+                # not a group, therefore a glyph
+                if rightItem in self.grouped_right:
                     # it is a group_to_glyph exception!
                     if isRTLpair:
                         self.rtl_group_glyph_exceptions[pair] = value
@@ -624,10 +630,9 @@ class KernProcessor(object):
                     continue  # It is an exception, so move on to the next pair
 
                 else:
-                    r_group_glyphs = rightGroup
+                    r_group_glyphs = [rightItem]
 
             # skip the pair if the value is zero
-            value = self.kerning[pair]
             if value == 0:
                 self.pairs_unprocessed.append(pair)
                 continue
@@ -642,13 +647,13 @@ class KernProcessor(object):
                     self._explode(l_group_glyphs, r_group_glyphs))
                 # list of all possible pair combinations for the
                 # @class @class kerning pairs of the font.
-            self.pairs_processed.append((leftGroup, rightGroup))
+            self.pairs_processed.append((leftGroup, rightItem))
 
-        self.exceptionPairs = set(explodedPairList) & set(glyph_2_glyph)
-        self.RTLexceptionPairs = set(RTLexplodedPairList) & set(glyph_2_glyph)
-        # Finds the intersection of the exploded pairs with the glyph_2_glyph
+        # Find the intersection of the exploded pairs with the glyph_2_glyph
         # pairs collected above. Those must be exceptions, as they occur twice
         # (once in class-kerning, once as a single pair).
+        self.exceptionPairs = set(explodedPairList) & set(glyph_2_glyph)
+        self.RTLexceptionPairs = set(RTLexplodedPairList) & set(glyph_2_glyph)
 
         for pair in self.exceptionPairs:
             self.glyph_glyph_exceptions[pair] = self.kerning[pair]
@@ -658,21 +663,37 @@ class KernProcessor(object):
             self.rtl_glyph_glyph_exceptions[pair] = self.kerning[pair]
             self.pairs_processed.append(pair)
 
-        # glyph to glyph pairs:
-        # ---------------------
-        # RTL glyph-to-glyph pairs can only be identified if its glyphs are
-        # in the @RTL_KERNING group.
+        # finally, collect normal glyph to glyph pairs:
+        # ---------------------------------------------
+        # NB: RTL glyph-to-glyph pairs can only be identified if its
+        # glyphs are in the @RTL_KERNING group.
 
-        for pair in glyph_2_glyph:
-            if(
-                pair not in self.glyph_glyph_exceptions and
-                pair not in self.rtl_glyph_glyph_exceptions
+        for glyph_1, glyph_2 in glyph_2_glyph:
+            pair = glyph_1, glyph_2
+            value = self.kerning[pair]
+            isRTLpair = self._isRTL(pair)
+            if any(
+                [glyph_1 in self.grouped_left, glyph_2 in self.grouped_right]
             ):
+                # it is an exception!
+                # exceptions expressed as glyph-to-glyph pairs -- these cannot
+                # be filtered and need to be added to the kern feature
+                # ---------------------------------------------
                 if self._isRTL(pair):
-                    self.rtl_glyph_glyph[pair] = self.kerning[pair]
+                    self.rtl_glyph_glyph_exceptions[pair] = value
                 else:
-                    self.glyph_glyph[pair] = self.kerning[pair]
+                    self.glyph_glyph_exceptions[pair] = value
                 self.pairs_processed.append(pair)
+            else:
+                if (
+                    pair not in self.glyph_glyph_exceptions and
+                    pair not in self.rtl_glyph_glyph_exceptions
+                ):
+                    if self._isRTL(pair):
+                        self.rtl_glyph_glyph[pair] = self.kerning[pair]
+                    else:
+                        self.glyph_glyph[pair] = self.kerning[pair]
+                    self.pairs_processed.append(pair)
 
 
 class MakeMeasuredSubtables(object):
@@ -776,7 +797,10 @@ class MakeMeasuredSubtables(object):
 
 class run(object):
 
-    def __init__(self, font, args):
+    def __init__(self, font, args=None):
+
+        if not args:
+            args = Defaults()
 
         if args.write_timestamp:
             self.header = ['# Created: %s' % time.ctime()]
@@ -794,9 +818,6 @@ class run(object):
         self.subtable_size = args.subtable_size
         self.write_trimmed_pairs = args.write_trimmed_pairs
         self.dissolve_single = args.dissolve_single
-
-        # This does not do anything really. Remove or fix
-        self.processedPairs = 0
         self.trimmedPairs = 0
 
         if self.inFL:
@@ -901,7 +922,6 @@ class run(object):
 
         for table in subtableList:
             if len(table):
-                self.processedPairs += len(table)
 
                 if RTL:
                     self.RTLsubtablesCreated += 1
@@ -995,7 +1015,6 @@ class run(object):
                 output.append(comment)
                 output.append(
                     self._dict2pos(container_dict, minKern, enum))
-                self.processedPairs += len(container_dict)
 
         if self.write_subtables:
             self.subtablesCreated = 0
@@ -1036,7 +1055,6 @@ class run(object):
                     output.append(
                         self._dict2pos(
                             container_dict, minKern, enum, RTL=True))
-                    self.processedPairs += len(container_dict)
 
             if self.write_subtables:
                 self.RTLsubtablesCreated = 0
