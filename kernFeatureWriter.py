@@ -353,15 +353,6 @@ class KernProcessor(object):
         else:
             return group_name
 
-    def _remap_group_order(self, group_list):
-        '''
-        Remap group order list
-        '''
-        remapped_group_order = [
-            self._remap_group_name(g_name) for g_name in group_list
-        ]
-        return remapped_group_order
-
     def _remap_groups(self, groups):
         '''
         Remap groups dictionary to not contain public.kern prefixes.
