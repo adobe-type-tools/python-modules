@@ -512,9 +512,7 @@ class KernProcessor(object):
         num_pairs_total = len(self.kerning.keys())
         num_pairs_processed = len(self.pairs_processed)
         num_pairs_unprocessed = len(self.pairs_unprocessed)
-        print(num_pairs_total)
-        print(num_pairs_processed)
-        print(num_pairs_unprocessed)
+
         if num_pairs_total != num_pairs_processed + num_pairs_unprocessed:
             print('Something went wrong...')
             print('Kerning pairs provided: %s' % num_pairs_total)
