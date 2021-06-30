@@ -568,41 +568,39 @@ class KernProcessor(object):
         # glyph to group pairs:
         # ---------------------
         for (glyph, group) in glyph_2_group:
+            pair = glyph, group
+            value = self.kerning[pair]
+            isRTLpair = self._isRTL(pair)
             groupList = self.groups[group]
-            isRTLpair = self._isRTL((glyph, group))
             if glyph in self.grouped_left:
-                value = self.kerning[glyph, group]
                 # it is a glyph_to_group exception!
                 if isRTLpair:
-                    self.rtl_glyph_group_exceptions[glyph, group] = value
+                    self.rtl_glyph_group_exceptions[pair] = value
                 else:
-                    self.glyph_group_exceptions[glyph, group] = value
-                self.pairs_processed.append((glyph, group))
+                    self.glyph_group_exceptions[pair] = value
+                self.pairs_processed.append(pair)
 
             else:
                 for groupedGlyph in groupList:
-                    pair = (glyph, groupedGlyph)
-                    if pair in glyph_2_glyph:
-                        value = self.kerning[pair]
+                    gr_pair = (glyph, groupedGlyph)
+                    if gr_pair in glyph_2_glyph:
+                        gr_value = self.kerning[gr_pair]
                         # that pair is a glyph_to_glyph exception!
                         if isRTLpair:
-                            self.rtl_glyph_glyph_exceptions[pair] = value
+                            self.rtl_glyph_glyph_exceptions[gr_pair] = gr_value
                         else:
-                            self.glyph_glyph_exceptions[pair] = value
-                        self.pairs_processed.append(pair)
+                            self.glyph_glyph_exceptions[gr_pair] = gr_value
 
+                # skip the pair if the value is zero
+                if value == 0:
+                    self.pairs_unprocessed.append(pair)
+                    continue
+
+                if isRTLpair:
+                    self.rtl_glyph_group[pair] = value
                 else:
-                    value = self.kerning[glyph, group]
-                    # skip the pair if the value is zero
-                    if value == 0:
-                        self.pairs_unprocessed.append((glyph, group))
-                        continue
-
-                    if isRTLpair:
-                        self.rtl_glyph_group[glyph, group] = value
-                    else:
-                        self.glyph_group[glyph, group] = value
-                    self.pairs_processed.append((glyph, group))
+                    self.glyph_group[pair] = value
+                self.pairs_processed.append(pair)
 
         # group to group/glyph pairs:
         # ---------------------------
@@ -611,10 +609,10 @@ class KernProcessor(object):
 
         for (leftGroup, rightItem) in group_2_item:
             # the right item of the pair may be a group or a glyph
-            isRTLpair = self._isRTL((leftGroup, rightItem))
-            l_group_glyphs = self.groups[leftGroup]
             pair = (leftGroup, rightItem)
             value = self.kerning[pair]
+            isRTLpair = self._isRTL(pair)
+            l_group_glyphs = self.groups[leftGroup]
 
             if self._isGroup(rightItem):
                 r_group_glyphs = self.groups[rightItem]
@@ -647,7 +645,7 @@ class KernProcessor(object):
                     self._explode(l_group_glyphs, r_group_glyphs))
                 # list of all possible pair combinations for the
                 # @class @class kerning pairs of the font.
-            self.pairs_processed.append((leftGroup, rightItem))
+            self.pairs_processed.append(pair)
 
         # Find the intersection of the exploded pairs with the glyph_2_glyph
         # pairs collected above. Those must be exceptions, as they occur twice
@@ -657,11 +655,9 @@ class KernProcessor(object):
 
         for pair in self.exceptionPairs:
             self.glyph_glyph_exceptions[pair] = self.kerning[pair]
-            self.pairs_processed.append(pair)
 
         for pair in self.RTLexceptionPairs:
             self.rtl_glyph_glyph_exceptions[pair] = self.kerning[pair]
-            self.pairs_processed.append(pair)
 
         # finally, collect normal glyph to glyph pairs:
         # ---------------------------------------------
