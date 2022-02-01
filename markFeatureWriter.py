@@ -12,23 +12,11 @@ import sys
 import argparse
 from defcon import Font
 
-default_mark_file = 'mark.fea'
-default_mkmk_file = 'mkmk.fea'
-default_mkclass_file = 'markclasses.fea'
-default_abvm_file = 'abvm.fea'
-default_blwm_file = 'blwm.fea'
-default_mkgrp_name = 'COMBINING_MARKS'
-
-default_trim_tags = False
-default_indic_format = False
-default_write_mkmk = False
-default_write_classes = False
-
 
 def get_args():
     parser = argparse.ArgumentParser(
         description=(
-            'Mark Feature Writer\r'
+            'Mark Feature Writer'
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
@@ -40,67 +28,67 @@ def get_args():
     parser.add_argument(
         '-t', '--trim_tags',
         action='store_true',
-        default=default_trim_tags,
+        default=False,
         help='trim casing tags from anchor names?')
 
     parser.add_argument(
         '-c', '--write_classes',
         action='store_true',
-        default=default_write_classes,
+        default=False,
         help='write mark classes to extra file?')
 
     parser.add_argument(
         '-m', '--write_mkmk',
         action='store_true',
-        default=default_write_mkmk,
+        default=False,
         help='write mark-to-mark feature file?')
 
     parser.add_argument(
         '-i', '--indic_format',
         action='store_true',
-        default=default_indic_format,
+        default=False,
         help='write Indic mark format?')
 
     parser.add_argument(
         '--mark_file',
         action='store',
         metavar='NAME',
-        default=default_mark_file,
+        default='mark.fea',
         help='name for mark feature file')
 
     parser.add_argument(
         '--mkmk_file',
         action='store',
         metavar='NAME',
-        default=default_mkmk_file,
+        default='mkmk.fea',
         help='name for mkmk feature file')
 
     parser.add_argument(
         '--mkclass_file',
         action='store',
         metavar='NAME',
-        default=default_mkclass_file,
+        default='markclasses.fea',
         help='name for mark classes file')
 
     parser.add_argument(
         '--abvm_file',
         action='store',
         metavar='NAME',
-        default=default_abvm_file,
+        default='abvm.fea',
         help='name for above mark feature file')
 
     parser.add_argument(
         '--blwm_file',
         action='store',
         metavar='NAME',
-        default=default_blwm_file,
+        default='blwm.fea',
         help='name for below mark feature file')
 
     parser.add_argument(
         '--mkgrp_name',
         action='store',
         metavar='NAME',
-        default=default_mkgrp_name,
+        default='COMBINING_MARKS',
         help='name for group containing all mark glyphs')
 
     return parser.parse_args()
@@ -137,34 +125,21 @@ class AnchorMate(object):
         self.pos_name_dict = {}
 
 
-class run(object):
-    def __init__(
-        self,
-        input_file,
-        mark_file=default_mark_file,
-        mkmk_file=default_mkmk_file,
-        mkclass_file=default_mkclass_file,
-        abvm_file=default_abvm_file,
-        blwm_file=default_blwm_file,
-        mkgrp_name=default_mkgrp_name,
-        trim_tags=default_trim_tags,
-        indic_format=default_indic_format,
-        write_mkmk=default_write_mkmk,
-        write_classes=default_write_classes,
-    ):
+class MarkFeatureWriter(object):
+    def __init__(self, args):
 
-        self.mark_file = mark_file
-        self.mkmk_file = mkmk_file
-        self.mkclass_file = mkclass_file
-        self.abvm_file = abvm_file
-        self.blwm_file = blwm_file
-        self.mkgrp_name = mkgrp_name
-        self.trim_tags = trim_tags
-        self.indic_format = indic_format
-        self.write_mkmk = write_mkmk
-        self.write_classes = write_classes
+        ufo_path = args.input_file
+        self.mark_file = args.mark_file
+        self.mkmk_file = args.mkmk_file
+        self.mkclass_file = args.mkclass_file
+        self.abvm_file = args.abvm_file
+        self.blwm_file = args.blwm_file
+        self.mkgrp_name = args.mkgrp_name
+        self.trim_tags = args.trim_tags
+        self.indic_format = args.indic_format
+        self.write_mkmk = args.write_mkmk
+        self.write_classes = args.write_classes
 
-        ufo_path = input_file
         ufo_dir = os.path.dirname(
             os.path.normpath(ufo_path)
         )
@@ -435,19 +410,7 @@ class run(object):
 
 def main():
     args = get_args()
-    run(
-        input_file=args.input_file,
-        mark_file=args.mark_file,
-        mkmk_file=args.mkmk_file,
-        mkclass_file=args.mkclass_file,
-        abvm_file=args.abvm_file,
-        blwm_file=args.blwm_file,
-        mkgrp_name=args.mkgrp_name,
-        trim_tags=args.trim_tags,
-        indic_format=args.indic_format,
-        write_mkmk=args.write_mkmk,
-        write_classes=args.write_classes
-    )
+    MarkFeatureWriter(args)
 
 
 if __name__ == '__main__':
