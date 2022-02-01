@@ -1142,8 +1142,7 @@ def get_args():
     return parser.parse_args()
 
 
-if __name__ == '__main__':
-
+def main():
     args = get_args()
     f_path = os.path.normpath(args.input_file)
     import defcon
@@ -1154,3 +1153,7 @@ if __name__ == '__main__':
 
     else:
         print(f_path, 'does not exist.')
+
+
+if __name__ == '__main__':
+    main()

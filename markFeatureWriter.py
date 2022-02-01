@@ -25,6 +25,87 @@ default_write_mkmk = False
 default_write_classes = False
 
 
+def get_args():
+    parser = argparse.ArgumentParser(
+        description=(
+            'Mark Feature Writer\r'
+        ),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    parser.add_argument(
+        'input_file',
+        help='input UFO file')
+
+    parser.add_argument(
+        '-t', '--trim_tags',
+        action='store_true',
+        default=default_trim_tags,
+        help='trim casing tags from anchor names?')
+
+    parser.add_argument(
+        '-c', '--write_classes',
+        action='store_true',
+        default=default_write_classes,
+        help='write mark classes to extra file?')
+
+    parser.add_argument(
+        '-m', '--write_mkmk',
+        action='store_true',
+        default=default_write_mkmk,
+        help='write mark-to-mark feature file?')
+
+    parser.add_argument(
+        '-i', '--indic_format',
+        action='store_true',
+        default=default_indic_format,
+        help='write Indic mark format?')
+
+    parser.add_argument(
+        '--mark_file',
+        action='store',
+        metavar='NAME',
+        default=default_mark_file,
+        help='name for mark feature file')
+
+    parser.add_argument(
+        '--mkmk_file',
+        action='store',
+        metavar='NAME',
+        default=default_mkmk_file,
+        help='name for mkmk feature file')
+
+    parser.add_argument(
+        '--mkclass_file',
+        action='store',
+        metavar='NAME',
+        default=default_mkclass_file,
+        help='name for mark classes file')
+
+    parser.add_argument(
+        '--abvm_file',
+        action='store',
+        metavar='NAME',
+        default=default_abvm_file,
+        help='name for above mark feature file')
+
+    parser.add_argument(
+        '--blwm_file',
+        action='store',
+        metavar='NAME',
+        default=default_blwm_file,
+        help='name for below mark feature file')
+
+    parser.add_argument(
+        '--mkgrp_name',
+        action='store',
+        metavar='NAME',
+        default=default_mkgrp_name,
+        help='name for group containing all mark glyphs')
+
+    return parser.parse_args()
+
+
 def write_output(directory, file, data):
     f_path = os.path.join(directory, file)
     with open(f_path, 'w') as of:
@@ -352,86 +433,8 @@ class run(object):
         return '\n'.join(output)
 
 
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(
-        description=(
-            'Mark Feature Writer\r'
-        ),
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-
-    parser.add_argument(
-        'input_file',
-        help='input UFO file')
-
-    parser.add_argument(
-        '-t', '--trim_tags',
-        action='store_true',
-        default=default_trim_tags,
-        help='trim casing tags from anchor names?')
-
-    parser.add_argument(
-        '-c', '--write_classes',
-        action='store_true',
-        default=default_write_classes,
-        help='write mark classes to extra file?')
-
-    parser.add_argument(
-        '-m', '--write_mkmk',
-        action='store_true',
-        default=default_write_mkmk,
-        help='write mark-to-mark feature file?')
-
-    parser.add_argument(
-        '-i', '--indic_format',
-        action='store_true',
-        default=default_indic_format,
-        help='write Indic mark format?')
-
-    parser.add_argument(
-        '--mark_file',
-        action='store',
-        metavar='NAME',
-        default=default_mark_file,
-        help='name for mark feature file')
-
-    parser.add_argument(
-        '--mkmk_file',
-        action='store',
-        metavar='NAME',
-        default=default_mkmk_file,
-        help='name for mkmk feature file')
-
-    parser.add_argument(
-        '--mkclass_file',
-        action='store',
-        metavar='NAME',
-        default=default_mkclass_file,
-        help='name for mark classes file')
-
-    parser.add_argument(
-        '--abvm_file',
-        action='store',
-        metavar='NAME',
-        default=default_abvm_file,
-        help='name for above mark feature file')
-
-    parser.add_argument(
-        '--blwm_file',
-        action='store',
-        metavar='NAME',
-        default=default_blwm_file,
-        help='name for below mark feature file')
-
-    parser.add_argument(
-        '--mkgrp_name',
-        action='store',
-        metavar='NAME',
-        default=default_mkgrp_name,
-        help='name for group containing all mark glyphs')
-
-    args = parser.parse_args()
+def main():
+    args = get_args()
     run(
         input_file=args.input_file,
         mark_file=args.mark_file,
@@ -443,8 +446,12 @@ if __name__ == '__main__':
         trim_tags=args.trim_tags,
         indic_format=args.indic_format,
         write_mkmk=args.write_mkmk,
-        write_classes=args.write_classes)
+        write_classes=args.write_classes
+    )
 
+
+if __name__ == '__main__':
+    main()
 
 # constants from contextual mark feature writer, to be included in future
 # iterations
