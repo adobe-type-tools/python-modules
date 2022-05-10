@@ -287,9 +287,8 @@ class KernProcessor(object):
             self.groups = self._remap_groups(used_groups)
             self.kerning = self._remap_kerning(sanitized_kerning)
 
-        if used_groups:
-            self.grouped_left = self._getAllGroupedGlyphs(side='left')
-            self.grouped_right = self._getAllGroupedGlyphs(side='right')
+        self.grouped_left = self._getAllGroupedGlyphs(side='left')
+        self.grouped_right = self._getAllGroupedGlyphs(side='right')
 
         self._findExceptions()
 
