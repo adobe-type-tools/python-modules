@@ -350,7 +350,9 @@ class MarkFeatureWriter(object):
             if len(g_names) > 1:
                 sorted_g_names = self.sort_gnames(g_names)
                 group_name = '@bGC_{}_{}'.format(
-                    sorted_g_names[0], anchor_name_no_underscore)
+                    sorted_g_names[0].replace(':', '_'),
+                    anchor_name_no_underscore)
+                print(group_name)
                 group_list = ' '.join(sorted_g_names)
                 mgroup_definitions.append('\t{} = [ {} ];'.format(
                     group_name, group_list))
