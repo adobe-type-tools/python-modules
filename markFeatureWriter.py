@@ -224,7 +224,8 @@ class MarkFeatureWriter(object):
         mark_class_list = []
         for anchor_name, a_mate in sorted(combining_anchor_dict.items()):
             if anchor_name.startswith('_'):
-                mc = self.make_one_mark_class(anchor_name, a_mate)
+                anchor_name_no_underscore = anchor_name.replace('_', '')
+                mc = self.make_one_mark_class(anchor_name_no_underscore, a_mate)
                 mark_class_list.append(mc)
         mark_class_content = self.make_mark_class_content(mark_class_list)
 
@@ -287,13 +288,13 @@ class MarkFeatureWriter(object):
                 mgroup_definitions.append('{} = [ {} ];'.format(
                     group_name, group_list))
                 mgroup_attachments.append(
-                    'markClass {} <anchor {} {}> @MC{};'.format(
+                    'markClass {} <anchor {} {}> @MC_{};'.format(
                         group_name, pos_x, pos_y, anchor_name))
 
             else:
                 g_name = g_names[0]
                 single_attachments.append(
-                    'markClass {} <anchor {} {}> @MC{};'.format(
+                    'markClass {} <anchor {} {}> @MC_{};'.format(
                         g_name, pos_x, pos_y, anchor_name))
 
         return mgroup_definitions, mgroup_attachments, single_attachments
