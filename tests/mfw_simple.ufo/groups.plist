@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>COMBINING_MARKS</key>
+		<array>
+			<string>gravecmb</string>
+			<string>acutecmb</string>
+			<string>circumflexcmb</string>
+			<string>commabelowcmb</string>
+			<string>cedillacmb</string>
+			<string>dotbelowcmb</string>
+		</array>
+		<key>LATIN</key>
+		<array>
+			<string>o</string>
+		</array>
+		<key>lc</key>
+		<array>
+			<string>o</string>
+		</array>
+		<key>public.kern1.LAT_b</key>
+		<array>
+			<string>o</string>
+		</array>
+		<key>public.kern2.LAT_o</key>
+		<array>
+			<string>o</string>
+		</array>
+	</dict>
+</plist>

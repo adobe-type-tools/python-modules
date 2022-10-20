@@ -1,0 +1,34 @@
+@mGC_aboveLC_0_495 = [ gravecmb acutecmb circumflexcmb ];
+@mGC_belowLC_0_n20 = [ commabelowcmb dotbelowcmb ];
+
+markClass @mGC_aboveLC_0_495 <anchor 0 495> @MC_aboveLC;
+markClass @mGC_belowLC_0_n20 <anchor 0 -20> @MC_belowLC;
+
+markClass cedillacmb <anchor 0 0> @MC_baseLC;
+
+lookup MARK_BASE_aboveLC {
+	pos base o <anchor 275 495> mark @MC_aboveLC;
+} MARK_BASE_aboveLC;
+
+
+lookup MARK_BASE_belowLC {
+	pos base o <anchor 275 -20> mark @MC_belowLC;
+} MARK_BASE_belowLC;
+
+
+lookup MKMK_MARK_aboveLC {
+	lookupflag MarkAttachmentType @MC_aboveLC;
+
+	pos mark gravecmb <anchor 0 758> mark @MC_aboveLC;
+	pos mark acutecmb <anchor 0 758> mark @MC_aboveLC;
+	pos mark circumflexcmb <anchor 0 744> mark @MC_aboveLC;
+} MKMK_MARK_aboveLC;
+
+
+lookup MKMK_MARK_belowLC {
+	lookupflag MarkAttachmentType @MC_belowLC;
+
+	pos mark commabelowcmb <anchor 0 -253> mark @MC_belowLC;
+	pos mark dotbelowcmb <anchor 0 -203> mark @MC_belowLC;
+} MKMK_MARK_belowLC;
+
