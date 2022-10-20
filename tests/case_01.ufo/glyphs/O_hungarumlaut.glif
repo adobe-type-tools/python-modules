@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="Ohungarumlaut" format="2">
+	<unicode hex="0150"/>
+	<unicode hex="0151"/>
+	<advance width="508"/>
+	<outline>
+		<contour>
+			<point x="219" y="715" type="line"/>
+			<point x="362" y="866" type="line"/>
+			<point x="261" y="912" type="line"/>
+		</contour>
+		<contour>
+			<point x="264" y="710" type="line"/>
+			<point x="446" y="749" type="line"/>
+			<point x="392" y="846" type="line"/>
+		</contour>
+		<component base="O"/>
+	</outline>
+</glyph>

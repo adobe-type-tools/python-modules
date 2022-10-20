@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="Ocircumflex" format="2">
+	<unicode hex="00D4"/>
+	<unicode hex="00F4"/>
+	<advance width="508"/>
+	<outline>
+		<contour>
+			<point x="125" y="683" type="line"/>
+			<point x="257" y="766" type="line"/>
+			<point x="389" y="683" type="line"/>
+			<point x="317" y="844" type="line"/>
+			<point x="197" y="844" type="line"/>
+		</contour>
+		<component base="O"/>
+	</outline>
+</glyph>

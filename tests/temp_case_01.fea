@@ -1,0 +1,38 @@
+# PS Name: Pantelleria-Regular
+# MinKern: +/- 3 inclusive
+# exported from Defcon
+
+@MMK_L_A = [A Aacute Abreve Acircumflex Adieresis Agrave Amacron Aogonek Aring Atilde];
+@MMK_L_O = [O Oacute Ocircumflex Odieresis Ograve Ohungarumlaut Omacron Oslash Otilde];
+@MMK_L_parent = [parenleft parenright];
+@MMK_R_A = [A Aacute Abreve Acircumflex Adieresis Agrave Amacron Aogonek Aring Atilde];
+@MMK_R_O = [O Oacute Ocircumflex Odieresis Ograve Ohungarumlaut Omacron Oslash Otilde];
+
+# glyph, glyph:
+pos question parenright -16;
+pos question question -30;
+
+# glyph, glyph exceptions:
+pos Adieresis question 0;
+pos Aogonek parenright 24;
+pos Oslash parenright -2;
+pos Oslash question -3;
+
+# group, glyph exceptions:
+enum pos @MMK_L_A Oslash 3;
+enum pos @MMK_L_parent Oslash -2;
+
+# glyph, group:
+pos space @MMK_R_A -20;
+
+# group, group/glyph:
+pos @MMK_L_A @MMK_R_A 11;
+pos @MMK_L_A @MMK_R_O -27;
+pos @MMK_L_A parenright 10;
+pos @MMK_L_A question -50;
+pos @MMK_L_A space -20;
+pos @MMK_L_O @MMK_R_A -27;
+pos @MMK_L_O parenright -12;
+pos @MMK_L_O question -14;
+pos @MMK_L_parent @MMK_R_A 10;
+pos @MMK_L_parent @MMK_R_O -12;

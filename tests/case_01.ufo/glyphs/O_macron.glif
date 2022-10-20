@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="Omacron" format="2">
+	<unicode hex="014C"/>
+	<unicode hex="014D"/>
+	<advance width="508"/>
+	<outline>
+		<contour>
+			<point x="132" y="728" type="line"/>
+			<point x="393" y="728" type="line"/>
+			<point x="393" y="819" type="line"/>
+			<point x="132" y="771" type="line"/>
+		</contour>
+		<component base="O"/>
+	</outline>
+</glyph>

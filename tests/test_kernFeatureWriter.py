@@ -40,7 +40,21 @@ def test_subtable():
     args.input_file = ufo_path
     args.write_subtables = True
     args.subtable_size = 128
-    args.output_file = 'kern_subs.fea'
+    args.output_file = 'temp_subs.fea'
     f = defcon.Font(ufo_path)
     run(f, args)
-    assert read_file(os.path.join(test_dir, 'kern_subs.fea')) == example_feature
+    assert (
+        read_file(os.path.join(test_dir, args.output_file)) == example_feature)
+
+
+def test_case_01():
+    args = Defaults()
+    test_dir = os.path.dirname(__file__)
+    ufo_path = os.path.join(test_dir, 'case_01.ufo')
+    example_feature = read_file(os.path.join(test_dir, 'case_01.fea'))
+    args.input_file = ufo_path
+    args.output_file = 'temp_case_01.fea'
+    f = defcon.Font(ufo_path)
+    run(f, args)
+    assert (
+        read_file(os.path.join(test_dir, args.output_file)) == example_feature)
