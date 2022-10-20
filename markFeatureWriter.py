@@ -4,7 +4,6 @@
 Current draft for modernized mark feature writer module.
 This work is incomplete (i.e. support for Indic mark features still
 needs to be added).
-The anchor_name_no_underscore process is odd and was added to patch a bug.
 '''
 
 import os
@@ -224,8 +223,7 @@ class MarkFeatureWriter(object):
         mark_class_list = []
         for anchor_name, a_mate in sorted(combining_anchor_dict.items()):
             if anchor_name.startswith('_'):
-                anchor_name_no_underscore = anchor_name.replace('_', '')
-                mc = self.make_one_mark_class(anchor_name_no_underscore, a_mate)
+                mc = self.make_one_mark_class(anchor_name, a_mate)
                 mark_class_list.append(mc)
         mark_class_content = self.make_mark_class_content(mark_class_list)
 
@@ -288,13 +286,13 @@ class MarkFeatureWriter(object):
                 mgroup_definitions.append('{} = [ {} ];'.format(
                     group_name, group_list))
                 mgroup_attachments.append(
-                    'markClass {} <anchor {} {}> @MC_{};'.format(
+                    'markClass {} <anchor {} {}> @MC{};'.format(
                         group_name, pos_x, pos_y, anchor_name))
 
             else:
                 g_name = g_names[0]
                 single_attachments.append(
-                    'markClass {} <anchor {} {}> @MC_{};'.format(
+                    'markClass {} <anchor {} {}> @MC{};'.format(
                         g_name, pos_x, pos_y, anchor_name))
 
         return mgroup_definitions, mgroup_attachments, single_attachments
@@ -344,29 +342,27 @@ class MarkFeatureWriter(object):
         mgroup_attachments = []
         single_attachments = []
 
-        anchor_name_no_underscore = anchor_name.replace('_', '')
-
         for position, g_names in pos_to_gname:
             pos_x, pos_y = position
             if len(g_names) > 1:
                 sorted_g_names = self.sort_gnames(g_names)
                 group_name = '@bGC_{}_{}'.format(
                     sorted_g_names[0].replace(':', '_'),
-                    anchor_name_no_underscore)
-                print(group_name)
+                    anchor_name)
+
                 group_list = ' '.join(sorted_g_names)
                 mgroup_definitions.append('\t{} = [ {} ];'.format(
                     group_name, group_list))
                 mgroup_attachments.append(
                     '\tpos base {} <anchor {} {}> mark @MC_{};'.format(
-                        group_name, pos_x, pos_y, anchor_name_no_underscore))
+                        group_name, pos_x, pos_y, anchor_name))
 
             else:
                 g_name = g_names[0]
                 single_attachments.append(
                     # pos base AE <anchor 559 683> mark @MC_above;
                     '\tpos base {} <anchor {} {}> mark @MC_{};'.format(
-                        g_name, pos_x, pos_y, anchor_name_no_underscore))
+                        g_name, pos_x, pos_y, anchor_name))
 
         output = [open_lookup]
 
