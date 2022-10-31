@@ -68,7 +68,7 @@ def get_args():
     parser.add_argument(
         '-i', '--indic_format',
         action='store_true',
-        default=defaults.indic_formatd,
+        default=defaults.indic_format,
         help='write Indic mark format?')
 
     parser.add_argument(
