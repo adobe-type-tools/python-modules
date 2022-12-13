@@ -163,8 +163,8 @@ class FLKerningData(object):
                 else:
                     keyGlyphName = markedGlyphList[0]
                     print(
-                        '\tWARNING: Kerning class %s has no explicit key '
-                        'glyph.\n\tUsing first glyph found (%s).' % (
+                        'WARNING: Kerning class %s has no explicit key '
+                        'glyph.\nUsing first glyph found (%s).' % (
                             FLclassName, keyGlyphName)
                     )
 
@@ -829,7 +829,7 @@ class run(object):
             self.group_order = sorted(self.groups.keys())
 
         if not self.kerning:
-            print('\tERROR: The font has no kerning!')
+            print('ERROR: The font has no kerning!')
             return
 
         self.header.append('# MinKern: +/- %s inclusive' % self.minKern)
@@ -938,7 +938,7 @@ class run(object):
         for groupName in kp.group_order:
             glyphList = kp.groups[groupName]
             if not glyphList:
-                print('\tWARNING: Kerning group %s has no glyphs.' % groupName)
+                print('WARNING: Kerning group %s has no glyphs.' % groupName)
                 continue
             output.append('%s = [%s];' % (groupName, ' '.join(glyphList)))
 
@@ -1063,10 +1063,10 @@ class run(object):
 
     def writeDataToFile(self, data, fileName):
 
-        print('\tSaving %s file...' % fileName)
+        print('Saving %s file...' % fileName)
 
         if self.trimmedPairs > 0:
-            print('\tTrimmed pairs: %s' % self.trimmedPairs)
+            print('Trimmed pairs: %s' % self.trimmedPairs)
 
         outputPath = os.path.join(self.folder, fileName)
 
@@ -1078,7 +1078,7 @@ class run(object):
                 outfile.write('\n')
 
         if not self.inFL:
-            print('\tOutput file written to %s' % outputPath)
+            print('Output file written to %s' % outputPath)
 
 
 def get_args():
