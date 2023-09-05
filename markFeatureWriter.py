@@ -33,7 +33,7 @@ class Defaults(object):
         self.mkgrp_name = 'COMBINING_MARKS'
 
 
-def get_args():
+def get_args(args=None):
 
     defaults = Defaults()
     parser = argparse.ArgumentParser(
@@ -113,7 +113,7 @@ def get_args():
         default=defaults.mkgrp_name,
         help='name for group containing all mark glyphs')
 
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
 def write_output(directory, file, data):
@@ -433,8 +433,8 @@ class MarkFeatureWriter(object):
         return '\n'.join(output)
 
 
-def main():
-    args = get_args()
+def main(test_args=None):
+    args = get_args(test_args)
     MarkFeatureWriter(args)
 
 
