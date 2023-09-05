@@ -32,6 +32,9 @@ class Defaults(object):
         self.blwm_file = 'blwm.fea'
         self.mkgrp_name = 'COMBINING_MARKS'
 
+    def asdict(self):
+        return self.__dict__
+
 
 def get_args(args=None):
 
