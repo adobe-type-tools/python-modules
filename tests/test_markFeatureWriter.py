@@ -19,6 +19,12 @@ def read_file(path):
 #     # import __mocks__ as flsys ???
 #     # assert WhichApp().appName == 'FontLab'
 
+def test_get_args():
+    argparse_args = vars(get_args(['dummy']))  # args through argparse
+    dummy_args = Defaults().__dict__  # hard-coded dummy arguments
+    dummy_args['input_file'] = 'dummy'
+    assert argparse_args == dummy_args
+
 
 def test_full_run():
     args = Defaults()
