@@ -32,7 +32,7 @@ def test_get_args():
 
 def test_no_group():
     args = Defaults()
-    args.input_file = TEST_DIR / 'mfw_no_group.ufo'
+    args.input_file = TEST_DIR / 'mark_no_group.ufo'
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         MarkFeatureWriter(args)
     assert pytest_wrapped_e.type == SystemExit
@@ -40,26 +40,50 @@ def test_no_group():
 
 def test_trim():
     args = Defaults()
-    tmp_fea_trim = TEST_DIR / 'tmp_mfw_trim.fea'
+    tmp_fea_trim = TEST_DIR / 'tmp_mark_trim.fea'
     args.trim_tags = True
     args.mark_file = tmp_fea_trim
-    args.input_file = TEST_DIR / 'mfw_trim.ufo'
+    args.input_file = TEST_DIR / 'mark_trim.ufo'
     MarkFeatureWriter(args)
 
-    example_feature = read_file(TEST_DIR / 'mfw_trim.fea')
+    example_feature = read_file(TEST_DIR / 'mark_trim.fea')
     assert read_file(tmp_fea_trim) == example_feature
     tmp_fea_trim.unlink()
 
 
-def test_full_run():
+def test_mkclass_file():
+    '''
+    write external mark classes file
+    '''
     args = Defaults()
-    tmp_fea_full = TEST_DIR / 'tmp_mfw_full.fea'
-    args.mark_file = tmp_fea_full
-    args.input_file = TEST_DIR / 'mfw_simple.ufo'
+    tmp_fea_noclasses = TEST_DIR / 'tmp_mark.fea'
+    tmp_fea_classes = TEST_DIR / 'tmp_classes.fea'
+    args.mark_file = tmp_fea_noclasses
+    args.mkclass_file = tmp_fea_classes
+    args.write_classes = True
+    args.input_file = TEST_DIR / 'mark_simple.ufo'
     MarkFeatureWriter(args)
 
-    example_feature = read_file(TEST_DIR / 'mfw_simple.fea')
-    assert read_file(TEST_DIR / 'mark.fea') == example_feature
+    example_fea_noclasses = read_file(TEST_DIR / 'mark_simple_noclasses.fea')
+    example_fea_markclasses = read_file(TEST_DIR / 'mark_simple_classes.fea')
+    assert read_file(tmp_fea_noclasses) == example_fea_noclasses
+    assert read_file(tmp_fea_classes) == example_fea_markclasses
+    tmp_fea_noclasses.unlink()
+    tmp_fea_classes.unlink()
+
+
+def test_full_run():
+    '''
+    very basic run without any options
+    '''
+    args = Defaults()
+    tmp_fea_full = TEST_DIR / 'tmp_mark_full.fea'
+    args.mark_file = tmp_fea_full
+    args.input_file = TEST_DIR / 'mark_simple.ufo'
+    MarkFeatureWriter(args)
+
+    example_feature = read_file(TEST_DIR / 'mark_simple.fea')
+    assert read_file(tmp_fea_full) == example_feature
     tmp_fea_full.unlink()
 
 
