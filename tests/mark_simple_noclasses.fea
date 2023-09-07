@@ -1,11 +1,3 @@
-@mGC_aboveLC_0_495 = [ gravecmb acutecmb circumflexcmb ];
-@mGC_belowLC_0_n20 = [ commabelowcmb dotbelowcmb ];
-
-markClass @mGC_aboveLC_0_495 <anchor 0 495> @MC_aboveLC;
-markClass @mGC_belowLC_0_n20 <anchor 0 -20> @MC_belowLC;
-
-markClass cedillacmb <anchor 0 0> @MC_baseLC;
-
 lookup MARK_BASE_aboveLC {
 	pos base o <anchor 275 495> mark @MC_aboveLC;
 } MARK_BASE_aboveLC;
