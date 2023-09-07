@@ -13,19 +13,33 @@
 		</array>
 		<key>LATIN</key>
 		<array>
+			<string>a</string>
 			<string>o</string>
+			<string>oslash</string>
 		</array>
 		<key>lc</key>
 		<array>
+			<string>a</string>
 			<string>o</string>
+			<string>oslash</string>
+		</array>
+		<key>public.kern1.LAT_a</key>
+		<array>
+			<string>a</string>
 		</array>
 		<key>public.kern1.LAT_b</key>
 		<array>
 			<string>o</string>
+			<string>oslash</string>
+		</array>
+		<key>public.kern2.LAT_a</key>
+		<array>
+			<string>a</string>
 		</array>
 		<key>public.kern2.LAT_o</key>
 		<array>
 			<string>o</string>
+			<string>oslash</string>
 		</array>
 	</dict>
 </plist>

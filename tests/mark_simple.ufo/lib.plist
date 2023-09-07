@@ -6,7 +6,9 @@
 		<array>
 			<string>.notdef</string>
 			<string>space</string>
+			<string>a</string>
 			<string>o</string>
+			<string>oslash</string>
 			<string>gravecmb</string>
 			<string>acutecmb</string>
 			<string>circumflexcmb</string>
