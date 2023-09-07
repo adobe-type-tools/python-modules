@@ -10,20 +10,3 @@ lookup MARK_BASE_belowLC {
 	pos base o <anchor 275 -20> mark @MC_belowLC;
 } MARK_BASE_belowLC;
 
-
-lookup MKMK_MARK_aboveLC {
-	lookupflag MarkAttachmentType @MC_aboveLC;
-
-	pos mark gravecmb <anchor 0 758> mark @MC_aboveLC;
-	pos mark acutecmb <anchor 0 758> mark @MC_aboveLC;
-	pos mark circumflexcmb <anchor 0 744> mark @MC_aboveLC;
-} MKMK_MARK_aboveLC;
-
-
-lookup MKMK_MARK_belowLC {
-	lookupflag MarkAttachmentType @MC_belowLC;
-
-	pos mark commabelowcmb <anchor 0 -253> mark @MC_belowLC;
-	pos mark dotbelowcmb <anchor 0 -203> mark @MC_belowLC;
-} MKMK_MARK_belowLC;
-

@@ -85,7 +85,3 @@ def test_full_run():
     example_feature = read_file(TEST_DIR / 'mark_simple.fea')
     assert read_file(tmp_fea_full) == example_feature
     tmp_fea_full.unlink()
-
-
-if __name__ == '__main__':
-    test_full_run()
