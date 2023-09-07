@@ -72,6 +72,27 @@ def test_mkclass_file():
     tmp_fea_classes.unlink()
 
 
+def test_mkmk_file():
+    '''
+    write external mark classes file
+    '''
+    args = Defaults()
+    tmp_fea_mark = TEST_DIR / 'tmp_mark.fea'
+    tmp_fea_mkmk = TEST_DIR / 'tmp_mkmk.fea'
+    args.mark_file = tmp_fea_mark
+    args.mkmk_file = tmp_fea_mkmk
+    args.write_mkmk = True
+    args.input_file = TEST_DIR / 'mark_simple.ufo'
+    MarkFeatureWriter(args)
+
+    example_fea_mark = read_file(TEST_DIR / 'mark_simple.fea')
+    example_fea_mkmk = read_file(TEST_DIR / 'mkmk_simple.fea')
+    assert read_file(tmp_fea_mark) == example_fea_mark
+    assert read_file(tmp_fea_mkmk) == example_fea_mkmk
+    tmp_fea_mark.unlink()
+    tmp_fea_mkmk.unlink()
+
+
 def test_full_run():
     '''
     very basic run without any options
