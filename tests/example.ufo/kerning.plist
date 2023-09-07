@@ -8,10 +8,10 @@
 			<integer>-57</integer>
 			<key>public.kern2.LAT_Y</key>
 			<integer>-57</integer>
-			<key>public.kern2.quotedbl</key>
-			<integer>-68</integer>
 			<key>public.kern2.nirvana</key>
 			<integer>-1000</integer>
+			<key>public.kern2.quotedbl</key>
+			<integer>-68</integer>
 		</dict>
 		<key>V</key>
 		<dict>
