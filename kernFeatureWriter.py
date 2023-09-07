@@ -336,7 +336,7 @@ class KernProcessor(object):
         if 'public.kern1.' in group_name:
             stripped_name = group_name.replace('public.kern1.', '')
             if stripped_name.startswith('@MMK_L_'):
-                # UFO2 files contain the @ in the XML, Defon reads it as
+                # UFO2 files contain the @ in the XML, Defcon reads it as
                 # 'public.kernX.@MMK'
                 return stripped_name
             else:
