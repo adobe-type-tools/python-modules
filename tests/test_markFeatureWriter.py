@@ -38,13 +38,29 @@ def test_no_group():
     assert pytest_wrapped_e.type == SystemExit
 
 
+def test_trim():
+    args = Defaults()
+    tmp_fea_trim = TEST_DIR / 'tmp_mfw_trim.fea'
+    args.trim_tags = True
+    args.mark_file = tmp_fea_trim
+    args.input_file = TEST_DIR / 'mfw_trim.ufo'
+    MarkFeatureWriter(args)
+
+    example_feature = read_file(TEST_DIR / 'mfw_trim.fea')
+    assert read_file(tmp_fea_trim) == example_feature
+    tmp_fea_trim.unlink()
+
+
 def test_full_run():
     args = Defaults()
-    ufo_path = TEST_DIR / 'mfw_simple.ufo'
-    example_feature = read_file(TEST_DIR / 'mfw_simple.fea')
-    args.input_file = ufo_path
+    tmp_fea_full = TEST_DIR / 'tmp_mfw_full.fea'
+    args.mark_file = tmp_fea_full
+    args.input_file = TEST_DIR / 'mfw_simple.ufo'
     MarkFeatureWriter(args)
+
+    example_feature = read_file(TEST_DIR / 'mfw_simple.fea')
     assert read_file(TEST_DIR / 'mark.fea') == example_feature
+    tmp_fea_full.unlink()
 
 
 if __name__ == '__main__':
