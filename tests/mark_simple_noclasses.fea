@@ -1,9 +1,12 @@
 lookup MARK_BASE_aboveLC {
-	pos base o <anchor 275 495> mark @MC_aboveLC;
+	@bGC_o_aboveLC = [ o oslash ];
+	pos base @bGC_o_aboveLC <anchor 275 495> mark @MC_aboveLC;
+	pos base a <anchor 251 495> mark @MC_aboveLC;
 } MARK_BASE_aboveLC;
 
 
 lookup MARK_BASE_belowLC {
+	pos base a <anchor 250 -20> mark @MC_belowLC;
 	pos base o <anchor 275 -20> mark @MC_belowLC;
 } MARK_BASE_belowLC;
 
