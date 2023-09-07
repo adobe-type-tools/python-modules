@@ -270,23 +270,24 @@ class MarkFeatureWriter(object):
                 mkmk_feature_content.append(mkmk_lookup)
                 mkmk_feature_content.append('\n')
 
+        # assemble content
         consolidated_content = []
         if self.write_classes:
-            mark_class_output = '\n'.join(mark_class_content)
-            write_output(ufo_dir, self.mkclass_file, mark_class_output)
+            # write the classes into an external file if so requested
+            write_output(ufo_dir, self.mkclass_file, mark_class_content)
         else:
+            # otherwise they go on top of the mark.fea file
             consolidated_content.extend(mark_class_content)
 
+        # write the mark feature
         consolidated_content.extend(mark_feature_content)
 
         if self.write_mkmk:
+            # write mkmk only if requested, in the adjacent mkmk.fea file
             mkmk_feature_output = '\n'.join(mkmk_feature_content)
             write_output(ufo_dir, self.mkmk_file, mkmk_feature_output)
-        else:
-            consolidated_content.extend(mkmk_feature_content)
 
-        consolidated_output = '\n'.join(consolidated_content)
-        write_output(ufo_dir, self.mark_file, consolidated_output)
+        write_output(ufo_dir, self.mark_file, '\n'.join(consolidated_content))
 
     def sort_gnames(self, glyph_list):
         '''
