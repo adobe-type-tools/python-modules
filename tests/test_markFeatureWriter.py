@@ -1,7 +1,11 @@
 import sys
-sys.path.append("..")
+import pytest
+from pathlib import Path
 
+sys.path.append("..")
 from markFeatureWriter import *
+
+TEST_DIR = Path(__file__).parent
 
 
 def read_file(path):
@@ -26,16 +30,21 @@ def test_get_args():
     assert argparse_args == dummy_args
 
 
+def test_no_group():
+    args = Defaults()
+    args.input_file = TEST_DIR / 'mfw_no_group.ufo'
+    with pytest.raises(SystemExit) as pytest_wrapped_e:
+        MarkFeatureWriter(args)
+    assert pytest_wrapped_e.type == SystemExit
+
+
 def test_full_run():
     args = Defaults()
-    args.input_file = 'mfw_simple.ufo'
-
-    test_dir = os.path.dirname(__file__)
-    ufo_path = os.path.join(test_dir, 'mfw_simple.ufo')
-    example_feature = read_file(os.path.join(test_dir, 'mfw_simple.fea'))
+    ufo_path = TEST_DIR / 'mfw_simple.ufo'
+    example_feature = read_file(TEST_DIR / 'mfw_simple.fea')
     args.input_file = ufo_path
     MarkFeatureWriter(args)
-    assert read_file(os.path.join(test_dir, 'mark.fea')) == example_feature
+    assert read_file(TEST_DIR / 'mark.fea') == example_feature
 
 
 if __name__ == '__main__':
