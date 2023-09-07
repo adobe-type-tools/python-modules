@@ -123,7 +123,7 @@ def write_output(directory, file, data):
     f_path = os.path.join(directory, file)
     with open(f_path, 'w') as of:
         of.write(data)
-    print('writing {}'.format(file))
+    print(f'writing {file}')
 
 
 def trim_anchor_name(anchor_name):
@@ -178,12 +178,11 @@ class MarkFeatureWriter(object):
         combining_anchor_dict = {}
         combining_marks_group = f.groups.get(self.mkgrp_name, [])
         if not combining_marks_group:
-            print(
-                'No group named "{}" found. '
+            sys.exit(
+                f'No group named "{self.mkgrp_name}" found. '
                 'Please add it to your UFO file '
-                '(and combining marks to it).'.format(self.mkgrp_name)
+                '(and combining marks to it).'
             )
-            sys.exit()
 
         combining_marks = [f[g_name] for g_name in combining_marks_group]
         # find out which attachment anchors exist in combining marks
@@ -248,27 +247,26 @@ class MarkFeatureWriter(object):
                     anchor_name, AnchorMate(anchor))
                 am.pos_name_dict.setdefault(position, []).append(g.name)
 
-        # mark classes file
+        # mark classes
         mark_class_list = []
         for anchor_name, a_mate in sorted(combining_anchor_dict.items()):
             if anchor_name.startswith('_'):
-                mc = self.make_one_mark_class(anchor_name, a_mate)
+                mc = self.make_mark_class(anchor_name, a_mate)
                 mark_class_list.append(mc)
-        mark_class_content = self.make_mark_class_content(mark_class_list)
+        mark_class_content = self.make_mark_classes_content(mark_class_list)
 
-        # mark feature file
+        # mark feature
         mark_feature_content = []
         for anchor_name, a_mate in sorted(base_glyph_anchor_dict.items()):
-            mark_lookup = self.make_mark_feature_lookup(anchor_name, a_mate)
+            mark_lookup = self.make_mark_lookup(anchor_name, a_mate)
             mark_feature_content.append(mark_lookup)
             mark_feature_content.append('\n')
 
-        # mkmk feature file
+        # mkmk feature
         mkmk_feature_content = []
         for anchor_name, a_mate in sorted(mkmk_anchor_dict.items()):
             if not anchor_name.startswith('_'):
-                mkmk_lookup = self.make_mkmk_feature_lookup(
-                    anchor_name, a_mate)
+                mkmk_lookup = self.make_mkmk_lookup(anchor_name, a_mate)
                 mkmk_feature_content.append(mkmk_lookup)
                 mkmk_feature_content.append('\n')
 
@@ -297,7 +295,7 @@ class MarkFeatureWriter(object):
         glyph_list.sort(key=lambda x: self.glyph_order.index(x))
         return glyph_list
 
-    def make_one_mark_class(self, anchor_name, a_mate):
+    def make_mark_class(self, anchor_name, a_mate):
         pos_gname = sorted(a_mate.pos_name_dict.items())
         mgroup_definitions = []
         mgroup_attachments = []
@@ -307,57 +305,54 @@ class MarkFeatureWriter(object):
             pos_x, pos_y = position
             if len(g_names) > 1:
                 sorted_g_names = self.sort_gnames(g_names)
-                group_name = '@mGC{}_{}_{}'.format(
-                    anchor_name,
-                    str(pos_x).replace('-', 'n'),
-                    str(pos_y).replace('-', 'n'))
-                group_list = ' '.join(sorted_g_names)
-                mgroup_definitions.append('{} = [ {} ];'.format(
-                    group_name, group_list))
+                # represent negative numbers with “n”, because minus is
+                # reserved for ranges:
+                str_x = str(pos_x).replace('-', 'n')
+                str_y = str(pos_y).replace('-', 'n')
+                group_name = f'@mGC{anchor_name}_{str_x}_{str_y}'
+                group_glyphs = ' '.join(sorted_g_names)
+                mgroup_definitions.append(
+                    f'{group_name} = [ {group_glyphs} ];')
                 mgroup_attachments.append(
-                    'markClass {} <anchor {} {}> @MC{};'.format(
-                        group_name, pos_x, pos_y, anchor_name))
+                    f'markClass {group_name} <anchor {pos_x} {pos_y}> '
+                    f'@MC{anchor_name};')
 
             else:
                 g_name = g_names[0]
                 single_attachments.append(
-                    'markClass {} <anchor {} {}> @MC{};'.format(
-                        g_name, pos_x, pos_y, anchor_name))
+                    f'markClass {g_name} <anchor {pos_x} {pos_y}> '
+                    f'@MC{anchor_name};')
 
         return mgroup_definitions, mgroup_attachments, single_attachments
 
-    def make_mark_class_content(self, list_of_lists):
+    def make_mark_classes_content(self, mark_class_list):
         '''
-        The make_one_mark_class method returns a tuple of three lists per
+        The make_mark_class method returns a tuple of three lists per
         anchor, which may have data or not. Here those lists are assembled
-        into a neatly organized text string ready for writing in a file.
+        into an organized text string ready for writing in a file.
         '''
         top = []
         mid = []
         bot = []
-        for sublist in list_of_lists:
-            group_def, group_att, single_att = sublist
+        for group_def, group_attachment, single_attachment in mark_class_list:
             if group_def:
                 top.extend(group_def)
-            if group_att:
-                mid.extend(group_att)
-            if single_att:
-                bot.extend(single_att)
+            if group_attachment:
+                mid.extend(group_attachment)
+            if single_attachment:
+                bot.extend(single_attachment)
 
         output = []
-        output.extend(sorted(top))
-        output.extend([''])
-        output.extend(sorted(mid))
-        output.extend([''])
-        output.extend(sorted(bot))
-        output.extend([''])
+        output.extend(sorted(top) + [''])
+        output.extend(sorted(mid) + [''])
+        output.extend(sorted(bot) + [''])
         return output
 
-    def make_mark_feature_lookup(self, anchor_name, a_mate):
+    def make_mark_lookup(self, anchor_name, a_mate):
 
-        lookup_name = 'MARK_BASE_{}'.format(anchor_name)
-        open_lookup = 'lookup {} {{'.format(lookup_name)
-        close_lookup = '}} {};'.format(lookup_name)
+        lookup_name = f'MARK_BASE_{anchor_name}'
+        open_lookup = f'lookup {lookup_name} {{'
+        close_lookup = f'}} {lookup_name};'
 
         pos_to_gname = []
         for position, g_list in a_mate.pos_name_dict.items():
@@ -375,23 +370,24 @@ class MarkFeatureWriter(object):
             pos_x, pos_y = position
             if len(g_names) > 1:
                 sorted_g_names = self.sort_gnames(g_names)
-                group_name = '@bGC_{}_{}'.format(
-                    sorted_g_names[0].replace(':', '_'),
-                    anchor_name)
+                # GNUFL introduces the colon as part of the glyph name,
+                # e.g. thai:kokai, which breaks group names.
+                safe_group_name = sorted_g_names[0].replace(':', '_')
+                group_name = f'@bGC_{safe_group_name}_{anchor_name}'
 
-                group_list = ' '.join(sorted_g_names)
-                mgroup_definitions.append('\t{} = [ {} ];'.format(
-                    group_name, group_list))
+                group_glyphs = ' '.join(sorted_g_names)
+                mgroup_definitions.append(
+                    f'\t{group_name} = [ {group_glyphs} ];')
                 mgroup_attachments.append(
-                    '\tpos base {} <anchor {} {}> mark @MC_{};'.format(
-                        group_name, pos_x, pos_y, anchor_name))
+                    f'\tpos base {group_name} <anchor {pos_x} {pos_y}> '
+                    f'mark @MC_{anchor_name};')
 
             else:
                 g_name = g_names[0]
                 single_attachments.append(
                     # pos base AE <anchor 559 683> mark @MC_above;
-                    '\tpos base {} <anchor {} {}> mark @MC_{};'.format(
-                        g_name, pos_x, pos_y, anchor_name))
+                    f'\tpos base {g_name} <anchor {pos_x} {pos_y}> '
+                    f'mark @MC_{anchor_name};')
 
         output = [open_lookup]
 
@@ -405,13 +401,12 @@ class MarkFeatureWriter(object):
 
         return '\n'.join(output)
 
-    def make_mkmk_feature_lookup(self, anchor_name, a_mate):
-        lookup_name = 'MKMK_MARK_{}'.format(anchor_name)
+    def make_mkmk_lookup(self, anchor_name, a_mate):
+        lookup_name = f'MKMK_MARK_{anchor_name}'
         open_lookup = (
-            'lookup {} {{\n'
-            '\tlookupflag MarkAttachmentType @MC_{};\n'.format(
-                lookup_name, anchor_name))
-        close_lookup = '}} {};'.format(lookup_name)
+            f'lookup {lookup_name} {{\n'
+            f'\tlookupflag MarkAttachmentType @MC_{anchor_name};\n')
+        close_lookup = f'}} {lookup_name};'
 
         pos_to_gname = []
         for position, g_list in a_mate.pos_name_dict.items():
@@ -426,8 +421,8 @@ class MarkFeatureWriter(object):
             for g_name in sorted_g_names:
                 mkmk_attachments.append(
                     # pos mark acmb <anchor 0 763> mark @MC_above;
-                    '\tpos mark {} <anchor {} {}> mark @MC_{};'.format(
-                        g_name, pos_x, pos_y, anchor_name))
+                    f'\tpos mark {g_name} <anchor {pos_x} {pos_y}> '
+                    f'mark @MC_{anchor_name};')
 
         output = [open_lookup]
         output.append('\n'.join(mkmk_attachments))
