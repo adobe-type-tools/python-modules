@@ -6,10 +6,10 @@ This work is incomplete (i.e. support for Indic mark features still
 needs to be added).
 '''
 
-import os
 import sys
 import argparse
 from defcon import Font
+from pathlib import Path
 
 
 class Defaults(object):
@@ -119,10 +119,9 @@ def get_args(args=None):
     return parser.parse_args(args)
 
 
-def write_output(directory, file, data):
-    f_path = os.path.join(directory, file)
-    with open(f_path, 'w') as of:
-        of.write(data)
+def write_output(directory, file, line_list):
+    with open(directory / file, 'w') as of:
+        of.write('\n'.join(line_list))
     print(f'writing {file}')
 
 
@@ -156,7 +155,8 @@ class MarkFeatureWriter(object):
         if not args:
             args = Defaults()
 
-        ufo_path = args.input_file
+        ufo_path = Path(args.input_file)
+        ufo_dir = ufo_path.parent
         self.mark_file = args.mark_file
         self.mkmk_file = args.mkmk_file
         self.mkclass_file = args.mkclass_file
@@ -167,10 +167,6 @@ class MarkFeatureWriter(object):
         self.indic_format = args.indic_format
         self.write_mkmk = args.write_mkmk
         self.write_classes = args.write_classes
-
-        ufo_dir = os.path.dirname(
-            os.path.normpath(ufo_path)
-        )
 
         f = Font(ufo_path)
         self.glyph_order = f.lib['public.glyphOrder']
@@ -284,10 +280,9 @@ class MarkFeatureWriter(object):
 
         if self.write_mkmk:
             # write mkmk only if requested, in the adjacent mkmk.fea file
-            mkmk_feature_output = '\n'.join(mkmk_feature_content)
-            write_output(ufo_dir, self.mkmk_file, mkmk_feature_output)
+            write_output(ufo_dir, self.mkmk_file, mkmk_feature_content)
 
-        write_output(ufo_dir, self.mark_file, '\n'.join(consolidated_content))
+        write_output(ufo_dir, self.mark_file, consolidated_content)
 
     def sort_gnames(self, glyph_list):
         '''
