@@ -4,7 +4,6 @@
 markClass @mGC_aboveLC_0_495 <anchor 0 495> @MC_aboveLC;
 markClass @mGC_belowLC_0_n20 <anchor 0 -20> @MC_belowLC;
 
-markClass cedillacmb <anchor 0 0> @MC_baseLC;
 
 lookup MARK_BASE_aboveLC {
 	@bGC_o_aboveLC = [ o oslash ];
