@@ -4,7 +4,6 @@
 markClass @mGC_above_0_495 <anchor 0 495> @MC_above;
 markClass @mGC_above_0_690 <anchor 0 690> @MC_above;
 
-markClass cedillacmb <anchor 0 0> @MC_base;
 markClass commabelowcmb <anchor 0 -20> @MC_below;
 
 lookup MARK_BASE_above {

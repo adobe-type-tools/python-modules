@@ -247,8 +247,16 @@ class MarkFeatureWriter(object):
         mark_class_list = []
         for anchor_name, a_mate in sorted(combining_anchor_dict.items()):
             if anchor_name.startswith('_'):
-                mc = self.make_mark_class(anchor_name, a_mate)
-                mark_class_list.append(mc)
+                # write the class if a corresponding base anchor exists.
+                if base_glyph_anchor_dict.get(anchor_name[1:]):
+                    mc = self.make_mark_class(anchor_name, a_mate)
+                    mark_class_list.append(mc)
+                # if not, do not write it and complain.
+                else:
+                    print(
+                        f'anchor {anchor_name} does not have a corresponding '
+                        'base anchor.')
+
         mark_class_content = self.make_mark_classes_content(mark_class_list)
 
         # mark feature
