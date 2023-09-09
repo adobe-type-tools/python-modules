@@ -332,24 +332,37 @@ class MarkFeatureWriter(object):
     def make_mark_classes_content(self, mark_class_list):
         '''
         The make_mark_class method returns a tuple of three lists per
-        anchor, which may have data or not. Here those lists are assembled
-        into an organized text string ready for writing in a file.
+        anchor. Here, those lists are organized in chunks:
+
+        - first mark group definitions, like
+            @mGC_above_0_495 = [ gravecmb acutecmb circumflexcmb ];
+            @mGC_above_0_690 = [ gravecmb.cap acutecmb.cap circumflexcmb.cap ];
+
+        - then, markClass attachments relating to those groups:
+            markClass @mGC_above_0_495 <anchor 0 495> @MC_above;
+            markClass @mGC_above_0_690 <anchor 0 690> @MC_above;
+
+        - finally, markClass attachments relating to single glyphs:
+            markClass cedillacmb <anchor 0 0> @MC_base;
+            markClass horncmb <anchor 0 475> @MC_horn;
+
         '''
-        top = []
-        mid = []
-        bot = []
+        group_definitions = []
+        group_attachments = []
+        single_attachments = []
+
         for group_def, group_attachment, single_attachment in mark_class_list:
             if group_def:
-                top.extend(group_def)
+                group_definitions.extend(group_def)
             if group_attachment:
-                mid.extend(group_attachment)
+                group_attachments.extend(group_attachment)
             if single_attachment:
-                bot.extend(single_attachment)
+                single_attachments.extend(single_attachment)
 
         output = []
-        output.extend(sorted(top) + [''])
-        output.extend(sorted(mid) + [''])
-        output.extend(sorted(bot) + [''])
+        for content in [group_definitions, group_attachments, single_attachments]:
+            if content:
+                output.extend(sorted(content) + [''])
         return output
 
     def make_mark_lookup(self, anchor_name, a_mate):
