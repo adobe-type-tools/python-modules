@@ -92,11 +92,10 @@ class WhichApp(object):
 
     def __init__(self):
         self.inRF = False
-        self.inFL = False
         self.inDC = False
         self.appName = 'noApp'
 
-        if not any((self.inRF, self.inFL, self.inDC)):
+        if not any((self.inRF, self.inDC)):
             try:
                 import mojo.roboFont
                 self.inRF = True
@@ -104,139 +103,13 @@ class WhichApp(object):
             except ImportError:
                 pass
 
-        if not any((self.inRF, self.inFL, self.inDC)):
-            try:
-                import flsys
-                self.inFL = True
-                self.appName = 'FontLab'
-            except ImportError:
-                pass
-
-        if not any((self.inRF, self.inFL, self.inDC)):
+        if not any((self.inRF, self.inDC)):
             try:
                 import defcon
                 self.inDC = True
                 self.appName = 'Defcon'
             except ImportError:
                 pass
-
-
-class FLKerningData(object):
-
-    def __init__(self, font=None):
-        self.f = font
-        if font:
-            self._readFLGroups()
-            self._splitFLGroups()
-            self.leftKeyGlyphs = self._filterKeyGlyphs(self.leftGroups)
-            self.rightKeyGlyphs = self._filterKeyGlyphs(self.rightGroups)
-            self._readFLKerning()
-
-    def _isMMfont(self):
-        '''Check if the FontLab font is a Multiple Master font.'''
-
-        if self.f[0].layers_number > 1:
-            return True
-        else:
-            return False
-
-    def _readFLGroups(self):
-        self.groupToKeyglyph = {}
-        self.groups = {}
-        self.group_order = []
-
-        fl_class_names = [cname for cname in self.f.classes if cname[0] == '_']
-        for cString in fl_class_names:
-
-            FLclassName = cString.split(':')[0]
-            # FL class name, e.g. _L_LC_LEFT
-            OTgroupName = '@%s' % FLclassName[1:]
-            # OT group name, e.g. @L_LC_LEFT
-            markedGlyphList = cString.split(':')[1].split()
-            cleanGlyphList = [gName.strip("'") for gName in markedGlyphList]
-            # key glyph marker stripped out
-
-            for gName in markedGlyphList:
-                if gName[-1] == "'":  # finds keyglyph
-                    keyGlyphName = gName.strip("'")
-                    break
-                else:
-                    keyGlyphName = markedGlyphList[0]
-                    print(
-                        'WARNING: Kerning class %s has no explicit key '
-                        'glyph.\nUsing first glyph found (%s).' % (
-                            FLclassName, keyGlyphName)
-                    )
-
-            self.group_order.append(OTgroupName)
-            self.groupToKeyglyph[OTgroupName] = keyGlyphName
-            self.groups[OTgroupName] = cleanGlyphList
-
-    def _splitFLGroups(self):
-        '''
-        Split FontLab kerning classes into left and right sides; based on
-        the class name. If classes do not have an explicit side-flag, they
-        are assigned to both left and right sides.
-        '''
-
-        leftTagsList = tags_left
-        rightTagsList = tags_right
-
-        self.leftGroups = []
-        self.rightGroups = []
-
-        for groupName in self.groups:
-            if any([tag in groupName for tag in leftTagsList]):
-                self.leftGroups.append(groupName)
-            elif any([tag in groupName for tag in rightTagsList]):
-                self.rightGroups.append(groupName)
-            else:
-                self.leftGroups.append(groupName)
-                self.rightGroups.append(groupName)
-
-    def _filterKeyGlyphs(self, groupList):
-        '''
-        Return a dictionary
-        {keyGlyph: FLClassName}
-        for a given list of group names.
-        '''
-
-        filteredKeyGlyphs = {}
-
-        for groupName in groupList:
-            keyGlyphName = self.groupToKeyglyph[groupName]
-            filteredKeyGlyphs[keyGlyphName] = groupName
-
-        return filteredKeyGlyphs
-
-    def _readFLKerning(self):
-        '''
-        Read FontLab kerning and converts it into a UFO-style kerning dict.
-        '''
-
-        self.kerning = {}
-        glyphs = self.f.glyphs
-
-        for gIndexLeft, glyphLeft in enumerate(glyphs):
-            gNameLeft = glyphLeft.name
-            flKerningArray = glyphs[gIndexLeft].kerning
-
-            for flKerningPair in flKerningArray:
-                gIndexRight = flKerningPair.key
-                gNameRight = glyphs[gIndexRight].name
-
-                if self._isMMfont():
-                    kernValue = '<%s>' % ' '.join(
-                        map(str, flKerningPair.values))
-                    # flKerningPair.values is an array
-                    # holding kern values for each master
-                else:
-                    kernValue = int(flKerningPair.value)
-
-                pair = (
-                    self.leftKeyGlyphs.get(gNameLeft, gNameLeft),
-                    self.rightKeyGlyphs.get(gNameRight, gNameRight))
-                self.kerning[pair] = kernValue
 
 
 class KernProcessor(object):
@@ -794,7 +667,6 @@ class run(object):
         appTest = WhichApp()
         output_file = args.output_file
 
-        self.inFL = appTest.inFL
         self.f = font
         self.folder = os.path.dirname(font.path)
         self.minKern = args.min_value
@@ -804,29 +676,13 @@ class run(object):
         self.dissolve_single = args.dissolve_single
         self.trimmedPairs = 0
 
-        if self.inFL:
-            self.header.append('# PS Name: %s' % self.f.font_name)
+        self.header.append(
+            '# PS Name: %s' % self.f.info.postscriptFontName)
 
-            fl_K = FLKerningData(self.f)
-
-            self.MM = fl_K._isMMfont()
-            self.kerning = fl_K.kerning
-            self.groups = fl_K.groups
-            self.group_order = fl_K.group_order
-
-            if self.MM:
-                output_file = 'mm' + output_file
-            else:
-                self.header.append('# MM Inst: %s' % self.f.menu_name)
-
-        else:
-            self.header.append(
-                '# PS Name: %s' % self.f.info.postscriptFontName)
-
-            self.MM = False
-            self.kerning = self.f.kerning
-            self.groups = self.f.groups
-            self.group_order = sorted(self.groups.keys())
+        self.MM = False
+        self.kerning = self.f.kerning
+        self.groups = self.f.groups
+        self.group_order = sorted(self.groups.keys())
 
         if not self.kerning:
             print('ERROR: The font has no kerning!')
@@ -1077,8 +933,7 @@ class run(object):
                 outfile.write('\n'.join(data))
                 outfile.write('\n')
 
-        if not self.inFL:
-            print('Output file written to %s' % outputPath)
+        print('Output file written to %s' % outputPath)
 
 
 def get_args():
