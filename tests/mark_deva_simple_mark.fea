@@ -1,0 +1,11 @@
+markClass acutecmb <anchor 0 519> @MC_aboveLC;
+markClass dvAnusvara <anchor -150 624> @MC_abvmBINDU;
+markClass dvCandrabindu <anchor -178 624> @MC_abvmCANDRABINDU;
+markClass dvNukta <anchor 0 -46> @MC_blwmNUKTA;
+markClass dvReph <anchor -133 624> @MC_abvmTOP;
+markClass dvVirama <anchor -132 -20> @MC_blwmBOTTOM;
+
+lookup MARK_BASE_aboveLC {
+	pos base a <anchor 234 519> mark @MC_aboveLC;
+} MARK_BASE_aboveLC;
+

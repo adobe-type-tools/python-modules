@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>.notdef</key>
+		<string>_notdef.glif</string>
+		<key>a</key>
+		<string>a.glif</string>
+		<key>acutecmb</key>
+		<string>acutecmb.glif</string>
+		<key>dvAnusvara</key>
+		<string>dvA_nusvara.glif</string>
+		<key>dvCandrabindu</key>
+		<string>dvC_andrabindu.glif</string>
+		<key>dvKa</key>
+		<string>dvK_a.glif</string>
+		<key>dvKha</key>
+		<string>dvK_ha.glif</string>
+		<key>dvNukta</key>
+		<string>dvN_ukta.glif</string>
+		<key>dvQa</key>
+		<string>dvQ_a.glif</string>
+		<key>dvReph</key>
+		<string>dvR_eph.glif</string>
+		<key>dvVirama</key>
+		<string>dvV_irama.glif</string>
+		<key>space</key>
+		<string>space.glif</string>
+	</dict>
+</plist>

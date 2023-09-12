@@ -1,0 +1,20 @@
+lookup MARK_BASE_abvmBINDU {
+	@bGC_dvKa_abvmBINDU = [ dvKa dvQa ];
+	pos base @bGC_dvKa_abvmBINDU <anchor 360 624> mark @MC_abvmBINDU;
+	pos base dvKha <anchor 477 624> mark @MC_abvmBINDU;
+} MARK_BASE_abvmBINDU;
+
+
+lookup MARK_BASE_abvmCANDRABINDU {
+	@bGC_dvKa_abvmCANDRABINDU = [ dvKa dvQa ];
+	pos base @bGC_dvKa_abvmCANDRABINDU <anchor 350 624> mark @MC_abvmCANDRABINDU;
+	pos base dvKha <anchor 467 624> mark @MC_abvmCANDRABINDU;
+} MARK_BASE_abvmCANDRABINDU;
+
+
+lookup MARK_BASE_abvmTOP {
+	@bGC_dvKa_abvmTOP = [ dvKa dvQa ];
+	pos base @bGC_dvKa_abvmTOP <anchor 370 624> mark @MC_abvmTOP;
+	pos base dvKha <anchor 666 624> mark @MC_abvmTOP;
+} MARK_BASE_abvmTOP;
+

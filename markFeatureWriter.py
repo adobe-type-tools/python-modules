@@ -2,8 +2,6 @@
 
 '''
 Current draft for modernized mark feature writer module.
-This work is incomplete (i.e. support for Indic mark features still
-needs to be added).
 '''
 
 import sys
@@ -20,7 +18,6 @@ class Defaults(object):
 
     def __init__(self):
 
-        # self.input_file
         self.trim_tags = False
         self.write_classes = False
         self.write_mkmk = False
@@ -259,6 +256,24 @@ class MarkFeatureWriter(object):
 
         mark_class_content = self.make_mark_classes_content(mark_class_list)
 
+        # abvm blwm features
+        if self.indic_format:
+            abvm_feature_content = []
+            blwm_feature_content = []
+
+            for anchor_name, a_mate in sorted(base_glyph_anchor_dict.items()):
+                if anchor_name.startswith('abvm'):
+                    mark_lookup = self.make_mark_lookup(anchor_name, a_mate)
+                    abvm_feature_content.append(mark_lookup)
+                    abvm_feature_content.append('\n')
+                    del base_glyph_anchor_dict[anchor_name]
+
+                if anchor_name.startswith('blwm'):
+                    mark_lookup = self.make_mark_lookup(anchor_name, a_mate)
+                    blwm_feature_content.append(mark_lookup)
+                    blwm_feature_content.append('\n')
+                    del base_glyph_anchor_dict[anchor_name]
+
         # mark feature
         mark_feature_content = []
         for anchor_name, a_mate in sorted(base_glyph_anchor_dict.items()):
@@ -289,6 +304,10 @@ class MarkFeatureWriter(object):
         if self.write_mkmk:
             # write mkmk only if requested, in the adjacent mkmk.fea file
             write_output(ufo_dir, self.mkmk_file, mkmk_feature_content)
+
+        if self.indic_format:
+            write_output(ufo_dir, self.abvm_file, abvm_feature_content)
+            write_output(ufo_dir, self.blwm_file, blwm_feature_content)
 
         write_output(ufo_dir, self.mark_file, consolidated_content)
 
@@ -456,8 +475,8 @@ def main(test_args=None):
 if __name__ == '__main__':
     main()
 
-# constants from contextual mark feature writer, to be included in future
-# iterations
+
+# constants from contextual mark feature writer, to be included in future iterations
 # kPREMarkFileName = "mark-pre.fea"
 # kPOSTMarkFileName = "mark-post.fea"
 # kLigaturesClassName = "LIGATURES_WITH_%d_COMPONENTS"  # The '%d' part is required
@@ -466,6 +485,3 @@ if __name__ == '__main__':
 # kRTLtagsList = ['_AR', '_HE']  # Arabic, Hebrew
 # kIgnoreAnchorTag = "CXT"
 # kLigatureComponentOrderTags = ['1ST', '2ND', '3RD', '4TH']  # Add more as necessary to a maximum of 9 (nine)
-
-# kIndianAboveMarks = "abvm"
-# kIndianBelowMarks = "blwm"
