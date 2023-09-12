@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>LATIN</key>
+		<array>
+			<string>A</string>
+			<string>V</string>
+		</array>
+		<key>public.kern1.LAT_A</key>
+		<array>
+			<string>A</string>
+		</array>
+		<key>public.kern1.LAT_V</key>
+		<array>
+			<string>V</string>
+		</array>
+		<key>public.kern2.LAT_A</key>
+		<array>
+			<string>A</string>
+		</array>
+		<key>public.kern2.LAT_V</key>
+		<array>
+			<string>V</string>
+		</array>
+		<key>uc</key>
+		<array>
+			<string>A</string>
+			<string>V</string>
+		</array>
+	</dict>
+</plist>

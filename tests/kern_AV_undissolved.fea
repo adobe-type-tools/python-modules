@@ -1,0 +1,13 @@
+# PS Name: SourceSerif4-Regular
+# MinKern: +/- 3 inclusive
+# exported from Defcon
+
+@MMK_L_LAT_A = [A];
+@MMK_L_LAT_V = [V];
+@MMK_R_LAT_A = [A];
+@MMK_R_LAT_V = [V];
+
+# group, group/glyph:
+pos @MMK_L_LAT_A @MMK_R_LAT_A 10;
+pos @MMK_L_LAT_A @MMK_R_LAT_V -119;
+pos @MMK_L_LAT_V @MMK_R_LAT_A -120;
