@@ -936,7 +936,7 @@ class run(object):
         print('Output file written to %s' % outputPath)
 
 
-def get_args():
+def get_args(args=None):
 
     defaults = Defaults()
     parser = argparse.ArgumentParser(
@@ -993,11 +993,11 @@ def get_args():
         default=defaults.dissolve_single,
         help='dissolve single-element groups to glyph names')
 
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
-def main():
-    args = get_args()
+def main(test_args=None):
+    args = get_args(test_args)
     f_path = os.path.normpath(args.input_file)
     import defcon
     if os.path.exists(f_path):
