@@ -93,6 +93,32 @@ def test_mkmk_file():
     tmp_fea_mkmk.unlink()
 
 
+def test_indic_format():
+    '''
+    test abvm and blwm files
+    '''
+    args = Defaults()
+    args.indic_format = True
+    tmp_fea_mark = TEST_DIR / 'tmp_mark.fea'
+    tmp_fea_abvm = TEST_DIR / 'tmp_abvm.fea'
+    tmp_fea_blwm = TEST_DIR / 'tmp_blwm.fea'
+    args.mark_file = tmp_fea_mark
+    args.abvm_file = tmp_fea_abvm
+    args.blwm_file = tmp_fea_blwm
+    args.input_file = TEST_DIR / 'mark_deva_simple.ufo'
+    MarkFeatureWriter(args)
+
+    example_fea_mark = read_file(TEST_DIR / 'mark_deva_simple_mark.fea')
+    example_fea_abvm = read_file(TEST_DIR / 'mark_deva_simple_abvm.fea')
+    example_fea_blwm = read_file(TEST_DIR / 'mark_deva_simple_blwm.fea')
+    assert read_file(tmp_fea_mark) == example_fea_mark
+    assert read_file(tmp_fea_abvm) == example_fea_abvm
+    assert read_file(tmp_fea_blwm) == example_fea_blwm
+    tmp_fea_mark.unlink()
+    tmp_fea_abvm.unlink()
+    tmp_fea_blwm.unlink()
+
+
 def test_full_run():
     '''
     very basic run without any options

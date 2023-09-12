@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="dvQa" format="2">
+	<unicode hex="0958"/>
+	<advance width="730"/>
+	<outline>
+		<component base="dvKa"/>
+		<component base="dvNukta" xOffset="180" yOffset="109"/>
+	</outline>
+	<anchor name="abvmBINDUCXT-IKAR" x="380" y="654"/>
+	<anchor name="abvmBINDU" x="360" y="624"/>
+	<anchor name="abvmCANDRABINDU" x="350" y="624"/>
+	<anchor name="abvmTOP" x="370" y="624"/>
+	<anchor name="blwmBOTTOM" x="367" y="-50"/>
+</glyph>
