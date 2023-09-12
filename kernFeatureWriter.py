@@ -336,7 +336,7 @@ class KernProcessor(object):
         if 'public.kern1.' in group_name:
             stripped_name = group_name.replace('public.kern1.', '')
             if stripped_name.startswith('@MMK_L_'):
-                # UFO2 files contain the @ in the XML, Defon reads it as
+                # UFO2 files contain the @ in the XML, Defcon reads it as
                 # 'public.kernX.@MMK'
                 return stripped_name
             else:
@@ -378,7 +378,7 @@ class KernProcessor(object):
 
     def _isGroup(self, itemName):
         '''
-        Return True if the first character of a kerning item is "@".
+        Check if an item name implies a group.
         '''
 
         if itemName[0] == '@':
@@ -389,7 +389,7 @@ class KernProcessor(object):
 
     def _isKerningGroup(self, groupName):
         '''
-        Return True if the first group is a kerning group.
+        Check if a group name implies a kerning group.
         '''
 
         if groupName.startswith('@MMK_'):
