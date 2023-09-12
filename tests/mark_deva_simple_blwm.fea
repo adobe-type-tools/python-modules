@@ -1,0 +1,12 @@
+lookup MARK_BASE_blwmBOTTOM {
+	pos base dvKa <anchor 367 -20> mark @MC_blwmBOTTOM;
+	pos base dvKha <anchor 663 -20> mark @MC_blwmBOTTOM;
+	pos base dvQa <anchor 367 -50> mark @MC_blwmBOTTOM;
+} MARK_BASE_blwmBOTTOM;
+
+
+lookup MARK_BASE_blwmNUKTA {
+	pos base dvKa <anchor 182 62> mark @MC_blwmNUKTA;
+	pos base dvKha <anchor 139 39> mark @MC_blwmNUKTA;
+} MARK_BASE_blwmNUKTA;
+
