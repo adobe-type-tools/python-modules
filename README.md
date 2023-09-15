@@ -1,4 +1,4 @@
-[![codecov](https://codecov.io/gh/adobe-type-tools/python-modules/branch/master/graph/badge.svg?token=Zeqzh6AHfO)](https://codecov.io/gh/adobe-type-tools/python-modules)
+[![codecov](https://codecov.io/gh/adobe-type-tools/python-modules/graph/badge.svg?token=Zeqzh6AHfO)](https://codecov.io/gh/adobe-type-tools/python-modules)
 
 Python modules
 ==============
