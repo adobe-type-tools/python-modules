@@ -139,10 +139,14 @@ class KernProcessor(object):
         self.pairs_unprocessed = []
         self.pairs_processed = []
 
-        self.reference_groups = {
-            group: glyph_list for (group, glyph_list) in groups.items() if
-            not self._isKerningGroup(group)
-        }
+        self.rtl_groups = [
+            group for group in groups.keys() if any([
+                tag_ara in group,
+                tag_heb in group,
+                tag_RTL in group,
+            ])]
+        self.rtl_glyphs = list(itertools.chain.from_iterable(
+            groups.get(rtl_group) for rtl_group in self.rtl_groups))
 
         sanitized_kerning = self.sanitize_kerning(groups, kerning)
         used_group_names = self._get_used_groups(sanitized_kerning)
@@ -274,15 +278,15 @@ class KernProcessor(object):
     def _isRTL(self, pair):
         '''
         Check if a given pair is RTL, by looking for a RTL-specific group
-        tag. Also use the hard-coded list of RTL glyphs.
+        tag, or membership in an RTL group
         '''
 
-        RTLGlyphs = self.reference_groups.get(group_RTL, [])
+        # RTLGlyphs = self.reference_groups.get(group_RTL, [])
+
         RTLkerningTags = [tag_ara, tag_heb, tag_RTL]
 
-        if set(pair) & set(RTLGlyphs):
-            # Any item in the pair is in the RTL glyph reference group.
-            # This will work for glyph-glyph pairs only.
+        if set(pair) & set(self.rtl_glyphs):
+            # Any item in the pair is an RTL glyph.
             return True
 
         for tag in RTLkerningTags:
@@ -536,7 +540,7 @@ class KernProcessor(object):
                 # exceptions expressed as glyph-to-glyph pairs -- these cannot
                 # be filtered and need to be added to the kern feature
                 # ---------------------------------------------
-                if self._isRTL(pair):
+                if isRTLpair:
                     self.rtl_glyph_glyph_exceptions[pair] = value
                 else:
                     self.glyph_glyph_exceptions[pair] = value
