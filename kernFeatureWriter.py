@@ -139,20 +139,9 @@ class KernProcessor(object):
         self.pairs_unprocessed = []
         self.pairs_processed = []
 
-        self.rtl_groups = [
-            group for group in groups.keys() if any([
-                tag_ara in group,
-                tag_heb in group,
-                tag_RTL in group,
-            ])]
-        self.rtl_glyphs = list(itertools.chain.from_iterable(
-            groups.get(rtl_group) for rtl_group in self.rtl_groups))
-
         sanitized_kerning = self.sanitize_kerning(groups, kerning)
-        used_group_names = self._get_used_groups(sanitized_kerning)
-        used_groups = {
-            g_name: groups.get(g_name) for g_name in used_group_names
-        }
+        used_groups = self._get_used_groups(groups, sanitized_kerning)
+        self.reference_groups = self._get_reference_groups(groups)
 
         if used_groups and option_dissolve:
             dissolved_groups, dissolved_kerning = self._dissolveSingleGroups(
@@ -166,6 +155,7 @@ class KernProcessor(object):
 
         self.grouped_left = self._getAllGroupedGlyphs(side='left')
         self.grouped_right = self._getAllGroupedGlyphs(side='right')
+        self.rtl_glyphs = self._get_rtl_glyphs(self.groups)
 
         self._findExceptions()
 
@@ -281,11 +271,11 @@ class KernProcessor(object):
         tag, or membership in an RTL group
         '''
 
-        # RTLGlyphs = self.reference_groups.get(group_RTL, [])
-
+        RTLGlyphs = self.reference_groups.get(group_RTL, [])
+        all_rtl_glyphs = set(RTLGlyphs) | set(self.rtl_glyphs)
         RTLkerningTags = [tag_ara, tag_heb, tag_RTL]
 
-        if set(pair) & set(self.rtl_glyphs):
+        if set(pair) & set(all_rtl_glyphs):
             # Any item in the pair is an RTL glyph.
             return True
 
@@ -307,18 +297,39 @@ class KernProcessor(object):
                 return True
         return False
 
-    def _get_used_groups(self, kerning):
+    def _get_used_groups(self, groups, kerning):
         '''
         Return all groups which are actually used in kerning,
         by iterating through the kerning pairs.
         '''
-        groupList = []
+        used_group_names = []
         for left, right in kerning.keys():
             if self._isGroup(left):
-                groupList.append(left)
+                used_group_names.append(left)
             if self._isGroup(right):
-                groupList.append(right)
-        return sorted(set(groupList))
+                used_group_names.append(right)
+        used_groups = {
+            g_name: groups.get(g_name) for g_name in used_group_names
+        }
+        return used_groups
+
+    def _get_reference_groups(self, groups):
+        reference_group_names = [
+            gn for gn in groups if not self._isKerningGroup(gn)]
+        reference_groups = {
+            gn: groups.get(gn) for gn in reference_group_names}
+        return reference_groups
+
+    def _get_rtl_glyphs(self, groups):
+        rtl_groups = [
+            group for group in groups.keys() if any([
+                tag_ara in group,
+                tag_heb in group,
+                tag_RTL in group,
+            ])]
+        rtl_glyphs = list(itertools.chain.from_iterable(
+            groups.get(rtl_group) for rtl_group in rtl_groups))
+        return rtl_glyphs
 
     def _getAllGroupedGlyphs(self, groupFilterList=None, side=None):
         '''
