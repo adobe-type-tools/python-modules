@@ -8,6 +8,10 @@ from kernFeatureWriter import *
 TEST_DIR = Path(__file__).parent
 
 
+class Dummy(object):
+    pass
+
+
 def read_file(path):
     '''
     Read a file, split lines into a list, close the file.
@@ -37,7 +41,7 @@ def test_full_run():
     tmp_feature = TEST_DIR / 'tmp_kern_example.fea'
     example_feature = read_file(TEST_DIR / 'kern_example.fea')
     args.input_file = ufo_path
-    args.output_file = tmp_feature
+    args.output_name = tmp_feature
     f = defcon.Font(ufo_path)
     run(f, args)
     assert read_file(tmp_feature) == example_feature
@@ -55,7 +59,7 @@ def test_subtable():
     args.input_file = ufo_path
     args.write_subtables = True
     args.subtable_size = 128
-    args.output_file = tmp_feature
+    args.output_name = tmp_feature
     f = defcon.Font(ufo_path)
     run(f, args)
     assert read_file(tmp_feature) == example_feature
@@ -75,12 +79,12 @@ def test_dissolve():
     example_feature_dissolved = read_file(
         TEST_DIR / 'kern_AV_dissolved.fea')
     args.input_file = ufo_path
-    args.output_file = tmp_feature_undissolved
+    args.output_name = tmp_feature_undissolved
     f = defcon.Font(ufo_path)
     run(f, args)
     assert read_file(tmp_feature_undissolved) == example_feature_undissolved
     args.dissolve_single = True
-    args.output_file = tmp_feature_dissolved
+    args.output_name = tmp_feature_dissolved
     run(f, args)
     assert read_file(tmp_feature_dissolved) == example_feature_dissolved
     tmp_feature_undissolved.unlink()
@@ -97,8 +101,22 @@ def test_case_01():
     tmp_feature = TEST_DIR / 'tmp_case_01.fea'
     example_feature = read_file(TEST_DIR / 'kern_case_01.fea')
     args.input_file = ufo_path
-    args.output_file = tmp_feature
+    args.output_name = tmp_feature
     f = defcon.Font(ufo_path)
     run(f, args)
     assert read_file(tmp_feature) == example_feature
     tmp_feature.unlink()
+
+
+def test_make_header():
+    kfw = run(None, None)
+    dummy_args = Dummy()
+    dummy_args.min_value = 1
+    dummy_args.write_timestamp = False
+    header = kfw.make_header(dummy_args)
+    assert len(header) == 3
+    assert header[0] == '# PS Name: None'
+    dummy_args.write_timestamp = True
+    header = kfw.make_header(dummy_args)
+    assert len(header) == 4
+    assert header[0].startswith('# Created:')

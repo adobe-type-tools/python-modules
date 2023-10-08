@@ -674,14 +674,6 @@ class run(object):
         if not args:
             args = Defaults()
 
-        if args.write_timestamp:
-            self.header = ['# Created: %s' % time.ctime()]
-        else:
-            self.header = []
-
-        appTest = WhichApp()
-        output_name = args.output_name
-
         self.f = font
         self.minKern = args.min_value
         self.write_subtables = args.write_subtables
@@ -690,24 +682,37 @@ class run(object):
         self.dissolve_single = args.dissolve_single
         self.trimmedPairs = 0
 
-        self.header.append(
-            '# PS Name: %s' % self.f.info.postscriptFontName)
+        if self.f:
+            self.kerning = self.f.kerning
+            self.groups = self.f.groups
+            self.group_order = sorted(self.groups.keys())
 
-        self.kerning = self.f.kerning
-        self.groups = self.f.groups
-        self.group_order = sorted(self.groups.keys())
+            if not self.kerning:
+                print('ERROR: The font has no kerning!')
+                return
 
-        if not self.kerning:
-            print('ERROR: The font has no kerning!')
-            return
+            output_data = self._makeOutputData(args)
+            if output_data:
+                self.header = self.make_header(args)
+                output_dir = os.path.abspath(os.path.dirname(self.f.path))
+                output_path = os.path.join(output_dir, args.output_name)
+                self.writeDataToFile(output_data, output_path)
 
-        self.header.append('# MinKern: +/- %s inclusive' % self.minKern)
-        self.header.append('# exported from %s' % appTest.appName)
+    def make_header(self, args):
+        app = WhichApp()
+        ps_name = None
+        try:
+            ps_name = self.f.info.postscriptFontName
+        except KeyError:
+            ps_name = None
 
-        outputData = self._makeOutputData(args)
-        if outputData:
-            output_path = os.path.join(os.path.dirname(font.path), output_name)
-            self.writeDataToFile(outputData, output_path)
+        header = []
+        if args.write_timestamp:
+            header.append('# Created: %s' % time.ctime())
+        header.append('# PS Name: %s' % ps_name)
+        header.append('# MinKern: +/- %s inclusive' % args.min_value)
+        header.append('# exported from %s' % app.appName)
+        return header
 
     def _dict2pos(self, pairValueDict, minimum=0, enum=False, RTL=False):
         '''
