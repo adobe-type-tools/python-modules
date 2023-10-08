@@ -694,7 +694,6 @@ class run(object):
         self.header.append(
             '# PS Name: %s' % self.f.info.postscriptFontName)
 
-        self.MM = False
         self.kerning = self.f.kerning
         self.groups = self.f.groups
         self.group_order = sorted(self.groups.keys())
@@ -722,22 +721,8 @@ class run(object):
         for pair, value in pairValueDict.items():
 
             if RTL:
-                if self.MM:
-                    # kern value is stored in an array represented
-                    # as a string, for instance: '<10 20 30 40>'
-
-                    values = value[1:-1].split()
-                    values = [
-                        '<{0} 0 {0} 0>'.format(kernValue) for
-                        kernValue in values]
-                    valueString = '<%s>' % ' '.join(values)
-                    # create an (experimental, but consequent)
-                    # string like this:
-                    # <<10 0 10 0> <20 0 20 0> <30 0 30 0> <40 0 40 0>>
-
-                else:
-                    kernValue = value
-                    valueString = '<{0} 0 {0} 0>'.format(kernValue)
+                kernValue = value
+                valueString = '<{0} 0 {0} 0>'.format(kernValue)
 
             else:
                 kernValue = value
@@ -746,22 +731,15 @@ class run(object):
             posLine = 'pos %s %s;' % (' '.join(pair), valueString)
             enumLine = 'enum %s' % posLine
 
-            if self.MM:  # no filtering happening in MM.
-                if enum:
-                    data.append(enumLine)
+            if enum:
+                data.append(enumLine)
+            else:
+                if abs(kernValue) < minimum:
+                    if self.write_trimmed_pairs:
+                        data.append('# %s' % posLine)
+                    trimmed += 1
                 else:
                     data.append(posLine)
-
-            else:
-                if enum:
-                    data.append(enumLine)
-                else:
-                    if abs(kernValue) < minimum:
-                        if self.write_trimmed_pairs:
-                            data.append('# %s' % posLine)
-                        trimmed += 1
-                    else:
-                        data.append(posLine)
 
         self.trimmedPairs += trimmed
         data.sort()
