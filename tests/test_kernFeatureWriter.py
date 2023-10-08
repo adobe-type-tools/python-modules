@@ -120,3 +120,35 @@ def test_make_header():
     header = kfw.make_header(dummy_args)
     assert len(header) == 4
     assert header[0].startswith('# Created:')
+
+
+def test_dict2pos():
+    kfw = run(None, None)
+    kfw.write_trimmed_pairs = False
+
+    pv_dict = {
+        ('A', 'V'): 3,
+        ('A', 'X'): 2,
+        ('A', 'A'): 1,
+    }
+
+    assert kfw._dict2pos(pv_dict) == (
+        'pos A A 1;\n'
+        'pos A V 3;\n'
+        'pos A X 2;'
+    )
+    assert kfw._dict2pos(pv_dict, minimum=2) == (
+        'pos A V 3;\n'
+        'pos A X 2;'
+    )
+    assert kfw._dict2pos(pv_dict, RTL=True) == (
+        'pos A A <1 0 1 0>;\n'
+        'pos A V <3 0 3 0>;\n'
+        'pos A X <2 0 2 0>;'
+    )
+    kfw.write_trimmed_pairs = True
+    assert kfw._dict2pos(pv_dict, minimum=2) == (
+        '# pos A A 1;\n'
+        'pos A V 3;\n'
+        'pos A X 2;'
+    )

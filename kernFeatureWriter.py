@@ -700,10 +700,9 @@ class run(object):
 
     def make_header(self, args):
         app = WhichApp()
-        ps_name = None
         try:
             ps_name = self.f.info.postscriptFontName
-        except KeyError:
+        except Exception:
             ps_name = None
 
         header = []
@@ -716,9 +715,8 @@ class run(object):
 
     def _dict2pos(self, pairValueDict, minimum=0, enum=False, RTL=False):
         '''
-        Turn a dictionary to a list of kerning pairs. In a single master font,
-        the function can filter kerning pairs whose absolute value does not
-        exceed a given threshold.
+        Turn a dictionary to a list of kerning pairs. Kerning pairs whose
+        absolute value does not exceed a given threshold can be filtered.
         '''
 
         data = []
@@ -726,23 +724,21 @@ class run(object):
         for pair, value in pairValueDict.items():
 
             if RTL:
-                kernValue = value
-                valueString = '<{0} 0 {0} 0>'.format(kernValue)
-
+                value_str = '<{0} 0 {0} 0>'.format(value)
             else:
-                kernValue = value
-                valueString = value
+                value_str = str(value)
 
-            posLine = 'pos %s %s;' % (' '.join(pair), valueString)
-            enumLine = 'enum %s' % posLine
+            posLine = 'pos %s %s;' % (' '.join(pair), value_str)
 
             if enum:
-                data.append(enumLine)
+                data.append('enum ' + posLine)
             else:
-                if abs(kernValue) < minimum:
+                if abs(value) < minimum:
                     if self.write_trimmed_pairs:
-                        data.append('# %s' % posLine)
-                    trimmed += 1
+                        data.append('# ' + posLine)
+                        trimmed += 1
+                    else:
+                        continue
                 else:
                     data.append(posLine)
 
