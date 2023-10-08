@@ -52,7 +52,7 @@ class Defaults(object):
     def __init__(self):
 
         # The default output filename
-        self.output_file = 'kern.fea'
+        self.output_name = 'kern.fea'
 
         # Default mimimum kerning value. This value is _inclusive_, which
         # means that pairs that equal this absolute value will NOT be
@@ -680,10 +680,9 @@ class run(object):
             self.header = []
 
         appTest = WhichApp()
-        output_file = args.output_file
+        output_name = args.output_name
 
         self.f = font
-        self.folder = os.path.dirname(font.path)
         self.minKern = args.min_value
         self.write_subtables = args.write_subtables
         self.subtable_size = args.subtable_size
@@ -707,7 +706,8 @@ class run(object):
 
         outputData = self._makeOutputData(args)
         if outputData:
-            self.writeDataToFile(outputData, output_file)
+            output_path = os.path.join(os.path.dirname(font.path), output_name)
+            self.writeDataToFile(outputData, output_path)
 
     def _dict2pos(self, pairValueDict, minimum=0, enum=False, RTL=False):
         '''
@@ -910,23 +910,21 @@ class run(object):
 
         return output
 
-    def writeDataToFile(self, data, fileName):
+    def writeDataToFile(self, data, output_path):
 
-        print('Saving %s file...' % fileName)
+        print('Saving %s file...' % os.path.basename(output_path))
 
         if self.trimmedPairs > 0:
             print('Trimmed pairs: %s' % self.trimmedPairs)
 
-        outputPath = os.path.join(self.folder, fileName)
-
-        with open(outputPath, 'w') as outfile:
-            outfile.write('\n'.join(self.header))
-            outfile.write('\n\n')
+        with open(output_path, 'w') as blob:
+            blob.write('\n'.join(self.header))
+            blob.write('\n\n')
             if data:
-                outfile.write('\n'.join(data))
-                outfile.write('\n')
+                blob.write('\n'.join(data))
+                blob.write('\n')
 
-        print('Output file written to %s' % outputPath)
+        print('Output file written to %s' % output_path)
 
 
 def get_args(args=None):
@@ -941,9 +939,9 @@ def get_args(args=None):
         help='input font file')
 
     parser.add_argument(
-        '-o', '--output_file',
+        '-o', '--output_name',
         action='store',
-        default=defaults.output_file,
+        default=defaults.output_name,
         help='change the output file name')
 
     parser.add_argument(
