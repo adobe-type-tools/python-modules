@@ -1,27 +1,15 @@
 #!/usr/bin/env python3
 
 '''
-kernFeatureWriter.py 1.0 - Sept 2016
+Kern Feature Writer for the FDK font production workflow.
 
-Rewrite of WriteFeaturesKernFDK.py, which will eventually be replaced by
-this module. The main motivation for this were problems with kerning
-subtable overflow.
-
-Main improvements of this script compared to WriteFeaturesKernFDK.py:
--   can be called from the command line, with a UFO file as an argument
--   automatic subtable measuring
--   ability to dissolve single-glyph groups into glyph-pairs
-    (this feature was written for subtable optimization)
--   identify glyph-to-glyph RTL kerning (requirement: all RTL glyphs
-    are part of a catch-all @RTL_KERNING group)
-
-To do:
--   write proper tests for individual functions.
-    Some doctests were written, but not enough for all scenarios
--   measure the `mark` feature, which also contributes to the size of the
-    GPOS table (and therefore indirectly influences kerning overflow)
--   test kerning integrity, to make sure referenced glyphs actually exist
-    (and building binaries doesn't fail).
+Optional functionality of this tool includes:
+-   subtable measuring and automatic insertion of subtable breaks
+-   dissolving of single-element groups into glyph pairs
+    (helping with subtable optimization)
+-   identify glyph-to-glyph RTL kerning
+    (requirement: all RTL glyphs are part of a RTL-specific kerning group,
+    or are members of the catch-all @RTL_KERNING group)
 
 '''
 
@@ -139,30 +127,31 @@ class KernProcessor(object):
         self.pairs_unprocessed = []
         self.pairs_processed = []
 
-        sanitized_kerning = self.sanitize_kerning(groups, kerning)
-        used_groups = self._get_used_groups(groups, sanitized_kerning)
-        self.reference_groups = self._get_reference_groups(groups)
+        if kerning:
+            sanitized_kerning = self.sanitize_kerning(groups, kerning)
+            used_groups = self._get_used_groups(groups, sanitized_kerning)
+            self.reference_groups = self._get_reference_groups(groups)
 
-        if used_groups and option_dissolve:
-            dissolved_groups, dissolved_kerning = self._dissolveSingleGroups(
-                used_groups, sanitized_kerning)
-            self.groups = self._remap_groups(dissolved_groups)
-            self.kerning = self._remap_kerning(dissolved_kerning)
+            if used_groups and option_dissolve:
+                dissolved_groups, dissolved_kerning = self._dissolveSingleGroups(
+                    used_groups, sanitized_kerning)
+                self.groups = self._remap_groups(dissolved_groups)
+                self.kerning = self._remap_kerning(dissolved_kerning)
 
-        else:
-            self.groups = self._remap_groups(used_groups)
-            self.kerning = self._remap_kerning(sanitized_kerning)
+            else:
+                self.groups = self._remap_groups(used_groups)
+                self.kerning = self._remap_kerning(sanitized_kerning)
 
-        self.grouped_left = self._getAllGroupedGlyphs(side='left')
-        self.grouped_right = self._getAllGroupedGlyphs(side='right')
-        self.rtl_glyphs = self._get_rtl_glyphs(self.groups)
+            self.grouped_left = self._getAllGroupedGlyphs(side='left')
+            self.grouped_right = self._getAllGroupedGlyphs(side='right')
+            self.rtl_glyphs = self._get_rtl_glyphs(self.groups)
 
-        self._findExceptions()
+            self._findExceptions()
 
-        if self.kerning and len(self.kerning.keys()):
-            self.group_order = sorted(
-                [gr_name for gr_name in self.groups])
-            self._sanityCheck()
+            if self.kerning and len(self.kerning.keys()):
+                self.group_order = sorted(
+                    [gr_name for gr_name in self.groups])
+                self._sanityCheck()
 
     def sanitize_kerning(self, groups, kerning):
         '''
@@ -971,13 +960,13 @@ def get_args(args=None):
         '-t', '--write_trimmed_pairs',
         action='store_true',
         default=defaults.write_trimmed_pairs,
-        help='write trimmed pairs to fea file (as comments)')
+        help='write trimmed pairs to output file (as comments)')
 
     parser.add_argument(
         '--write_timestamp',
         action='store_true',
         default=defaults.write_timestamp,
-        help='write time stamp in header of fea file')
+        help='write time stamp in header of output file')
 
     parser.add_argument(
         '--dissolve_single',
