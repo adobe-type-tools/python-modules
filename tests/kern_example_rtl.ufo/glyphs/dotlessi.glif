@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="dotlessi" format="2">
+	<advance width="209"/>
+	<outline>
+		<contour>
+			<point x="81" y="0" type="line"/>
+			<point x="128" y="0" type="line"/>
+			<point x="128" y="480" type="line"/>
+			<point x="81" y="480" type="line"/>
+		</contour>
+	</outline>
+	<anchor name="aboveLC" x="104" y="515"/>
+	<anchor name="belowLC" x="104" y="-30"/>
+	<anchor name="baseLC" x="96" y="0"/>
+</glyph>

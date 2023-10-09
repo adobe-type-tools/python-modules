@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arAlefMadda" format="2">
+	<advance width="231"/>
+	<outline>
+		<contour>
+			<point x="132" y="816" type="curve" smooth="yes"/>
+			<point x="168" y="816"/>
+			<point x="200" y="827"/>
+			<point x="215" y="854" type="curve"/>
+			<point x="208" y="889" type="line"/>
+			<point x="181" y="864"/>
+			<point x="162" y="857"/>
+			<point x="141" y="857" type="curve" smooth="yes"/>
+			<point x="101" y="857"/>
+			<point x="64" y="884"/>
+			<point x="18" y="884" type="curve" smooth="yes"/>
+			<point x="-32" y="884"/>
+			<point x="-53" y="848"/>
+			<point x="-55" y="806" type="curve"/>
+			<point x="-21" y="795" type="line"/>
+			<point x="-14" y="838"/>
+			<point x="5" y="843"/>
+			<point x="15" y="843" type="curve" smooth="yes"/>
+			<point x="48" y="843"/>
+			<point x="88" y="816"/>
+		</contour>
+		<component base="arAlef"/>
+	</outline>
+	<anchor name="aboveAR" x="80" y="915"/>
+	<anchor name="belowAR" x="125" y="-180"/>
+	<anchor name="belowARCXT-YEHBREE" x="125" y="-360"/>
+</glyph>

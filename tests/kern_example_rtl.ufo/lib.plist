@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>public.glyphOrder</key>
+		<array>
+			<string>arAlef</string>
+			<string>arAlefMadda</string>
+			<string>arBeh.i</string>
+			<string>arPeh.i</string>
+			<string>arReh</string>
+			<string>arZain</string>
+			<string>arRreh</string>
+			<string>arJeh</string>
+			<string>arHeh</string>
+			<string>arTehMarbuta</string>
+			<string>arHehYeh</string>
+			<string>arHehGoalHamza</string>
+			<string>arAe</string>
+			<string>arYeh.i</string>
+			<string>arE.i</string>
+			<string>arYehBarree.f</string>
+			<string>arYehBarree.fa</string>
+			<string>arYehBarreeHamza.f</string>
+			<string>arYehBarreeHamza.fa</string>
+			<string>arColon</string>
+			<string>F</string>
+			<string>i</string>
+			<string>igrave</string>
+			<string>iacute</string>
+			<string>icircumflex</string>
+			<string>idieresis</string>
+			<string>dotlessi</string>
+			<string>imacron</string>
+		</array>
+	</dict>
+</plist>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arZain" format="2">
+	<advance width="453"/>
+	<outline>
+		<contour>
+			<point x="249" y="490" type="curve" smooth="yes"/>
+			<point x="273" y="490"/>
+			<point x="289" y="507"/>
+			<point x="289" y="533" type="curve" smooth="yes"/>
+			<point x="289" y="556"/>
+			<point x="273" y="574"/>
+			<point x="250" y="574" type="curve" smooth="yes"/>
+			<point x="226" y="574"/>
+			<point x="210" y="556"/>
+			<point x="210" y="533" type="curve" smooth="yes"/>
+			<point x="210" y="507"/>
+			<point x="226" y="490"/>
+		</contour>
+		<component base="arReh"/>
+	</outline>
+	<anchor name="aboveAR" x="245" y="655"/>
+	<anchor name="belowAR" x="195" y="-330"/>
+</glyph>
