@@ -19,14 +19,14 @@ import os
 import time
 
 
-group_RTL = 'RTL_KERNING'
+group_rtl = 'RTL_KERNING'
 
 tags_left = ['_LEFT', '_1ST', '_L_']
 tags_right = ['_RIGHT', '_2ND', '_R_']
 
 tag_ara = '_ARA'
 tag_heb = '_HEB'
-tag_RTL = '_RTL'
+tag_rtl = '_RTL'
 tag_exception = 'EXC_'
 tag_ignore = '.cxt'
 
@@ -133,7 +133,7 @@ class KernProcessor(object):
             self.reference_groups = self._get_reference_groups(groups)
 
             if used_groups and option_dissolve:
-                dissolved_groups, dissolved_kerning = self._dissolveSingleGroups(
+                dissolved_groups, dissolved_kerning = self._dissolve_single_groups(
                     used_groups, sanitized_kerning)
                 self.groups = self._remap_groups(dissolved_groups)
                 self.kerning = self._remap_kerning(dissolved_kerning)
@@ -142,11 +142,11 @@ class KernProcessor(object):
                 self.groups = self._remap_groups(used_groups)
                 self.kerning = self._remap_kerning(sanitized_kerning)
 
-            self.grouped_left = self._getAllGroupedGlyphs(side='left')
-            self.grouped_right = self._getAllGroupedGlyphs(side='right')
+            self.grouped_left = self._get_grouped_glyphs(left=True)
+            self.grouped_right = self._get_grouped_glyphs(left=False)
             self.rtl_glyphs = self._get_rtl_glyphs(self.groups)
 
-            self._findExceptions()
+            self._find_exceptions()
 
             if self.kerning and len(self.kerning.keys()):
                 self.group_order = sorted(
@@ -167,7 +167,7 @@ class KernProcessor(object):
         all_pairs = [pair for pair in kerning.keys()]
         all_kerned_items = set([item for pair in all_pairs for item in pair])
         all_kerned_groups = [
-            item for item in all_kerned_items if self._isGroup(item)]
+            item for item in all_kerned_items if self._is_group(item)]
 
         bad_groups = set(all_kerned_groups) - set(groups.keys())
         sanitized_kerning = {
@@ -226,7 +226,7 @@ class KernProcessor(object):
 
         return remapped_kerning
 
-    def _isGroup(self, itemName):
+    def _is_group(self, itemName):
         '''
         Check if an item name implies a group.
         '''
@@ -237,7 +237,7 @@ class KernProcessor(object):
             return True
         return False
 
-    def _isKerningGroup(self, groupName):
+    def _is_kerning_group(self, groupName):
         '''
         Check if a group name implies a kerning group.
         '''
@@ -248,36 +248,35 @@ class KernProcessor(object):
             return True
         return False
 
-    def _isRTL(self, pair):
+    def _is_rtl(self, pair):
         '''
         Check if a given pair is RTL, by looking for a RTL-specific group
         tag, or membership in an RTL group
         '''
 
-        RTLGlyphs = self.reference_groups.get(group_RTL, [])
-        all_rtl_glyphs = set(RTLGlyphs) | set(self.rtl_glyphs)
-        RTLkerningTags = [tag_ara, tag_heb, tag_RTL]
+        rtl_group = self.reference_groups.get(group_rtl, [])
+        all_rtl_glyphs = set(rtl_group) | set(self.rtl_glyphs)
+        rtl_tags = [tag_ara, tag_heb, tag_rtl]
 
         if set(pair) & set(all_rtl_glyphs):
             # Any item in the pair is an RTL glyph.
             return True
 
-        for tag in RTLkerningTags:
+        for tag in rtl_tags:
             # Group tags indicate presence of RTL item.
             # This will work for any pair including a RTL group.
             if any([tag in item for item in pair]):
                 return True
         return False
 
-    def _isRTLGroup(self, groupName):
+    def _is_rtl_group(self, groupName):
         '''
         Check if a given group is a RTL group
         '''
-        RTLkerningTags = [tag_ara, tag_heb, tag_RTL]
+        rtl_tags = [tag_ara, tag_heb, tag_rtl]
 
-        for tag in RTLkerningTags:
-            if any([tag in groupName]):
-                return True
+        if any([tag in groupName for tag in rtl_tags]):
+            return True
         return False
 
     def _get_used_groups(self, groups, kerning):
@@ -287,9 +286,9 @@ class KernProcessor(object):
         '''
         used_group_names = []
         for left, right in kerning.keys():
-            if self._isGroup(left):
+            if self._is_group(left):
                 used_group_names.append(left)
-            if self._isGroup(right):
+            if self._is_group(right):
                 used_group_names.append(right)
         used_groups = {
             g_name: groups.get(g_name) for g_name in used_group_names
@@ -298,7 +297,7 @@ class KernProcessor(object):
 
     def _get_reference_groups(self, groups):
         reference_group_names = [
-            gn for gn in groups if not self._isKerningGroup(gn)]
+            gn for gn in groups if not self._is_kerning_group(gn)]
         reference_groups = {
             gn: groups.get(gn) for gn in reference_group_names}
         return reference_groups
@@ -308,13 +307,13 @@ class KernProcessor(object):
             group for group in groups.keys() if any([
                 tag_ara in group,
                 tag_heb in group,
-                tag_RTL in group,
+                tag_rtl in group,
             ])]
         rtl_glyphs = list(itertools.chain.from_iterable(
             groups.get(rtl_group) for rtl_group in rtl_groups))
         return rtl_glyphs
 
-    def _getAllGroupedGlyphs(self, groupFilterList=None, side=None):
+    def _get_grouped_glyphs(self, left=False):
         '''
         Return lists of glyphs used in groups on left or right side.
         This is used to calculate the subtable size for a given list
@@ -323,44 +322,43 @@ class KernProcessor(object):
         grouped_left = []
         grouped_right = []
 
-        if not groupFilterList:
-            groupFilterList = self.groups.keys()
+        group_names = list(self.groups.keys())
 
         for left, right in self.kerning.keys():
-            if self._isGroup(left) and left in groupFilterList:
+            if self._is_group(left) and left in group_names:
                 grouped_left.extend(self.groups.get(left))
-            if self._isGroup(right) and right in groupFilterList:
+            if self._is_group(right) and right in group_names:
                 grouped_right.extend(self.groups.get(right))
 
-        if side == 'left':
+        if left is True:
             return sorted(set(grouped_left))
-        elif side == 'right':
-            return sorted(set(grouped_right))
         else:
-            return sorted(set(grouped_left)), sorted(set(grouped_right))
+            return sorted(set(grouped_right))
 
-    def _dissolveSingleGroups(self, groups, kerning):
+    def _dissolve_single_groups(self, groups, kerning):
         '''
-        Find any groups with a single-item glyph list,
-        (which are not RTL groups) which can be dissolved
-        into single, or group-to-glyph/glyph-to-group pairs.
-        The intention is avoiding an overload of the group-group subtable.
+        Find any (non-RTL) group with a single-item glyph list.
+        This group can be dissolved into a single glyph to create more
+        glyph-to-glyph pairs. The intention is shifting the load from the
+        group-to-group subtable.
+
+        The actual effect of this depends on the group setup.
         '''
-        singleGroups = dict(
+        single_groups = dict(
             [(group_name, glyphs) for group_name, glyphs in groups.items() if(
-                len(glyphs) == 1 and not self._isRTLGroup(group_name))])
-        if singleGroups:
-            dissolvedKerning = {}
+                len(glyphs) == 1 and not self._is_rtl_group(group_name))])
+        if single_groups:
+            dissolved_kerning = {}
             for (left, right), value in kerning.items():
-                dissolvedLeft = singleGroups.get(left, [left])[0]
-                dissolvedRight = singleGroups.get(right, [right])[0]
-                dissolvedKerning[(dissolvedLeft, dissolvedRight)] = value
+                dissolvedLeft = single_groups.get(left, [left])[0]
+                dissolvedRight = single_groups.get(right, [right])[0]
+                dissolved_kerning[(dissolvedLeft, dissolvedRight)] = value
 
-            remainingGroups = dict(
+            remaining_groups = dict(
                 [(gr_name, glyphs) for gr_name, glyphs in groups.items() if(
-                    gr_name not in singleGroups)]
+                    gr_name not in single_groups)]
             )
-            return remainingGroups, dissolvedKerning
+            return remaining_groups, dissolved_kerning
 
         else:
             return groups, kerning
@@ -390,7 +388,7 @@ class KernProcessor(object):
 
         return list(itertools.product(leftGlyphList, rightGlyphList))
 
-    def _findExceptions(self):
+    def _find_exceptions(self):
         '''
         Process kerning to find which pairs are exceptions,
         and which are just normal pairs.
@@ -411,17 +409,17 @@ class KernProcessor(object):
 
         glyph_2_glyph = sorted(
             [pair for pair in self.kerning.keys() if(
-                not self._isGroup(pair[0]) and
-                not self._isGroup(pair[1]))]
+                not self._is_group(pair[0]) and
+                not self._is_group(pair[1]))]
         )
         glyph_2_group = sorted(
             [pair for pair in self.kerning.keys() if(
-                not self._isGroup(pair[0]) and
-                self._isGroup(pair[1]))]
+                not self._is_group(pair[0]) and
+                self._is_group(pair[1]))]
         )
         group_2_item = sorted(
             [pair for pair in self.kerning.keys() if(
-                self._isGroup(pair[0]))]
+                self._is_group(pair[0]))]
         )
 
         # glyph to group pairs:
@@ -429,23 +427,22 @@ class KernProcessor(object):
         for (glyph, group) in glyph_2_group:
             pair = glyph, group
             value = self.kerning[pair]
-            isRTLpair = self._isRTL(pair)
-            groupList = self.groups[group]
+            is_rtl_pair = self._is_rtl(pair)
             if glyph in self.grouped_left:
                 # it is a glyph_to_group exception!
-                if isRTLpair:
+                if is_rtl_pair:
                     self.rtl_glyph_group_exceptions[pair] = value
                 else:
                     self.glyph_group_exceptions[pair] = value
                 self.pairs_processed.append(pair)
 
             else:
-                for groupedGlyph in groupList:
-                    gr_pair = (glyph, groupedGlyph)
+                for grouped_glyph in self.groups[group]:
+                    gr_pair = (glyph, grouped_glyph)
                     if gr_pair in glyph_2_glyph:
                         gr_value = self.kerning[gr_pair]
                         # that pair is a glyph_to_glyph exception!
-                        if isRTLpair:
+                        if is_rtl_pair:
                             self.rtl_glyph_glyph_exceptions[gr_pair] = gr_value
                         else:
                             self.glyph_glyph_exceptions[gr_pair] = gr_value
@@ -455,7 +452,7 @@ class KernProcessor(object):
                     self.pairs_unprocessed.append(pair)
                     continue
 
-                if isRTLpair:
+                if is_rtl_pair:
                     self.rtl_glyph_group[pair] = value
                 else:
                     self.glyph_group[pair] = value
@@ -463,23 +460,23 @@ class KernProcessor(object):
 
         # group to group/glyph pairs:
         # ---------------------------
-        explodedPairList = []
-        RTLexplodedPairList = []
+        exploded_pair_list = []
+        exploded_pair_list_rtl = []
 
-        for (leftGroup, rightItem) in group_2_item:
+        for (group_l, item_r) in group_2_item:
             # the right item of the pair may be a group or a glyph
-            pair = (leftGroup, rightItem)
+            pair = (group_l, item_r)
             value = self.kerning[pair]
-            isRTLpair = self._isRTL(pair)
-            l_group_glyphs = self.groups[leftGroup]
+            is_rtl_pair = self._is_rtl(pair)
+            l_group_glyphs = self.groups[group_l]
 
-            if self._isGroup(rightItem):
-                r_group_glyphs = self.groups[rightItem]
+            if self._is_group(item_r):
+                r_group_glyphs = self.groups[item_r]
             else:
                 # not a group, therefore a glyph
-                if rightItem in self.grouped_right:
+                if item_r in self.grouped_right:
                     # it is a group_to_glyph exception!
-                    if isRTLpair:
+                    if is_rtl_pair:
                         self.rtl_group_glyph_exceptions[pair] = value
                     else:
                         self.group_glyph_exceptions[pair] = value
@@ -487,20 +484,20 @@ class KernProcessor(object):
                     continue  # It is an exception, so move on to the next pair
 
                 else:
-                    r_group_glyphs = [rightItem]
+                    r_group_glyphs = [item_r]
 
             # skip the pair if the value is zero
             if value == 0:
                 self.pairs_unprocessed.append(pair)
                 continue
 
-            if isRTLpair:
+            if is_rtl_pair:
                 self.rtl_group_group[pair] = value
-                RTLexplodedPairList.extend(
+                exploded_pair_list_rtl.extend(
                     self._explode(l_group_glyphs, r_group_glyphs))
             else:
                 self.group_group[pair] = value
-                explodedPairList.extend(
+                exploded_pair_list.extend(
                     self._explode(l_group_glyphs, r_group_glyphs))
                 # list of all possible pair combinations for the
                 # @class @class kerning pairs of the font.
@@ -509,13 +506,13 @@ class KernProcessor(object):
         # Find the intersection of the exploded pairs with the glyph_2_glyph
         # pairs collected above. Those must be exceptions, as they occur twice
         # (once in class-kerning, once as a single pair).
-        self.exceptionPairs = set(explodedPairList) & set(glyph_2_glyph)
-        self.RTLexceptionPairs = set(RTLexplodedPairList) & set(glyph_2_glyph)
+        self.exception_pairs = set(exploded_pair_list) & set(glyph_2_glyph)
+        self.exception_pairs_rtl = set(exploded_pair_list_rtl) & set(glyph_2_glyph)
 
-        for pair in self.exceptionPairs:
+        for pair in self.exception_pairs:
             self.glyph_glyph_exceptions[pair] = self.kerning[pair]
 
-        for pair in self.RTLexceptionPairs:
+        for pair in self.exception_pairs_rtl:
             self.rtl_glyph_glyph_exceptions[pair] = self.kerning[pair]
 
         # finally, collect normal glyph to glyph pairs:
@@ -526,7 +523,7 @@ class KernProcessor(object):
         for glyph_1, glyph_2 in glyph_2_glyph:
             pair = glyph_1, glyph_2
             value = self.kerning[pair]
-            isRTLpair = self._isRTL(pair)
+            is_rtl_pair = self._is_rtl(pair)
             if any(
                 [glyph_1 in self.grouped_left, glyph_2 in self.grouped_right]
             ):
@@ -534,7 +531,7 @@ class KernProcessor(object):
                 # exceptions expressed as glyph-to-glyph pairs -- these cannot
                 # be filtered and need to be added to the kern feature
                 # ---------------------------------------------
-                if isRTLpair:
+                if is_rtl_pair:
                     self.rtl_glyph_glyph_exceptions[pair] = value
                 else:
                     self.glyph_glyph_exceptions[pair] = value
@@ -544,7 +541,7 @@ class KernProcessor(object):
                     pair not in self.glyph_glyph_exceptions and
                     pair not in self.rtl_glyph_glyph_exceptions
                 ):
-                    if self._isRTL(pair):
+                    if self._is_rtl(pair):
                         self.rtl_glyph_glyph[pair] = self.kerning[pair]
                     else:
                         self.glyph_glyph[pair] = self.kerning[pair]
