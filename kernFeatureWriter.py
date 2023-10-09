@@ -101,11 +101,7 @@ class WhichApp(object):
 
 
 class KernProcessor(object):
-    def __init__(
-        self,
-        groups=None, kerning=None,
-        option_dissolve=False
-    ):
+    def __init__(self, groups=None, kerning=None, option_dissolve=False):
 
         # kerning dicts containing pair-value combinations
         self.glyph_glyph = {}
@@ -226,27 +222,23 @@ class KernProcessor(object):
 
         return remapped_kerning
 
-    def _is_group(self, itemName):
+    def _is_group(self, item_name):
         '''
         Check if an item name implies a group.
         '''
 
-        if itemName[0] == '@':
-            return True
-        if itemName.split('.')[0] == 'public':
-            return True
-        return False
+        return any([
+            item_name.startswith('@'),
+            item_name.startswith('public.')])
 
-    def _is_kerning_group(self, groupName):
+    def _is_kerning_group(self, grp_name):
         '''
         Check if a group name implies a kerning group.
         '''
 
-        if groupName.startswith('@MMK_'):
-            return True
-        if groupName.startswith('public.kern'):
-            return True
-        return False
+        return any([
+            grp_name.startswith('@MMK_'),
+            grp_name.startswith('public.kern')])
 
     def _is_rtl(self, pair):
         '''
@@ -269,13 +261,13 @@ class KernProcessor(object):
                 return True
         return False
 
-    def _is_rtl_group(self, groupName):
+    def _is_rtl_group(self, grp_name):
         '''
         Check if a given group is a RTL group
         '''
         rtl_tags = [tag_ara, tag_heb, tag_rtl]
 
-        if any([tag in groupName for tag in rtl_tags]):
+        if any([tag in grp_name for tag in rtl_tags]):
             return True
         return False
 
@@ -296,19 +288,13 @@ class KernProcessor(object):
         return used_groups
 
     def _get_reference_groups(self, groups):
-        reference_group_names = [
+        reference_grp_names = [
             gn for gn in groups if not self._is_kerning_group(gn)]
-        reference_groups = {
-            gn: groups.get(gn) for gn in reference_group_names}
+        reference_groups = {gn: groups.get(gn) for gn in reference_grp_names}
         return reference_groups
 
     def _get_rtl_glyphs(self, groups):
-        rtl_groups = [
-            group for group in groups.keys() if any([
-                tag_ara in group,
-                tag_heb in group,
-                tag_rtl in group,
-            ])]
+        rtl_groups = [gn for gn in groups if self._is_rtl_group(gn)]
         rtl_glyphs = list(itertools.chain.from_iterable(
             groups.get(rtl_group) for rtl_group in rtl_groups))
         return rtl_glyphs
@@ -319,21 +305,18 @@ class KernProcessor(object):
         This is used to calculate the subtable size for a given list
         of groups (groupFilterList) used within that subtable.
         '''
-        grouped_left = []
-        grouped_right = []
+        grouped = []
 
-        group_names = list(self.groups.keys())
-
-        for left, right in self.kerning.keys():
-            if self._is_group(left) and left in group_names:
-                grouped_left.extend(self.groups.get(left))
-            if self._is_group(right) and right in group_names:
-                grouped_right.extend(self.groups.get(right))
-
-        if left is True:
-            return sorted(set(grouped_left))
+        if left:
+            for left, right in self.kerning.keys():
+                if self._is_group(left):
+                    grouped.extend(self.groups.get(left))
         else:
-            return sorted(set(grouped_right))
+            for left, right in self.kerning.keys():
+                if self._is_group(right):
+                    grouped.extend(self.groups.get(right))
+
+        return sorted(set(grouped))
 
     def _dissolve_single_groups(self, groups, kerning):
         '''
@@ -440,6 +423,7 @@ class KernProcessor(object):
                 for grouped_glyph in self.groups[group]:
                     gr_pair = (glyph, grouped_glyph)
                     if gr_pair in glyph_2_glyph:
+                        print(pair, gr_pair)
                         gr_value = self.kerning[gr_pair]
                         # that pair is a glyph_to_glyph exception!
                         if is_rtl_pair:
@@ -663,20 +647,20 @@ class run(object):
         self.trimmedPairs = 0
 
         if self.f:
+            if not self.f.kerning:
+                print('ERROR: The font has no kerning!')
+                return
+
             self.kerning = self.f.kerning
             self.groups = self.f.groups
             self.group_order = sorted(self.groups.keys())
 
-            if not self.kerning:
-                print('ERROR: The font has no kerning!')
-                return
-
-            output_data = self._makeOutputData(args)
-            if output_data:
+            fea_data = self._make_fea_data(args)
+            if fea_data:
                 self.header = self.make_header(args)
                 output_dir = os.path.abspath(os.path.dirname(self.f.path))
                 output_path = os.path.join(output_dir, args.output_name)
-                self.writeDataToFile(output_data, output_path)
+                self.write_fea_data(fea_data, output_path)
 
     def make_header(self, args):
         app = WhichApp()
@@ -693,7 +677,7 @@ class run(object):
         header.append('# exported from %s' % app.appName)
         return header
 
-    def _dict2pos(self, pairValueDict, minimum=0, enum=False, RTL=False):
+    def _dict2pos(self, pair_value_dict, minimum=0, enum=False, rtl=False):
         '''
         Turn a dictionary to a list of kerning pairs. Kerning pairs whose
         absolute value does not exceed a given threshold can be filtered.
@@ -701,9 +685,9 @@ class run(object):
 
         data = []
         trimmed = 0
-        for pair, value in pairValueDict.items():
+        for pair, value in pair_value_dict.items():
 
-            if RTL:
+            if rtl:
                 value_str = '<{0} 0 {0} 0>'.format(value)
             else:
                 value_str = str(value)
@@ -727,32 +711,32 @@ class run(object):
 
         return '\n'.join(data)
 
-    def _buildSubtableOutput(self, subtableList, comment, RTL=False):
-        subtableOutput = []
-        subtableBreak = '\nsubtable;'
+    def _build_st_output(self, st_list, comment, rtl=False):
+        st_output = []
+        st_break = '\nsubtable;'
 
-        if sum([len(subtable.keys()) for subtable in subtableList]) > 0:
-            subtableOutput.append(comment)
+        if sum([len(subtable.keys()) for subtable in st_list]) > 0:
+            st_output.append(comment)
 
-        for table in subtableList:
+        for table in st_list:
             if len(table):
 
-                if RTL:
-                    self.RTLsubtablesCreated += 1
-                    if self.RTLsubtablesCreated > 1:
-                        subtableOutput.append(subtableBreak)
+                if rtl:
+                    self.num_subtables_rtl += 1
+                    if self.num_subtables_rtl > 1:
+                        st_output.append(st_break)
 
                 else:
-                    self.subtablesCreated += 1
-                    if self.subtablesCreated > 1:
-                        subtableOutput.append(subtableBreak)
+                    self.num_subtables += 1
+                    if self.num_subtables > 1:
+                        st_output.append(st_break)
 
-                subtableOutput.append(
-                    self._dict2pos(table, self.minKern, RTL=RTL))
-        print('%s subtables created' % self.subtablesCreated)
-        return subtableOutput
+                st_output.append(
+                    self._dict2pos(table, self.minKern, rtl=rtl))
+        print('%s subtables created' % self.num_subtables)
+        return st_output
 
-    def _makeOutputData(self, args):
+    def _make_fea_data(self, args):
         # Build the output data.
 
         output = []
@@ -765,17 +749,17 @@ class run(object):
         # ---------------
         # list of groups:
         # ---------------
-        for groupName in kp.group_order:
-            glyphList = kp.groups[groupName]
+        for grp_name in kp.group_order:
+            glyphList = kp.groups[grp_name]
             if not glyphList:
-                print('WARNING: Kerning group %s has no glyphs.' % groupName)
+                print('WARNING: Kerning group %s has no glyphs.' % grp_name)
                 continue
-            output.append('%s = [%s];' % (groupName, ' '.join(glyphList)))
+            output.append('%s = [%s];' % (grp_name, ' '.join(glyphList)))
 
         # ------------------
         # LTR kerning pairs:
         # ------------------
-        LTRorder = [
+        order_ltr = [
             # container_dict, minKern, comment, enum
             (kp.predefined_exceptions, 0,
                 '\n# pre-defined exceptions:', True),
@@ -789,7 +773,7 @@ class run(object):
                 '\n# group, glyph exceptions:', True),
         ]
 
-        LTRorderExtension = [
+        order_ltr_ext = [
             # in case no subtables are desired
             (kp.glyph_group, self.minKern, '\n# glyph, group:', False),
             (kp.group_group, self.minKern, '\n# group, group/glyph:', False),
@@ -798,7 +782,7 @@ class run(object):
         # ------------------
         # RTL kerning pairs:
         # ------------------
-        RTLorder = [
+        order_rtl = [
             # container_dict, minKern, comment, enum
             (kp.rtl_predefined_exceptions, 0,
                 '\n# RTL pre-defined exceptions:', True),
@@ -812,7 +796,7 @@ class run(object):
                 '\n# RTL group, glyph exceptions:', True),
         ]
 
-        RTLorderExtension = [
+        order_rtl_ext = [
             # in case no subtables are desired
             (kp.rtl_glyph_group, self.minKern,
                 '\n# RTL glyph, group:', False),
@@ -821,77 +805,77 @@ class run(object):
         ]
 
         if not self.write_subtables:
-            LTRorder.extend(LTRorderExtension)
-            RTLorder.extend(RTLorderExtension)
+            order_ltr.extend(order_ltr_ext)
+            order_rtl.extend(order_rtl_ext)
 
-        for container_dict, minKern, comment, enum in LTRorder:
+        for container_dict, minKern, comment, enum in order_ltr:
             if container_dict:
                 output.append(comment)
                 output.append(
                     self._dict2pos(container_dict, minKern, enum))
 
         if self.write_subtables:
-            self.subtablesCreated = 0
+            self.num_subtables = 0
 
             glyph_to_class_subtables = MakeMeasuredSubtables(
                 kp.glyph_group, kp.kerning, kp.groups,
                 self.subtable_size).subtables
-            output.extend(self._buildSubtableOutput(
+            output.extend(self._build_st_output(
                 glyph_to_class_subtables, '\n# glyph, group:'))
 
             class_to_class_subtables = MakeMeasuredSubtables(
                 kp.group_group, kp.kerning, kp.groups,
                 self.subtable_size).subtables
-            output.extend(self._buildSubtableOutput(
+            output.extend(self._build_st_output(
                 class_to_class_subtables,
                 '\n# group, glyph and group, group:')
             )
 
         # Check if RTL pairs exist
-        rtlPairsExist = False
-        for container_dict, _, _, _ in RTLorderExtension + RTLorder:
+        rtl_pairs_exist = False
+        for container_dict, _, _, _ in order_rtl_ext + order_rtl:
             if container_dict.keys():
-                rtlPairsExist = True
+                rtl_pairs_exist = True
                 break
 
-        if rtlPairsExist:
+        if rtl_pairs_exist:
 
-            lookupRTLopen = (
+            lookup_rtl_open = (
                 '\n\nlookup RTL_kerning {\n'
                 'lookupflag RightToLeft IgnoreMarks;\n')
-            lookupRTLclose = '\n\n} RTL_kerning;\n'
+            lookup_rtl_close = '\n\n} RTL_kerning;\n'
 
-            output.append(lookupRTLopen)
+            output.append(lookup_rtl_open)
 
-            for container_dict, minKern, comment, enum in RTLorder:
+            for container_dict, minKern, comment, enum in order_rtl:
                 if container_dict:
                     output.append(comment)
                     output.append(
                         self._dict2pos(
-                            container_dict, minKern, enum, RTL=True))
+                            container_dict, minKern, enum, rtl=True))
 
             if self.write_subtables:
-                self.RTLsubtablesCreated = 0
+                self.num_subtables_rtl = 0
 
                 rtl_glyph_class_subtables = MakeMeasuredSubtables(
                     kp.rtl_glyph_group, kp.kerning, kp.groups,
                     self.subtable_size).subtables
-                output.extend(self._buildSubtableOutput(
+                output.extend(self._build_st_output(
                     rtl_glyph_class_subtables,
-                    '\n# RTL glyph, group:', RTL=True))
+                    '\n# RTL glyph, group:', rtl=True))
 
                 rtl_class_class_subtables = MakeMeasuredSubtables(
                     kp.rtl_group_group, kp.kerning, kp.groups,
                     self.subtable_size).subtables
-                output.extend(self._buildSubtableOutput(
+                output.extend(self._build_st_output(
                     rtl_class_class_subtables,
-                    '\n# RTL group, glyph and group, group:', RTL=True))
+                    '\n# RTL group, glyph and group, group:', rtl=True))
 
-            output.append(lookupRTLclose)
+            output.append(lookup_rtl_close)
 
         return output
 
-    def writeDataToFile(self, data, output_path):
+    def write_fea_data(self, data, output_path):
 
         print('Saving %s file...' % os.path.basename(output_path))
 

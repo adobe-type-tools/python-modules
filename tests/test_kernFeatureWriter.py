@@ -45,6 +45,14 @@ def test_full_run():
     f = defcon.Font(ufo_path)
     run(f, args)
     assert read_file(tmp_feature) == example_feature
+
+    '''
+    test with --dissolve_single option, which should not make a difference
+    for this UFO (no single-item groups)
+    '''
+    args.dissolve_single = True
+    run(f, args)
+    assert read_file(tmp_feature) == example_feature
     tmp_feature.unlink()
 
 
@@ -235,3 +243,13 @@ def test_remap_kerning():
 
     kp = KernProcessor()
     assert list(kp._remap_kerning(f.kerning).keys()) == remapped_pairs
+
+
+def test_no_kerning(capsys):
+    ufo_path = TEST_DIR / 'kern_example.ufo'
+    f = defcon.Font(ufo_path)
+    f.kerning.clear()
+    args = Defaults()
+    run(f, args)
+    out, err = capsys.readouterr()
+    assert f'has no kerning' in out
