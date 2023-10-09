@@ -185,39 +185,35 @@ class KernProcessor(object):
 
         return sanitized_kerning
 
-    def _remap_group_name(self, group_name):
+    def _remap_name(self, item_name):
         '''
-        Remap a single group name from public.kern style to @MMK style
+        Remap a single item from public.kern style to @MMK style (if it is
+        a group). Otherwise, just pass it through.
         '''
-        if 'public.kern1.' in group_name:
-            stripped_name = group_name.replace('public.kern1.', '')
+        if 'public.kern1.' in item_name:
+            stripped_name = item_name.replace('public.kern1.', '')
             if stripped_name.startswith('@MMK_L_'):
                 # UFO2 files contain the @ in the XML, Defcon reads it as
                 # 'public.kernX.@MMK'
                 return stripped_name
             else:
                 # UFO3 files just contain the public.kern notation
-                return group_name.replace('public.kern1.', '@MMK_L_')
+                return item_name.replace('public.kern1.', '@MMK_L_')
 
-        elif 'public.kern2.' in group_name:
-            stripped_name = group_name.replace('public.kern2.', '')
+        elif 'public.kern2.' in item_name:
+            stripped_name = item_name.replace('public.kern2.', '')
             if stripped_name.startswith('@MMK_R_'):
                 return stripped_name
             else:
-                return group_name.replace('public.kern2.', '@MMK_R_')
+                return item_name.replace('public.kern2.', '@MMK_R_')
         else:
-            return group_name
+            return item_name
 
     def _remap_groups(self, groups):
         '''
         Remap groups dictionary to not contain public.kern prefixes.
         '''
-        remapped_groups = {}
-        for group_name, glyph_list in groups.items():
-            remapped_group_name = self._remap_group_name(group_name)
-            remapped_groups[remapped_group_name] = glyph_list
-
-        return remapped_groups
+        return {self._remap_name(gn): gl for gn, gl in groups.items()}
 
     def _remap_kerning(self, kerning):
         '''
@@ -225,9 +221,7 @@ class KernProcessor(object):
         '''
         remapped_kerning = {}
         for (left, right), value in kerning.items():
-            remapped_pair = (
-                self._remap_group_name(left),
-                self._remap_group_name(right))
+            remapped_pair = (self._remap_name(left), self._remap_name(right))
             remapped_kerning[remapped_pair] = value
 
         return remapped_kerning
