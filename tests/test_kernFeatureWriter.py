@@ -152,3 +152,53 @@ def test_dict2pos():
         'pos A V 3;\n'
         'pos A X 2;'
     )
+
+
+def test_remap_name():
+    kp = KernProcessor()
+    assert kp._remap_name('public.kern1.example') == '@MMK_L_example'
+    assert kp._remap_name('public.kern1.@MMK_L_example') == '@MMK_L_example'
+    assert kp._remap_name('public.kern2.example') == '@MMK_R_example'
+    assert kp._remap_name('public.kern2.@MMK_R_example') == '@MMK_R_example'
+    assert kp._remap_name('@example') == '@example'
+
+
+def test_remap_groups():
+    ufo_path = TEST_DIR / 'kern_example.ufo'
+    f = defcon.Font(ufo_path)
+    groups_l = {
+        gr: gl for gr, gl in f.groups.items() if gr.startswith('public.kern1')}
+    groups_r = {
+        gr: gl for gr, gl in f.groups.items() if gr.startswith('public.kern2')}
+    groups_other = {
+        gr: gl for gr, gl in f.groups.items() if gr not in groups_l.keys() | groups_r.keys()}
+    expected_groups_l = {
+        gr.replace('public.kern1.', '@MMK_L_'): gl for gr, gl in groups_l.items()}
+    expected_groups_r = {
+        gr.replace('public.kern2.', '@MMK_R_'): gl for gr, gl in groups_r.items()}
+    kp = KernProcessor()
+
+    assert kp._remap_groups(groups_l) == expected_groups_l
+    assert kp._remap_groups(groups_r) == expected_groups_r
+    assert kp._remap_groups(groups_other) == groups_other
+
+
+def test_remap_kerning():
+    ufo_path = TEST_DIR / 'kern_example.ufo'
+    f = defcon.Font(ufo_path)
+
+    # https://stackoverflow.com/a/15175239
+    import re
+    remapped_pairs = []
+    replacements = {
+        'public.kern1.': '@MMK_L_',
+        'public.kern2.': '@MMK_R_'
+    }
+    regex = re.compile("(%s)" % "|".join(map(re.escape, replacements.keys())))
+    for pair in f.kerning.keys():
+        new_pair = regex.sub(
+            lambda mo: replacements[mo.group()], ' '.join(pair)).split()
+        remapped_pairs.append(tuple(new_pair))
+
+    kp = KernProcessor()
+    assert list(kp._remap_kerning(f.kerning).keys()) == remapped_pairs
