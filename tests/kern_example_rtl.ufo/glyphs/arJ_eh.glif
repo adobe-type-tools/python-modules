@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arJeh" format="2">
+	<advance width="453"/>
+	<outline>
+		<contour>
+			<point x="306" y="490" type="curve" smooth="yes"/>
+			<point x="330" y="490"/>
+			<point x="344" y="507"/>
+			<point x="344" y="533" type="curve" smooth="yes"/>
+			<point x="344" y="554"/>
+			<point x="330" y="573"/>
+			<point x="306" y="573" type="curve" smooth="yes"/>
+			<point x="283" y="573"/>
+			<point x="267" y="554"/>
+			<point x="267" y="533" type="curve" smooth="yes"/>
+			<point x="267" y="507"/>
+			<point x="283" y="490"/>
+		</contour>
+		<contour>
+			<point x="194" y="490" type="curve" smooth="yes"/>
+			<point x="217" y="490"/>
+			<point x="234" y="507"/>
+			<point x="234" y="533" type="curve" smooth="yes"/>
+			<point x="234" y="554"/>
+			<point x="217" y="573"/>
+			<point x="194" y="573" type="curve" smooth="yes"/>
+			<point x="173" y="573"/>
+			<point x="156" y="554"/>
+			<point x="156" y="533" type="curve" smooth="yes"/>
+			<point x="156" y="507"/>
+			<point x="171" y="490"/>
+		</contour>
+		<contour>
+			<point x="251" y="594" type="curve" smooth="yes"/>
+			<point x="276" y="594"/>
+			<point x="291" y="610"/>
+			<point x="291" y="635" type="curve" smooth="yes"/>
+			<point x="291" y="658"/>
+			<point x="276" y="677"/>
+			<point x="251" y="677" type="curve" smooth="yes"/>
+			<point x="229" y="677"/>
+			<point x="214" y="658"/>
+			<point x="214" y="635" type="curve" smooth="yes"/>
+			<point x="214" y="608"/>
+			<point x="229" y="594"/>
+		</contour>
+		<component base="arReh"/>
+	</outline>
+	<anchor name="aboveAR" x="240" y="715"/>
+	<anchor name="belowAR" x="195" y="-330"/>
+</glyph>

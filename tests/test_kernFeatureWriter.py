@@ -48,6 +48,19 @@ def test_full_run():
     tmp_feature.unlink()
 
 
+def test_full_run_rtl():
+    args = Defaults()
+    ufo_path = TEST_DIR / 'kern_example_rtl.ufo'
+    tmp_feature = TEST_DIR / 'tmp_kern_example_rtl.fea'
+    example_feature = read_file(TEST_DIR / 'kern_example_rtl.fea')
+    args.input_file = ufo_path
+    args.output_name = tmp_feature
+    f = defcon.Font(ufo_path)
+    run(f, args)
+    assert read_file(tmp_feature) == example_feature
+    tmp_feature.unlink()
+
+
 def test_subtable():
     '''
     test writing a file with subtable breaks
@@ -56,6 +69,24 @@ def test_subtable():
     ufo_path = TEST_DIR / 'kern_example.ufo'
     tmp_feature = TEST_DIR / 'tmp_kern_example_subs.fea'
     example_feature = read_file(TEST_DIR / 'kern_example_subs.fea')
+    args.input_file = ufo_path
+    args.write_subtables = True
+    args.subtable_size = 128
+    args.output_name = tmp_feature
+    f = defcon.Font(ufo_path)
+    run(f, args)
+    assert read_file(tmp_feature) == example_feature
+    tmp_feature.unlink()
+
+
+def test_subtable_rtl():
+    '''
+    test writing a file with subtable breaks
+    '''
+    args = Defaults()
+    ufo_path = TEST_DIR / 'kern_example_rtl.ufo'
+    tmp_feature = TEST_DIR / 'tmp_kern_example_rtl_subs.fea'
+    example_feature = read_file(TEST_DIR / 'kern_example_rtl_subs.fea')
     args.input_file = ufo_path
     args.write_subtables = True
     args.subtable_size = 128
@@ -141,7 +172,7 @@ def test_dict2pos():
         'pos A V 3;\n'
         'pos A X 2;'
     )
-    assert kfw._dict2pos(pv_dict, RTL=True) == (
+    assert kfw._dict2pos(pv_dict, rtl=True) == (
         'pos A A <1 0 1 0>;\n'
         'pos A V <3 0 3 0>;\n'
         'pos A X <2 0 2 0>;'
@@ -166,12 +197,14 @@ def test_remap_name():
 def test_remap_groups():
     ufo_path = TEST_DIR / 'kern_example.ufo'
     f = defcon.Font(ufo_path)
+
     groups_l = {
         gr: gl for gr, gl in f.groups.items() if gr.startswith('public.kern1')}
     groups_r = {
         gr: gl for gr, gl in f.groups.items() if gr.startswith('public.kern2')}
     groups_other = {
         gr: gl for gr, gl in f.groups.items() if gr not in groups_l.keys() | groups_r.keys()}
+
     expected_groups_l = {
         gr.replace('public.kern1.', '@MMK_L_'): gl for gr, gl in groups_l.items()}
     expected_groups_r = {

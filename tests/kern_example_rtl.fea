@@ -1,0 +1,61 @@
+# PS Name: kern_example_rtl
+# MinKern: +/- 3 inclusive
+# exported from Defcon
+
+@MMK_L_ALEF_1ST_ARA = [arAlef arAlefMadda];
+@MMK_L_F_UC_LEFT = [F];
+@MMK_L_HEH_1ST_ARA = [arHeh arAe arTehMarbuta arHehYeh arHehGoalHamza];
+@MMK_L_REH_1ST_ARA = [arReh arZain arRreh arJeh];
+@MMK_L_YEHBAREE_F_1ST_ARA = [arYehBarree.f arYehBarreeHamza.f arYehBarree.fa arYehBarreeHamza.fa];
+@MMK_R_ALEFMAKSURA_I_2ND_ARA = [arYeh.i arE.i arBeh.i arPeh.i];
+@MMK_R_ALEF_2ND_ARA = [arAlef arAlefMadda];
+@MMK_R_HEH_2ND_ARA = [arHeh arAe arTehMarbuta arHehYeh arHehGoalHamza];
+@MMK_R_IMNR_LC_RIGHT = [i dotlessi iacute icircumflex idieresis igrave imacron];
+@MMK_R_REH_2ND_ARA = [arReh arZain arRreh arJeh];
+
+# group, glyph exceptions:
+enum pos @MMK_L_F_UC_LEFT idieresis 10;
+
+# group, group/glyph:
+pos @MMK_L_F_UC_LEFT @MMK_R_IMNR_LC_RIGHT -30;
+
+
+lookup RTL_kerning {
+lookupflag RightToLeft IgnoreMarks;
+
+
+# RTL glyph, glyph exceptions:
+pos arYehBarreeHamza.fa arPeh.i <0 0 0 0>;
+pos arYehBarreeHamza.fa arYeh.i <0 0 0 0>;
+
+# RTL glyph, group exceptions:
+enum pos arJeh @MMK_R_ALEF_2ND_ARA <-147 0 -147 0>;
+enum pos arRreh @MMK_R_ALEF_2ND_ARA <-137 0 -137 0>;
+
+# RTL group, glyph exceptions:
+enum pos @MMK_L_REH_1ST_ARA arBeh.i <-62 0 -62 0>;
+enum pos @MMK_L_REH_1ST_ARA arE.i <-81 0 -81 0>;
+enum pos @MMK_L_REH_1ST_ARA arPeh.i <-33 0 -33 0>;
+enum pos @MMK_L_REH_1ST_ARA arYeh.i <-37 0 -37 0>;
+enum pos @MMK_L_YEHBAREE_F_1ST_ARA arYeh.i <-28 0 -28 0>;
+
+# RTL glyph, group:
+pos arColon @MMK_R_ALEF_2ND_ARA <-21 0 -21 0>;
+
+# RTL group, group/glyph:
+pos @MMK_L_ALEF_1ST_ARA @MMK_R_ALEF_2ND_ARA <5 0 5 0>;
+pos @MMK_L_ALEF_1ST_ARA @MMK_R_REH_2ND_ARA <-4 0 -4 0>;
+pos @MMK_L_ALEF_1ST_ARA arColon <-20 0 -20 0>;
+pos @MMK_L_HEH_1ST_ARA @MMK_R_ALEF_2ND_ARA <-4 0 -4 0>;
+pos @MMK_L_REH_1ST_ARA @MMK_R_ALEFMAKSURA_I_2ND_ARA <-176 0 -176 0>;
+pos @MMK_L_REH_1ST_ARA @MMK_R_ALEF_2ND_ARA <-177 0 -177 0>;
+pos @MMK_L_REH_1ST_ARA @MMK_R_HEH_2ND_ARA <-185 0 -185 0>;
+pos @MMK_L_REH_1ST_ARA @MMK_R_REH_2ND_ARA <-67 0 -67 0>;
+pos @MMK_L_REH_1ST_ARA arColon <-30 0 -30 0>;
+pos @MMK_L_YEHBAREE_F_1ST_ARA @MMK_R_ALEFMAKSURA_I_2ND_ARA <-32 0 -32 0>;
+pos @MMK_L_YEHBAREE_F_1ST_ARA @MMK_R_ALEF_2ND_ARA <-37 0 -37 0>;
+pos @MMK_L_YEHBAREE_F_1ST_ARA @MMK_R_HEH_2ND_ARA <-48 0 -48 0>;
+
+
+} RTL_kerning;
+

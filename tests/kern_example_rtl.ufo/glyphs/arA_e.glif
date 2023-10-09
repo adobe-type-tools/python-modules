@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arAe" format="2">
+	<unicode hex="06D5"/>
+	<advance width="427"/>
+	<outline>
+		<component base="arHeh"/>
+	</outline>
+	<anchor name="aboveAR" x="185" y="620"/>
+	<anchor name="belowAR" x="215" y="-180"/>
+	<anchor name="belowARCXT-YEHBREE" x="215" y="-360"/>
+</glyph>
