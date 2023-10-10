@@ -18,10 +18,13 @@ class Defaults(object):
 
     def __init__(self):
 
+        self.input_file = None
+
         self.trim_tags = False
         self.write_classes = False
         self.write_mkmk = False
         self.indic_format = False
+
         self.mark_file = 'mark.fea'
         self.mkmk_file = 'mkmk.fea'
         self.mkclass_file = 'markclasses.fea'
@@ -152,8 +155,6 @@ class MarkFeatureWriter(object):
         if not args:
             args = Defaults()
 
-        ufo_path = Path(args.input_file)
-        ufo_dir = ufo_path.parent
         self.mark_file = args.mark_file
         self.mkmk_file = args.mkmk_file
         self.mkclass_file = args.mkclass_file
@@ -165,7 +166,13 @@ class MarkFeatureWriter(object):
         self.write_mkmk = args.write_mkmk
         self.write_classes = args.write_classes
 
+        if args.input_file:
+            ufo_path = Path(args.input_file)
+            self.run(ufo_path)
+
+    def run(self, ufo_path):
         f = Font(ufo_path)
+        ufo_dir = ufo_path.parent
         self.glyph_order = f.lib['public.glyphOrder']
 
         combining_anchor_dict = {}
@@ -384,12 +391,39 @@ class MarkFeatureWriter(object):
                 output.extend(sorted(content) + [''])
         return output
 
-    def make_mark_lookup(self, anchor_name, a_mate):
+    def make_lookup_wrappers(self, anchor_name, mkmk=False):
+        '''
+        make the fences the lookup is surrounded by - something like
+        lookup MARK_BASE_above {
+        } MARK_BASE_above;
+        '''
+        rtl = anchor_name.endswith(('AR', 'HE', 'RTL'))
 
-        lookup_name = f'MARK_BASE_{anchor_name}'
+        lookup_flag = '\tlookupflag '
+        if mkmk:
+            lookup_prefix = 'MKMK_MARK_'
+            if rtl:
+                lookup_flag += f'RightToLeft '
+            lookup_flag += f'MarkAttachmentType @MC_{anchor_name};'
+
+        else:
+            lookup_prefix = 'MARK_BASE_'
+            if rtl:
+                lookup_flag += 'RightToLeft;'
+            else:
+                lookup_flag = None
+
+        lookup_name = f'{lookup_prefix}{anchor_name}'
         open_lookup = f'lookup {lookup_name} {{'
+        if lookup_flag:
+            open_lookup += '\n' + lookup_flag + '\n'
         close_lookup = f'}} {lookup_name};'
 
+        return open_lookup, close_lookup
+
+    def make_mark_lookup(self, anchor_name, a_mate):
+
+        open_lookup, close_lookup = self.make_lookup_wrappers(anchor_name)
         pos_to_gname = []
         for position, g_list in a_mate.pos_name_dict.items():
             pos_to_gname.append((position, self.sort_gnames(g_list)))
@@ -438,11 +472,9 @@ class MarkFeatureWriter(object):
         return '\n'.join(output)
 
     def make_mkmk_lookup(self, anchor_name, a_mate):
-        lookup_name = f'MKMK_MARK_{anchor_name}'
-        open_lookup = (
-            f'lookup {lookup_name} {{\n'
-            f'\tlookupflag MarkAttachmentType @MC_{anchor_name};\n')
-        close_lookup = f'}} {lookup_name};'
+
+        open_lookup, close_lookup = self.make_lookup_wrappers(
+            anchor_name, mkmk=True)
 
         pos_to_gname = []
         for position, g_list in a_mate.pos_name_dict.items():
@@ -482,6 +514,5 @@ if __name__ == '__main__':
 # kLigaturesClassName = "LIGATURES_WITH_%d_COMPONENTS"  # The '%d' part is required
 # kCasingTagsList = ['LC', 'UC', 'SC', 'AC']  # All the tags must have the same number of characters, and that number must be equal to kCasingTagSize
 # kCasingTagSize = 2
-# kRTLtagsList = ['_AR', '_HE']  # Arabic, Hebrew
 # kIgnoreAnchorTag = "CXT"
 # kLigatureComponentOrderTags = ['1ST', '2ND', '3RD', '4TH']  # Add more as necessary to a maximum of 9 (nine)

@@ -132,3 +132,29 @@ def test_full_run():
     example_feature = read_file(TEST_DIR / 'mark_simple.fea')
     assert read_file(tmp_fea_full) == example_feature
     tmp_fea_full.unlink()
+
+
+def test_make_lookup_wrappers():
+    mfw = MarkFeatureWriter()
+    # default mark lookup
+    open_ltr, close_ltr = mfw.make_lookup_wrappers('anchorLTR')
+    assert 'MARK_BASE_anchorLTR' in open_ltr
+    assert 'MARK_BASE_anchorLTR' in close_ltr
+
+    # RTL mark lookup
+    open_rtl, close_rtl = mfw.make_lookup_wrappers('anchorAR')
+    assert 'lookupflag RightToLeft;' in open_rtl
+
+    # RTL mark lookup
+    open_rtl, close_rtl = mfw.make_lookup_wrappers('anchorRTL')
+    assert 'lookupflag RightToLeft;' in open_rtl
+
+    # mkmk lookup
+    open_ltr, close_ltr = mfw.make_lookup_wrappers('anchorLTR', mkmk=True)
+    assert 'MKMK_MARK_anchorLTR' in open_ltr
+    assert 'lookupflag MarkAttachmentType @MC_anchorLTR;' in open_ltr
+
+    # RTL mkmk lookup
+    open_ltr, close_ltr = mfw.make_lookup_wrappers('anchorHE', mkmk=True)
+    assert 'MKMK_MARK_anchorHE' in open_ltr
+    assert 'lookupflag RightToLeft MarkAttachmentType @MC_anchorHE;' in open_ltr
