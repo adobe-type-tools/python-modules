@@ -172,7 +172,6 @@ class MarkFeatureWriter(object):
         ufo_dir = ufo_path.parent
         self.glyph_order = f.lib['public.glyphOrder']
 
-        combining_anchor_dict = {}
         combining_marks_group = f.groups.get(self.mkgrp_name, [])
         if not combining_marks_group:
             sys.exit(
@@ -186,6 +185,7 @@ class MarkFeatureWriter(object):
         combining_anchor_names = set([
             a.name for g in combining_marks for a in g.anchors if
             a.name.startswith('_')])
+
         if self.trim_tags:
             combining_anchor_names = [
                 trim_anchor_name(a_name) for a_name in combining_anchor_names]
@@ -194,7 +194,6 @@ class MarkFeatureWriter(object):
         mkmk_marks = [g for g in combining_marks if not all(
             [anchor.name.startswith('_') for anchor in g.anchors])]
 
-        base_glyph_anchor_dict = {}
         base_glyphs = [
             g for g in f if
             g.anchors and
@@ -203,46 +202,10 @@ class MarkFeatureWriter(object):
             not all([anchor.name.startswith('_') for anchor in g.anchors])
         ]
 
-        for g in combining_marks:
-            for anchor in g.anchors:
-                if self.trim_tags:
-                    anchor_name = trim_anchor_name(anchor.name)
-                else:
-                    anchor_name = anchor.name
-
-                position = round_coordinate((anchor.x, anchor.y))
-                am = combining_anchor_dict.setdefault(
-                    anchor_name, AnchorMate(anchor))
-                am.pos_name_dict.setdefault(position, []).append(g.name)
-
-        for g in base_glyphs:
-            for anchor in g.anchors:
-                if self.trim_tags:
-                    anchor_name = trim_anchor_name(anchor.name)
-                else:
-                    anchor_name = anchor.name
-
-                position = round_coordinate((anchor.x, anchor.y))
-
-                # only consider anchors that have an attachment equivalent
-                # in the combining mark glyphs
-                attaching_anchor_name = '_' + anchor_name
-                if attaching_anchor_name in combining_anchor_names:
-                    am = base_glyph_anchor_dict.setdefault(
-                        anchor_name, AnchorMate(anchor))
-                    am.pos_name_dict.setdefault(position, []).append(g.name)
-
-        for g in mkmk_marks:
-            for anchor in g.anchors:
-                if self.trim_tags:
-                    anchor_name = trim_anchor_name(anchor.name)
-                else:
-                    anchor_name = anchor.name
-
-                position = round_coordinate((anchor.x, anchor.y))
-                am = mkmk_anchor_dict.setdefault(
-                    anchor_name, AnchorMate(anchor))
-                am.pos_name_dict.setdefault(position, []).append(g.name)
+        combining_anchor_dict = self.make_anchor_dict(combining_marks)
+        base_glyph_anchor_dict = self.make_anchor_dict(
+            base_glyphs, combining_anchor_names)
+        mkmk_anchor_dict = self.make_anchor_dict(mkmk_marks)
 
         # mark classes
         mark_class_list = []
@@ -314,6 +277,29 @@ class MarkFeatureWriter(object):
             write_output(ufo_dir, self.blwm_file, blwm_feature_content)
 
         write_output(ufo_dir, self.mark_file, consolidated_content)
+
+    def make_anchor_dict(self, glyph_list, attachment_list=None):
+        anchor_dict = {}
+        for g in glyph_list:
+            for anchor in g.anchors:
+                if self.trim_tags:
+                    anchor_name = trim_anchor_name(anchor.name)
+                else:
+                    anchor_name = anchor.name
+
+                position = round_coordinate((anchor.x, anchor.y))
+                am = anchor_dict.setdefault(anchor_name, AnchorMate(anchor))
+                am.pos_name_dict.setdefault(position, []).append(g.name)
+
+        if attachment_list:
+            # remove anchors that do not have an attachment equivalent
+            # among in the combining marks
+            for anchor_name in list(anchor_dict.keys()):
+                if '_' + anchor_name not in attachment_list:
+                    print(anchor_name)
+                    del anchor_dict[anchor_name]
+
+        return anchor_dict
 
     def sort_gnames(self, glyph_list):
         '''
