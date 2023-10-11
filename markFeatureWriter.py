@@ -201,7 +201,6 @@ class MarkFeatureWriter(object):
         base_glyph_anchor_dict = self.make_anchor_dict(
             base_glyphs, combining_anchor_names)
         mkmk_anchor_dict = self.make_anchor_dict(mkmk_marks)
-
         # mark classes
         mark_class_list = []
         for anchor_name, a_mate in sorted(combining_anchor_dict.items()):
@@ -274,6 +273,18 @@ class MarkFeatureWriter(object):
         write_output(ufo_dir, self.mark_file, consolidated_content)
 
     def make_anchor_dict(self, glyph_list, attachment_list=None):
+        '''
+        create a dict mapping anchor names to attachment points, which may
+        be shared by various glyphs -- for example:
+
+        'aboveLC': {
+            (275, 495): ['oslash', 'o'],
+            (251, 495): ['a']},
+        'belowLC': {
+            (250, -20): ['a'],
+            (275, -20): ['o']}
+
+        '''
         anchor_dict = {}
         for g in glyph_list:
             for anchor in g.anchors:
