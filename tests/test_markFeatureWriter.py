@@ -160,6 +160,14 @@ def test_full_run():
     assert read_file(tmp_fea_full) == example_feature
     tmp_fea_full.unlink()
 
+    # same should work through main()
+    input_file = str(TEST_DIR / 'mark_simple.ufo')
+    fea_file = str(TEST_DIR / 'tmp_mark_full.fea')
+    main([input_file, '--mark_file', fea_file])
+    example_feature = read_file(TEST_DIR / 'mark_simple.fea')
+    assert read_file(tmp_fea_full) == example_feature
+    tmp_fea_full.unlink()
+
 
 def test_make_lookup_wrappers():
     mfw = MarkFeatureWriter()
