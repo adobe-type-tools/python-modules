@@ -30,12 +30,16 @@ def test_get_args():
     assert argparse_args == dummy_args
 
 
-def test_trim_anchor_name():
-    assert trim_anchor_name('anchorUC') == 'anchor'
-    assert trim_anchor_name('anchorLC') == 'anchor'
-    assert trim_anchor_name('anchorSC') == 'anchor'
-    assert trim_anchor_name('anchor') == 'anchor'
-    assert trim_anchor_name('UCSC') == 'UC'
+def test_process_anchor_name():
+    assert process_anchor_name('anchorUC', trim=True) == 'anchor'
+    assert process_anchor_name('anchorUC') == 'anchorUC'
+    assert process_anchor_name('anchorLC', trim=True) == 'anchor'
+    assert process_anchor_name('anchorLC') == 'anchorLC'
+    assert process_anchor_name('anchorSC', trim=True) == 'anchor'
+    assert process_anchor_name('anchor', trim=True) == 'anchor'
+    assert process_anchor_name('anchor') == 'anchor'
+    assert process_anchor_name('UCSC', trim=True) == 'UC'
+    assert process_anchor_name('UCSC') == 'UCSC'
 
 
 def test_no_group():
