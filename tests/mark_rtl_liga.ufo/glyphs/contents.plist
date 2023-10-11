@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>arFatha</key>
+		<string>arF_atha.glif</string>
+		<key>arFathatan</key>
+		<string>arF_athatan.glif</string>
+		<key>arKafAlefMaksura</key>
+		<string>arK_afA_lefM_aksura.glif</string>
+		<key>arKasra</key>
+		<string>arK_asra.glif</string>
+		<key>arKasratan</key>
+		<string>arK_asratan.glif</string>
+	</dict>
+</plist>

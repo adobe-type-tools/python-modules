@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>COMBINING_MARKS</key>
+		<array>
+			<string>arFatha</string>
+			<string>arFathatan</string>
+			<string>arKasra</string>
+			<string>arKasratan</string>
+		</array>
+		<key>LIGATURES_WITH_2_COMPONENTS</key>
+		<array>
+			<string>arKafAlefMaksura</string>
+		</array>
+		<key>public.kern1.ALEFMAKSURA_1ST_ARA</key>
+		<array>
+			<string>arKafAlefMaksura</string>
+		</array>
+		<key>public.kern2.KAFALEFMAKSURA_2ND_ARA</key>
+		<array>
+			<string>arKafAlefMaksura</string>
+		</array>
+	</dict>
+</plist>
