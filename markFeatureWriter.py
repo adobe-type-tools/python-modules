@@ -126,11 +126,8 @@ def write_output(directory, file, line_list):
 
 
 def trim_anchor_name(anchor_name):
-    suffixes = ['UC', 'LC', 'SC']
-    for suffix in suffixes:
-        if anchor_name.endswith(suffix):
-            trimmed_name = anchor_name.replace(suffix, '')
-            return trimmed_name
+    if anchor_name.endswith(('UC', 'LC', 'SC')):
+        return anchor_name[:-2]
     return anchor_name
 
 

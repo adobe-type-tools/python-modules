@@ -30,6 +30,14 @@ def test_get_args():
     assert argparse_args == dummy_args
 
 
+def test_trim_anchor_name():
+    assert trim_anchor_name('anchorUC') == 'anchor'
+    assert trim_anchor_name('anchorLC') == 'anchor'
+    assert trim_anchor_name('anchorSC') == 'anchor'
+    assert trim_anchor_name('anchor') == 'anchor'
+    assert trim_anchor_name('UCSC') == 'UC'
+
+
 def test_no_group():
     args = Defaults()
     args.input_file = TEST_DIR / 'mark_no_group.ufo'
