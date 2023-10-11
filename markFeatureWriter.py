@@ -125,8 +125,8 @@ def write_output(directory, file, line_list):
     print(f'writing {file}')
 
 
-def trim_anchor_name(anchor_name):
-    if anchor_name.endswith(('UC', 'LC', 'SC')):
+def process_anchor_name(anchor_name, trim=False):
+    if trim and anchor_name.endswith(('UC', 'LC', 'SC')):
         return anchor_name[:-2]
     return anchor_name
 
@@ -183,14 +183,9 @@ class MarkFeatureWriter(object):
         combining_marks = [f[g_name] for g_name in combining_marks_group]
         # find out which attachment anchors exist in combining marks
         combining_anchor_names = set([
-            a.name for g in combining_marks for a in g.anchors if
-            a.name.startswith('_')])
+            process_anchor_name(a.name, self.trim_tags) for
+            g in combining_marks for a in g.anchors if a.name.startswith('_')])
 
-        if self.trim_tags:
-            combining_anchor_names = [
-                trim_anchor_name(a_name) for a_name in combining_anchor_names]
-
-        mkmk_anchor_dict = {}
         mkmk_marks = [g for g in combining_marks if not all(
             [anchor.name.startswith('_') for anchor in g.anchors])]
 
@@ -282,11 +277,7 @@ class MarkFeatureWriter(object):
         anchor_dict = {}
         for g in glyph_list:
             for anchor in g.anchors:
-                if self.trim_tags:
-                    anchor_name = trim_anchor_name(anchor.name)
-                else:
-                    anchor_name = anchor.name
-
+                anchor_name = process_anchor_name(anchor.name, self.trim_tags)
                 position = round_coordinate((anchor.x, anchor.y))
                 am = anchor_dict.setdefault(anchor_name, AnchorMate(anchor))
                 am.pos_name_dict.setdefault(position, []).append(g.name)
@@ -296,7 +287,6 @@ class MarkFeatureWriter(object):
             # among in the combining marks
             for anchor_name in list(anchor_dict.keys()):
                 if '_' + anchor_name not in attachment_list:
-                    print(anchor_name)
                     del anchor_dict[anchor_name]
 
         return anchor_dict
