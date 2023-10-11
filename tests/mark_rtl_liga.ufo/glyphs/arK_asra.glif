@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arKasra" format="2">
+	<outline>
+		<contour>
+			<point x="114" y="-12" type="line"/>
+			<point x="47" y="-42"/>
+			<point x="-43" y="-70"/>
+			<point x="-133" y="-100" type="curve"/>
+			<point x="-123" y="-142" type="line"/>
+			<point x="-35" y="-115"/>
+			<point x="61" y="-84"/>
+			<point x="124" y="-56" type="curve"/>
+		</contour>
+	</outline>
+	<anchor name="belowAR" x="5" y="-120"/>
+	<anchor name="_belowAR" x="0" y="0"/>
+	<lib>
+		<dict>
+			<key>public.markColor</key>
+			<string>0.952,0.6552,0.648,1</string>
+		</dict>
+	</lib>
+</glyph>

@@ -1,0 +1,19 @@
+@mGC_aboveAR_85_770 = [ arFatha arFathatan ];
+@mGC_belowAR_0_0 = [ arKasra arKasratan ];
+
+markClass @mGC_aboveAR_85_770 <anchor 85 770> @MC_aboveAR;
+markClass @mGC_belowAR_0_0 <anchor 0 0> @MC_belowAR;
+
+lookup MARK_LIGATURE_aboveAR {
+	lookupflag RightToLeft;
+
+	pos ligature arKafAlefMaksura <anchor 525 770> mark @MC_aboveAR ligComponent <anchor 150 330> mark @MC_aboveAR;
+} MARK_LIGATURE_aboveAR;
+
+
+lookup MARK_LIGATURE_belowAR {
+	lookupflag RightToLeft;
+
+	pos ligature arKafAlefMaksura <anchor 660 -290> mark @MC_belowAR ligComponent <anchor 350 -360> mark @MC_belowAR;
+} MARK_LIGATURE_belowAR;
+

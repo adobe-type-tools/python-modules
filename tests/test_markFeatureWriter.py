@@ -131,6 +131,21 @@ def test_indic_format():
     tmp_fea_blwm.unlink()
 
 
+def test_ligature():
+    '''
+    test mark-to-ligature (GPOS Lookup Type 5)
+    '''
+    args = Defaults()
+    tmp_fea_mark = TEST_DIR / 'tmp_mark.fea'
+    args.mark_file = tmp_fea_mark
+    args.input_file = TEST_DIR / 'mark_rtl_liga.ufo'
+    MarkFeatureWriter(args)
+
+    example_fea_mark = read_file(TEST_DIR / 'mark_rtl_liga.fea')
+    assert read_file(tmp_fea_mark) == example_fea_mark
+    tmp_fea_mark.unlink()
+
+
 def test_full_run():
     '''
     very basic run without any options
