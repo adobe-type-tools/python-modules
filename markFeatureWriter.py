@@ -9,6 +9,9 @@ import argparse
 from defcon import Font
 from pathlib import Path
 
+# ligature anchors end with 1ST, 2ND, 3RD, etc.
+ORDINALS = ['1ST', '2ND', '3RD'] + [f'{i}TH' for i in range(4, 10)]
+
 
 class Defaults(object):
     """
@@ -31,9 +34,6 @@ class Defaults(object):
         self.abvm_file = 'abvm.fea'
         self.blwm_file = 'blwm.fea'
         self.mkgrp_name = 'COMBINING_MARKS'
-
-    def asdict(self):
-        return self.__dict__
 
 
 def get_args(args=None):
@@ -125,6 +125,17 @@ def write_output(directory, file, line_list):
     print(f'writing {file}')
 
 
+def split_liga_anchor_name(anchor_name):
+    '''
+    if the anchor name ends with 1ST, 2ND, etc.; get the implied index,
+    and the name without the suffix
+    '''
+    if anchor_name.endswith(tuple(ORDINALS)):
+        trimmed_name = anchor_name[:-3]
+        index = ORDINALS.index(anchor_name[-3:])
+        return index, trimmed_name
+
+
 def process_anchor_name(anchor_name, trim=False):
     if trim and anchor_name.endswith(('UC', 'LC', 'SC')):
         return anchor_name[:-2]
@@ -197,16 +208,26 @@ class MarkFeatureWriter(object):
             not all([anchor.name.startswith('_') for anchor in g.anchors])
         ]
 
+        ligature_base_glyphs = [g for g in base_glyphs if any(
+            [anchor.name.endswith(tuple(ORDINALS)) for anchor in g.anchors])
+        ]
+
         combining_anchor_dict = self.make_anchor_dict(combining_marks)
         base_glyph_anchor_dict = self.make_anchor_dict(
             base_glyphs, combining_anchor_names)
         mkmk_anchor_dict = self.make_anchor_dict(mkmk_marks)
+        liga_anchor_dict = self.make_liga_anchor_dict(
+            ligature_base_glyphs, combining_anchor_names)
+
         # mark classes
         mark_class_list = []
         for anchor_name, a_mate in sorted(combining_anchor_dict.items()):
             if anchor_name.startswith('_'):
                 # write the class if a corresponding base anchor exists.
-                if base_glyph_anchor_dict.get(anchor_name[1:]):
+                if any([
+                    anchor_name[1:] in base_glyph_anchor_dict,
+                    anchor_name[1:] in liga_anchor_dict]
+                ):
                     mc = self.make_mark_class(anchor_name, a_mate)
                     mark_class_list.append(mc)
                 # if not, do not write it and complain.
@@ -242,6 +263,12 @@ class MarkFeatureWriter(object):
             mark_feature_content.append(mark_lookup)
             mark_feature_content.append('\n')
 
+        # ligature lookups
+        for anchor_name, gname_index_dict in sorted(liga_anchor_dict.items()):
+            liga_lookup = self.make_liga_lookup(anchor_name, gname_index_dict)
+            mark_feature_content.append(liga_lookup)
+            mark_feature_content.append('\n')
+
         # mkmk feature
         mkmk_feature_content = []
         for anchor_name, a_mate in sorted(mkmk_anchor_dict.items()):
@@ -259,7 +286,7 @@ class MarkFeatureWriter(object):
             # otherwise they go on top of the mark.fea file
             consolidated_content.extend(mark_class_content)
 
-        # write the mark feature
+        # add mark feature content
         consolidated_content.extend(mark_feature_content)
 
         if self.write_mkmk:
@@ -267,10 +294,38 @@ class MarkFeatureWriter(object):
             write_output(ufo_dir, self.mkmk_file, mkmk_feature_content)
 
         if self.indic_format:
+            # write abvm/blwm in adjacent files.
             write_output(ufo_dir, self.abvm_file, abvm_feature_content)
             write_output(ufo_dir, self.blwm_file, blwm_feature_content)
 
+        # write the mark feature
         write_output(ufo_dir, self.mark_file, consolidated_content)
+
+    def make_liga_anchor_dict(self, glyph_list, attachment_list=None):
+        '''
+        create a nested dict mapping idealized anchor names to attachment
+        points within a ligature (and their index, indicated by 1ST, 2ND, etc):
+        'aboveAR': {
+            'arSeenAlefMaksura': {
+                0: (890, 390),
+                1: (150, 260)},
+            'arTahYehBarree.s': {
+                0: (320, 820),
+                1: (110, 250)},
+            }
+        '''
+
+        anchor_dict = {}
+        for g in glyph_list:
+            for anchor in g.anchors:
+                if anchor.name.endswith(tuple(ORDINALS)):
+                    anchor_index, trimmed_anchor_name = split_liga_anchor_name(
+                        anchor.name)
+                    ap = anchor_dict.setdefault(trimmed_anchor_name, {})
+                    index_pos_dict = ap.setdefault(g.name, {})
+                    position = round_coordinate((anchor.x, anchor.y))
+                    index_pos_dict[anchor_index] = position
+        return anchor_dict
 
     def make_anchor_dict(self, glyph_list, attachment_list=None):
         '''
@@ -295,9 +350,9 @@ class MarkFeatureWriter(object):
 
         if attachment_list:
             # remove anchors that do not have an attachment equivalent
-            # among in the combining marks
             for anchor_name in list(anchor_dict.keys()):
-                if '_' + anchor_name not in attachment_list:
+                attaching_anchor_name = '_' + anchor_name
+                if attaching_anchor_name not in attachment_list:
                     del anchor_dict[anchor_name]
 
         return anchor_dict
@@ -341,7 +396,7 @@ class MarkFeatureWriter(object):
 
     def make_mark_classes_content(self, mark_class_list):
         '''
-        The make_mark_class method returns a tuple of three lists per
+        The make_mark_class method returns a three-list tuple per
         anchor. Here, those lists are organized in chunks:
 
         - first mark group definitions, like
@@ -375,7 +430,7 @@ class MarkFeatureWriter(object):
                 output.extend(sorted(content) + [''])
         return output
 
-    def make_lookup_wrappers(self, anchor_name, mkmk=False):
+    def make_lookup_wrappers(self, anchor_name, lookup_prefix, mkmk=False):
         '''
         make the fences the lookup is surrounded by - something like
         lookup MARK_BASE_above {
@@ -383,31 +438,28 @@ class MarkFeatureWriter(object):
         '''
         rtl = anchor_name.endswith(('AR', 'HE', 'RTL'))
 
-        lookup_flag = '\tlookupflag '
-        if mkmk:
-            lookup_prefix = 'MKMK_MARK_'
-            if rtl:
-                lookup_flag += f'RightToLeft '
-            lookup_flag += f'MarkAttachmentType @MC_{anchor_name};'
+        lookup_flag = ['lookupflag']
+        if rtl:
+            lookup_flag.append('RightToLeft')
 
-        else:
-            lookup_prefix = 'MARK_BASE_'
-            if rtl:
-                lookup_flag += 'RightToLeft;'
-            else:
-                lookup_flag = None
+        if mkmk:
+            lookup_flag.append(f'MarkAttachmentType @MC_{anchor_name}')
+
+        if not any([mkmk, rtl]):
+            lookup_flag = None
 
         lookup_name = f'{lookup_prefix}{anchor_name}'
         open_lookup = f'lookup {lookup_name} {{'
         if lookup_flag:
-            open_lookup += '\n' + lookup_flag + '\n'
+            open_lookup += '\n\t' + ' '.join(lookup_flag) + ';\n'
         close_lookup = f'}} {lookup_name};'
 
         return open_lookup, close_lookup
 
     def make_mark_lookup(self, anchor_name, a_mate):
 
-        open_lookup, close_lookup = self.make_lookup_wrappers(anchor_name)
+        open_lookup, close_lookup = self.make_lookup_wrappers(
+            anchor_name, 'MARK_BASE_')
         pos_to_gname = []
         for position, g_list in a_mate.pos_name_dict.items():
             pos_to_gname.append((position, self.sort_gnames(g_list)))
@@ -455,10 +507,37 @@ class MarkFeatureWriter(object):
 
         return '\n'.join(output)
 
+    def make_liga_lookup(self, anchor_name, gname_index_dict):
+        open_lookup, close_lookup = self.make_lookup_wrappers(
+            anchor_name, 'MARK_LIGATURE_')
+
+        sorted_g_names = self.sort_gnames(list(gname_index_dict.keys()))
+        liga_attachments = []
+        for g_name in sorted_g_names:
+            liga_attachment = f'\tpos ligature {g_name}'
+            for a_index, position in sorted(gname_index_dict[g_name].items()):
+                pos_x, pos_y = position
+                if a_index == 0:
+                    liga_attachment += (
+                        f' <anchor {pos_x} {pos_y}> '
+                        f'mark @MC_{anchor_name}')
+                else:
+                    liga_attachment += (
+                        f' ligComponent <anchor {pos_x} {pos_y}> '
+                        f'mark @MC_{anchor_name}')
+            liga_attachment += ';'
+            liga_attachments.append(liga_attachment)
+
+        output = [open_lookup]
+        output.append('\n'.join(liga_attachments))
+        output.append(close_lookup)
+
+        return '\n'.join(output)
+
     def make_mkmk_lookup(self, anchor_name, a_mate):
 
         open_lookup, close_lookup = self.make_lookup_wrappers(
-            anchor_name, mkmk=True)
+            anchor_name, 'MKMK_MARK_', mkmk=True)
 
         pos_to_gname = []
         for position, g_list in a_mate.pos_name_dict.items():
@@ -495,8 +574,5 @@ if __name__ == '__main__':
 # constants from contextual mark feature writer, to be included in future iterations
 # kPREMarkFileName = "mark-pre.fea"
 # kPOSTMarkFileName = "mark-post.fea"
-# kLigaturesClassName = "LIGATURES_WITH_%d_COMPONENTS"  # The '%d' part is required
 # kCasingTagsList = ['LC', 'UC', 'SC', 'AC']  # All the tags must have the same number of characters, and that number must be equal to kCasingTagSize
-# kCasingTagSize = 2
 # kIgnoreAnchorTag = "CXT"
-# kLigatureComponentOrderTags = ['1ST', '2ND', '3RD', '4TH']  # Add more as necessary to a maximum of 9 (nine)
