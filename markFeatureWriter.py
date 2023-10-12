@@ -334,7 +334,9 @@ class MarkFeatureWriter(object):
                 if anchor.name.endswith(tuple(ORDINALS)):
                     anchor_index, trimmed_anchor_name = split_liga_anchor_name(
                         anchor.name)
-                    ap = anchor_dict.setdefault(trimmed_anchor_name, {})
+                    anchor_name = process_anchor_name(
+                        trimmed_anchor_name, self.trim_tags)
+                    ap = anchor_dict.setdefault(anchor_name, {})
                     index_pos_dict = ap.setdefault(g.name, {})
                     position = round_coordinate((anchor.x, anchor.y))
                     index_pos_dict[anchor_index] = position
