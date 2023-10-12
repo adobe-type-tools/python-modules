@@ -18,16 +18,20 @@ def read_file(path):
     return data
 
 
-# def test_WhichApp():
-#     assert WhichApp().appName == 'Defcon'
-#     # import __mocks__ as flsys ???
-#     # assert WhichApp().appName == 'FontLab'
-
 def test_get_args():
     argparse_args = vars(get_args(['dummy']))  # args through argparse
     dummy_args = Defaults().__dict__  # hard-coded dummy arguments
     dummy_args['input_file'] = 'dummy'
     assert argparse_args == dummy_args
+
+
+def test_attaching():
+    assert is_attaching('_') is True
+    assert is_attaching('_a') is True
+    assert is_attaching('__') is True
+    assert is_attaching('x_') is False
+    assert is_attaching('a') is False
+    assert is_attaching('') is False
 
 
 def test_process_anchor_name():

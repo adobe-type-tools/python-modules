@@ -125,6 +125,13 @@ def write_output(directory, file, line_list):
     print(f'writing {file}')
 
 
+def is_attaching(anchor_name):
+    '''
+    check if the anchor name in question is attaching or not
+    '''
+    return anchor_name.startswith('_')
+
+
 def split_liga_anchor_name(anchor_name):
     '''
     if the anchor name ends with 1ST, 2ND, etc.; get the implied index,
@@ -195,17 +202,17 @@ class MarkFeatureWriter(object):
         # find out which attachment anchors exist in combining marks
         combining_anchor_names = set([
             process_anchor_name(a.name, self.trim_tags) for
-            g in combining_marks for a in g.anchors if a.name.startswith('_')])
+            g in combining_marks for a in g.anchors if is_attaching(a.name)])
 
         mkmk_marks = [g for g in combining_marks if not all(
-            [anchor.name.startswith('_') for anchor in g.anchors])]
+            [is_attaching(anchor.name) for anchor in g.anchors])]
 
         base_glyphs = [
             g for g in f if
             g.anchors and
             g not in combining_marks and
             g.width != 0 and
-            not all([anchor.name.startswith('_') for anchor in g.anchors])
+            not all([is_attaching(anchor.name) for anchor in g.anchors])
         ]
 
         ligature_base_glyphs = [g for g in base_glyphs if any(
@@ -222,7 +229,7 @@ class MarkFeatureWriter(object):
         # mark classes
         mark_class_list = []
         for anchor_name, a_mate in sorted(combining_anchor_dict.items()):
-            if anchor_name.startswith('_'):
+            if is_attaching(anchor_name):
                 # write the class if a corresponding base anchor exists.
                 if any([
                     anchor_name[1:] in base_glyph_anchor_dict,
@@ -272,7 +279,7 @@ class MarkFeatureWriter(object):
         # mkmk feature
         mkmk_feature_content = []
         for anchor_name, a_mate in sorted(mkmk_anchor_dict.items()):
-            if not anchor_name.startswith('_'):
+            if not is_attaching(anchor_name):
                 mkmk_lookup = self.make_mkmk_lookup(anchor_name, a_mate)
                 mkmk_feature_content.append(mkmk_lookup)
                 mkmk_feature_content.append('\n')
