@@ -1,0 +1,30 @@
+@LC_ASCENDING_ALL = [ b d f h k l ];
+@MARKS_CMB_ABOVE = [ acutecmb dotaccentcmb ];
+@MARKS_CMB_BELOW = [ dotbelowcmb ];
+@MARKS_CMB_ABOVE_CAP = [ acutecmb.cap dotaccentcmb.cap ];
+
+feature ccmp {
+    lookup CAP_ACCENTS_CMB_CONTEXT {
+        # substitutes combining marks for minuscules with forms for uppercase
+        sub @LC_ASCENDING_ALL @MARKS_CMB_ABOVE' by @MARKS_CMB_ABOVE_CAP;
+        sub @LC_ASCENDING_ALL @MARKS_CMB_BELOW @MARKS_CMB_ABOVE' by @MARKS_CMB_ABOVE_CAP;
+        sub @MARKS_CMB_ABOVE_CAP @MARKS_CMB_ABOVE' by @MARKS_CMB_ABOVE_CAP;
+        sub @MARKS_CMB_ABOVE_CAP @MARKS_CMB_BELOW @MARKS_CMB_ABOVE' by @MARKS_CMB_ABOVE_CAP;
+    } CAP_ACCENTS_CMB_CONTEXT;
+} ccmp;
+
+
+
+feature liga {
+	lookupflag IgnoreMarks;
+
+	sub f i i i i i i i i by f_i_i_i_i_i_i_i_i;
+	sub f i i i i i i i by f_i_i_i_i_i_i_i;
+	sub f i i i i i i by f_i_i_i_i_i_i;
+	sub f i i i i i by f_i_i_i_i_i;
+	sub f i i i i by f_i_i_i_i;
+	sub f i i i by f_i_i_i;
+	sub f i i by f_i_i;
+	sub f i by f_i;
+
+} liga;

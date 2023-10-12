@@ -1,0 +1,105 @@
+# PS Name: LigaLTR-Light
+# MinKern: +/- 3 inclusive
+# exported from Defcon
+
+@MMK_L_LAT_b = [b o p];
+@MMK_L_LAT_h = [h m n];
+@MMK_L_LAT_i = [i dotlessi];
+@MMK_L_LAT_l = [d l];
+@MMK_L_LAT_v = [v w y];
+@MMK_R_LAT_h = [b h k l];
+@MMK_R_LAT_o = [c d e o q];
+@MMK_R_LAT_v = [v w];
+
+# glyph, glyph:
+pos a p -14;
+pos a y -24;
+pos c p -4;
+pos e a -4;
+pos e f -4;
+pos e p -4;
+pos e y -4;
+pos f g -6;
+pos f i 14;
+pos f j 7;
+pos f s -6;
+pos f u 10;
+pos f y 13;
+pos f z -6;
+pos g a -14;
+pos g g 13;
+pos g j 36;
+pos g y 16;
+pos j g -4;
+pos j p -6;
+pos j s -6;
+pos j t -6;
+pos k p -14;
+pos k s -4;
+pos q a -4;
+pos q j 63;
+pos q y 33;
+pos r a -16;
+pos r g -16;
+pos r t 20;
+pos r y 20;
+pos s p -14;
+pos u g -10;
+pos u j -4;
+pos u p -14;
+pos u y -17;
+pos x a -4;
+pos x g -4;
+pos x p -7;
+pos z p -4;
+
+# glyph, group:
+pos a @MMK_R_LAT_v -24;
+pos c @MMK_R_LAT_h -4;
+pos e @MMK_R_LAT_h -10;
+pos e @MMK_R_LAT_v -4;
+pos f @MMK_R_LAT_h -10;
+pos f @MMK_R_LAT_o -16;
+pos f @MMK_R_LAT_v 6;
+pos g @MMK_R_LAT_h -7;
+pos g @MMK_R_LAT_o -7;
+pos g @MMK_R_LAT_v 4;
+pos j @MMK_R_LAT_v -13;
+pos k @MMK_R_LAT_o -20;
+pos q @MMK_R_LAT_h -4;
+pos r @MMK_R_LAT_h -20;
+pos r @MMK_R_LAT_o -16;
+pos r @MMK_R_LAT_v 20;
+pos s @MMK_R_LAT_h -10;
+pos t @MMK_R_LAT_v 4;
+pos u @MMK_R_LAT_o -4;
+pos u @MMK_R_LAT_v -34;
+pos x @MMK_R_LAT_o -20;
+
+# group, group/glyph:
+pos @MMK_L_LAT_b @MMK_R_LAT_h -4;
+pos @MMK_L_LAT_b p -4;
+pos @MMK_L_LAT_b x -16;
+pos @MMK_L_LAT_b y -13;
+pos @MMK_L_LAT_h @MMK_R_LAT_v -34;
+pos @MMK_L_LAT_h p -10;
+pos @MMK_L_LAT_h y -34;
+pos @MMK_L_LAT_i @MMK_R_LAT_v -27;
+pos @MMK_L_LAT_i p -14;
+pos @MMK_L_LAT_i y -27;
+pos @MMK_L_LAT_l @MMK_R_LAT_v -27;
+pos @MMK_L_LAT_l a -4;
+pos @MMK_L_LAT_l g -4;
+pos @MMK_L_LAT_l p -14;
+pos @MMK_L_LAT_l u -4;
+pos @MMK_L_LAT_l y -27;
+pos @MMK_L_LAT_v @MMK_R_LAT_h -26;
+pos @MMK_L_LAT_v @MMK_R_LAT_o -16;
+pos @MMK_L_LAT_v @MMK_R_LAT_v 13;
+pos @MMK_L_LAT_v a -14;
+pos @MMK_L_LAT_v g -14;
+pos @MMK_L_LAT_v s -10;
+pos @MMK_L_LAT_v t 4;
+pos @MMK_L_LAT_v u 13;
+pos @MMK_L_LAT_v y 13;
+pos @MMK_L_LAT_v z -6;

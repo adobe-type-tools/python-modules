@@ -189,11 +189,27 @@ def test_make_lookup_wrappers():
     assert 'lookupflag RightToLeft;' in open_rtl
 
     # mkmk lookup
-    open_ltr, close_ltr = mfw.make_lookup_wrappers('anchorLTR', 'MKMK_MARK_', mkmk=True)
+    open_ltr, close_ltr = mfw.make_lookup_wrappers(
+        'anchorLTR', 'MKMK_MARK_', mkmk=True)
     assert 'MKMK_MARK_anchorLTR' in open_ltr
     assert 'lookupflag MarkAttachmentType @MC_anchorLTR;' in open_ltr
 
     # RTL mkmk lookup
-    open_ltr, close_ltr = mfw.make_lookup_wrappers('anchorHE', 'MKMK_MARK_', mkmk=True)
+    open_ltr, close_ltr = mfw.make_lookup_wrappers(
+        'anchorHE', 'MKMK_MARK_', mkmk=True)
     assert 'MKMK_MARK_anchorHE' in open_ltr
     assert 'lookupflag RightToLeft MarkAttachmentType @MC_anchorHE;' in open_ltr
+
+
+def test_liga_ltr():
+    input_file = TEST_DIR / 'project_mark_liga_ltr' / 'liga_ltr.ufo'
+    tmp_fea_mark = TEST_DIR / 'tmp_mark_liga_ltr.fea'
+    example_fea_mark = TEST_DIR / 'project_mark_liga_ltr' / 'mark.fea'
+    args = Defaults()
+    args.input_file = input_file
+    args.mark_file = tmp_fea_mark
+    args.trim_tags = True
+    MarkFeatureWriter(args)
+
+    assert read_file(tmp_fea_mark) == read_file(example_fea_mark)
+    tmp_fea_mark.unlink()

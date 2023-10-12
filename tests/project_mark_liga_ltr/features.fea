@@ -1,0 +1,13 @@
+languagesystem DFLT dflt;
+
+include(GSUB.fea);
+
+feature kern {
+	include(kern.fea);
+} kern;
+
+feature mark {
+	include(mark.fea);
+} mark;
+
+
