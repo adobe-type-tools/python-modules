@@ -272,9 +272,15 @@ class MarkFeatureWriter(object):
 
         # ligature lookups
         for anchor_name, gname_index_dict in sorted(liga_anchor_dict.items()):
-            liga_lookup = self.make_liga_lookup(anchor_name, gname_index_dict)
-            mark_feature_content.append(liga_lookup)
-            mark_feature_content.append('\n')
+            if anchor_name in combining_anchor_dict:
+                liga_lookup = self.make_liga_lookup(
+                    anchor_name, gname_index_dict)
+                mark_feature_content.append(liga_lookup)
+                mark_feature_content.append('\n')
+            else:
+                print(
+                    f'ligature anchor {anchor_name} does not have '
+                    'a corresponding mark anchor.')
 
         # mkmk feature
         mkmk_feature_content = []
