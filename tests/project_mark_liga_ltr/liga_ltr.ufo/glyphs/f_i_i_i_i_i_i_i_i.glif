@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="f_i_i_i_i_i_i_i_i" format="2">
+	<advance width="3094"/>
+	<outline>
+		<component base="f.liga"/>
+		<component base="dotlessi.liga" xOffset="334"/>
+		<component base="dotlessi.liga" xOffset="679"/>
+		<component base="dotlessi.liga" xOffset="1024"/>
+		<component base="dotlessi.liga" xOffset="1369"/>
+		<component base="dotlessi.liga" xOffset="1714"/>
+		<component base="dotlessi.liga" xOffset="2059"/>
+		<component base="dotlessi.liga" xOffset="2404"/>
+		<component base="dotlessi.liga" xOffset="2749"/>
+	</outline>
+	<anchor name="aboveUC1ST" x="320" y="745"/>
+	<anchor name="belowLC1ST" x="172" y="-20"/>
+	<anchor name="aboveLC2ND" x="507" y="523"/>
+	<anchor name="belowLC2ND" x="511" y="-20"/>
+	<anchor name="aboveLC3RD" x="852" y="523"/>
+	<anchor name="belowLC3RD" x="856" y="-20"/>
+	<anchor name="aboveLC4TH" x="1197" y="523"/>
+	<anchor name="belowLC4TH" x="1201" y="-20"/>
+	<anchor name="aboveLC5TH" x="1542" y="523"/>
+	<anchor name="belowLC5TH" x="1546" y="-20"/>
+	<anchor name="aboveLC6TH" x="1887" y="523"/>
+	<anchor name="belowLC6TH" x="1891" y="-20"/>
+	<anchor name="aboveLC7TH" x="2232" y="523"/>
+	<anchor name="belowLC7TH" x="2236" y="-20"/>
+	<anchor name="aboveLC8TH" x="2577" y="523"/>
+	<anchor name="belowLC8TH" x="2581" y="-20"/>
+	<anchor name="aboveLC9TH" x="2922" y="523"/>
+	<anchor name="belowLC9TH" x="2926" y="-20"/>
+	<anchor name="randomAnchor3RD" x="100" y="100"/>
+</glyph>

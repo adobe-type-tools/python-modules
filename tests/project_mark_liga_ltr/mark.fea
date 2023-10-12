@@ -1,0 +1,93 @@
+@mGC_above_0_523 = [ acutecmb dotaccentcmb ];
+
+markClass @mGC_above_0_523 <anchor 0 523> @MC_above;
+
+markClass acutecmb.cap <anchor 0 694> @MC_above;
+markClass dotaccentcmb.cap <anchor -1 694> @MC_above;
+markClass dotbelowcmb <anchor 0 -20> @MC_below;
+
+lookup MARK_BASE_above {
+	@bGC_a_above = [ a g ];
+	@bGC_b_above = [ b l ];
+	pos base @bGC_a_above <anchor 267 523> mark @MC_above;
+	pos base @bGC_b_above <anchor 170 745> mark @MC_above;
+	pos base c <anchor 315 523> mark @MC_above;
+	pos base d <anchor 469 745> mark @MC_above;
+	pos base e <anchor 301 523> mark @MC_above;
+	pos base f <anchor 320 745> mark @MC_above;
+	pos base h <anchor 167 745> mark @MC_above;
+	pos base i <anchor 172 730> mark @MC_above;
+	pos base j <anchor 160 730> mark @MC_above;
+	pos base k <anchor 169 745> mark @MC_above;
+	pos base m <anchor 515 523> mark @MC_above;
+	pos base n <anchor 352 523> mark @MC_above;
+	pos base o <anchor 304 523> mark @MC_above;
+	pos base p <anchor 354 523> mark @MC_above;
+	pos base q <anchor 318 523> mark @MC_above;
+	pos base r <anchor 273 523> mark @MC_above;
+	pos base s <anchor 250 523> mark @MC_above;
+	pos base t <anchor 173 632> mark @MC_above;
+	pos base u <anchor 322 523> mark @MC_above;
+	pos base v <anchor 326 523> mark @MC_above;
+	pos base w <anchor 467 523> mark @MC_above;
+	pos base x <anchor 312 523> mark @MC_above;
+	pos base y <anchor 319 523> mark @MC_above;
+	pos base z <anchor 260 523> mark @MC_above;
+	pos base dotlessi <anchor 173 523> mark @MC_above;
+} MARK_BASE_above;
+
+
+lookup MARK_BASE_below {
+	@bGC_d_below = [ d v ];
+	@bGC_k_below = [ k u ];
+	pos base @bGC_d_below <anchor 313 -20> mark @MC_below;
+	pos base @bGC_k_below <anchor 332 -20> mark @MC_below;
+	pos base a <anchor 282 -20> mark @MC_below;
+	pos base b <anchor 363 -20> mark @MC_below;
+	pos base c <anchor 312 -20> mark @MC_below;
+	pos base e <anchor 308 -20> mark @MC_below;
+	pos base f <anchor 172 -20> mark @MC_below;
+	pos base g <anchor 275 -254> mark @MC_below;
+	pos base h <anchor 347 -20> mark @MC_below;
+	pos base i <anchor 179 -20> mark @MC_below;
+	pos base j <anchor 84 -254> mark @MC_below;
+	pos base l <anchor 169 -20> mark @MC_below;
+	pos base m <anchor 516 -20> mark @MC_below;
+	pos base n <anchor 352 -20> mark @MC_below;
+	pos base o <anchor 304 -20> mark @MC_below;
+	pos base p <anchor 169 -254> mark @MC_below;
+	pos base q <anchor 480 -254> mark @MC_below;
+	pos base r <anchor 171 -20> mark @MC_below;
+	pos base s <anchor 231 -20> mark @MC_below;
+	pos base t <anchor 245 -20> mark @MC_below;
+	pos base w <anchor 458 -20> mark @MC_below;
+	pos base x <anchor 289 -20> mark @MC_below;
+	pos base y <anchor 164 -254> mark @MC_below;
+	pos base z <anchor 257 -20> mark @MC_below;
+	pos base dotlessi <anchor 177 -20> mark @MC_below;
+} MARK_BASE_below;
+
+
+lookup MARK_LIGATURE_above {
+	pos ligature f_i <anchor 320 745> mark @MC_above ligComponent <anchor 507 523> mark @MC_above;
+	pos ligature f_i_i <anchor 320 745> mark @MC_above ligComponent <anchor 507 523> mark @MC_above ligComponent <anchor 852 523> mark @MC_above;
+	pos ligature f_i_i_i <anchor 320 745> mark @MC_above ligComponent <anchor 507 523> mark @MC_above ligComponent <anchor 852 523> mark @MC_above ligComponent <anchor 1197 523> mark @MC_above;
+	pos ligature f_i_i_i_i <anchor 320 745> mark @MC_above ligComponent <anchor 507 523> mark @MC_above ligComponent <anchor 852 523> mark @MC_above ligComponent <anchor 1197 523> mark @MC_above ligComponent <anchor 1542 523> mark @MC_above;
+	pos ligature f_i_i_i_i_i <anchor 320 745> mark @MC_above ligComponent <anchor 507 523> mark @MC_above ligComponent <anchor 852 523> mark @MC_above ligComponent <anchor 1197 523> mark @MC_above ligComponent <anchor 1542 523> mark @MC_above ligComponent <anchor 1887 523> mark @MC_above;
+	pos ligature f_i_i_i_i_i_i <anchor 320 745> mark @MC_above ligComponent <anchor 507 523> mark @MC_above ligComponent <anchor 852 523> mark @MC_above ligComponent <anchor 1197 523> mark @MC_above ligComponent <anchor 1542 523> mark @MC_above ligComponent <anchor 1887 523> mark @MC_above ligComponent <anchor 2232 523> mark @MC_above;
+	pos ligature f_i_i_i_i_i_i_i <anchor 320 745> mark @MC_above ligComponent <anchor 507 523> mark @MC_above ligComponent <anchor 852 523> mark @MC_above ligComponent <anchor 1197 523> mark @MC_above ligComponent <anchor 1542 523> mark @MC_above ligComponent <anchor 1887 523> mark @MC_above ligComponent <anchor 2232 523> mark @MC_above ligComponent <anchor 2577 523> mark @MC_above;
+	pos ligature f_i_i_i_i_i_i_i_i <anchor 320 745> mark @MC_above ligComponent <anchor 507 523> mark @MC_above ligComponent <anchor 852 523> mark @MC_above ligComponent <anchor 1197 523> mark @MC_above ligComponent <anchor 1542 523> mark @MC_above ligComponent <anchor 1887 523> mark @MC_above ligComponent <anchor 2232 523> mark @MC_above ligComponent <anchor 2577 523> mark @MC_above ligComponent <anchor 2922 523> mark @MC_above;
+} MARK_LIGATURE_above;
+
+
+lookup MARK_LIGATURE_below {
+	pos ligature f_i <anchor 172 -20> mark @MC_below ligComponent <anchor 511 -20> mark @MC_below;
+	pos ligature f_i_i <anchor 172 -20> mark @MC_below ligComponent <anchor 511 -20> mark @MC_below ligComponent <anchor 856 -20> mark @MC_below;
+	pos ligature f_i_i_i <anchor 172 -20> mark @MC_below ligComponent <anchor 511 -20> mark @MC_below ligComponent <anchor 856 -20> mark @MC_below ligComponent <anchor 1201 -20> mark @MC_below;
+	pos ligature f_i_i_i_i <anchor 172 -20> mark @MC_below ligComponent <anchor 511 -20> mark @MC_below ligComponent <anchor 856 -20> mark @MC_below ligComponent <anchor 1201 -20> mark @MC_below ligComponent <anchor 1546 -20> mark @MC_below;
+	pos ligature f_i_i_i_i_i <anchor 172 -20> mark @MC_below ligComponent <anchor 511 -20> mark @MC_below ligComponent <anchor 856 -20> mark @MC_below ligComponent <anchor 1201 -20> mark @MC_below ligComponent <anchor 1546 -20> mark @MC_below ligComponent <anchor 1891 -20> mark @MC_below;
+	pos ligature f_i_i_i_i_i_i <anchor 172 -20> mark @MC_below ligComponent <anchor 511 -20> mark @MC_below ligComponent <anchor 856 -20> mark @MC_below ligComponent <anchor 1201 -20> mark @MC_below ligComponent <anchor 1546 -20> mark @MC_below ligComponent <anchor 1891 -20> mark @MC_below ligComponent <anchor 2236 -20> mark @MC_below;
+	pos ligature f_i_i_i_i_i_i_i <anchor 172 -20> mark @MC_below ligComponent <anchor 511 -20> mark @MC_below ligComponent <anchor 856 -20> mark @MC_below ligComponent <anchor 1201 -20> mark @MC_below ligComponent <anchor 1546 -20> mark @MC_below ligComponent <anchor 1891 -20> mark @MC_below ligComponent <anchor 2236 -20> mark @MC_below ligComponent <anchor 2581 -20> mark @MC_below;
+	pos ligature f_i_i_i_i_i_i_i_i <anchor 172 -20> mark @MC_below ligComponent <anchor 511 -20> mark @MC_below ligComponent <anchor 856 -20> mark @MC_below ligComponent <anchor 1201 -20> mark @MC_below ligComponent <anchor 1546 -20> mark @MC_below ligComponent <anchor 1891 -20> mark @MC_below ligComponent <anchor 2236 -20> mark @MC_below ligComponent <anchor 2581 -20> mark @MC_below ligComponent <anchor 2926 -20> mark @MC_below;
+} MARK_LIGATURE_below;
+
