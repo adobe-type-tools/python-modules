@@ -253,3 +253,18 @@ def test_no_kerning(capsys):
     run(f, args)
     out, err = capsys.readouterr()
     assert f'has no kerning' in out
+
+
+def test_ss4(capsys):
+    '''
+    kern feature for Source Serif 4 Regular
+    '''
+    ufo_path = TEST_DIR / 'kern_ss4.ufo'
+    kern_example = TEST_DIR / 'kern_ss4.fea'
+    kern_tmp = TEST_DIR / 'tmp_kern_ss4.fea'
+    args = Defaults()
+    args.input_file = ufo_path
+    args.output_name = kern_tmp
+    main([str(ufo_path), '--output_name', str(kern_tmp), '--write_subtables'])
+    assert read_file(kern_example) == read_file(kern_tmp)
+    kern_tmp.unlink()
