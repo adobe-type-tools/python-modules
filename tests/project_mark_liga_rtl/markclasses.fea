@@ -1,0 +1,5 @@
+@mGC_aboveAR_85_770 = [ arFatha arFathatan ];
+@mGC_belowAR_0_0 = [ arKasra arKasratan ];
+
+markClass @mGC_aboveAR_85_770 <anchor 85 770> @MC_aboveAR;
+markClass @mGC_belowAR_0_0 <anchor 0 0> @MC_belowAR;

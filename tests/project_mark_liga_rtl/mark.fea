@@ -1,0 +1,43 @@
+lookup MARK_BASE_aboveAR {
+	lookupflag RightToLeft;
+
+	@bGC_arHeh.i_aboveAR = [ arHeh.i arHeh.mc ];
+	pos base @bGC_arHeh.i_aboveAR <anchor 250 650> mark @MC_aboveAR;
+	pos base arHeh <anchor 185 620> mark @MC_aboveAR;
+	pos base arHeh.s <anchor 315 650> mark @MC_aboveAR;
+	pos base arHeh.m <anchor 215 560> mark @MC_aboveAR;
+	pos base arHeh.f <anchor 305 670> mark @MC_aboveAR;
+	pos base arYehBarree <anchor 260 650> mark @MC_aboveAR;
+	pos base arYehBarree.f <anchor 35 255> mark @MC_aboveAR;
+} MARK_BASE_aboveAR;
+
+
+lookup MARK_BASE_belowAR {
+	lookupflag RightToLeft;
+
+	@bGC_arHeh.i_belowAR = [ arHeh.i arHeh.mc ];
+	pos base @bGC_arHeh.i_belowAR <anchor 270 -180> mark @MC_belowAR;
+	pos base arHeh <anchor 215 -180> mark @MC_belowAR;
+	pos base arHeh.s <anchor 335 -180> mark @MC_belowAR;
+	pos base arHeh.m <anchor 280 -360> mark @MC_belowAR;
+	pos base arHeh.f <anchor 275 -180> mark @MC_belowAR;
+	pos base arYehBarree <anchor 580 -180> mark @MC_belowAR;
+	pos base arYehBarree.f <anchor 180 -360> mark @MC_belowAR;
+} MARK_BASE_belowAR;
+
+
+lookup MARK_LIGATURE_aboveAR {
+	lookupflag RightToLeft;
+
+	pos ligature arHehYehBarree <anchor 370 680> mark @MC_aboveAR ligComponent <anchor 20 200> mark @MC_aboveAR;
+	pos ligature arHehYehBarree.f <anchor 370 680> mark @MC_aboveAR ligComponent <anchor 20 200> mark @MC_aboveAR;
+} MARK_LIGATURE_aboveAR;
+
+
+lookup MARK_LIGATURE_belowAR {
+	lookupflag RightToLeft;
+
+	pos ligature arHehYehBarree <anchor 390 -410> mark @MC_belowAR ligComponent <anchor 180 -410> mark @MC_belowAR;
+	pos ligature arHehYehBarree.f <anchor 390 -410> mark @MC_belowAR ligComponent <anchor 180 -410> mark @MC_belowAR;
+} MARK_LIGATURE_belowAR;
+

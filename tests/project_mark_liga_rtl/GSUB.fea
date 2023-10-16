@@ -1,0 +1,60 @@
+languagesystem DFLT dflt;
+languagesystem arab dflt;
+
+feature aalt {
+	feature init;
+	feature medi;
+	feature fina;
+	feature calt;
+} aalt;
+
+
+feature isol {
+	sub arHeh' by arHeh.s;
+} isol;
+
+
+feature init {
+	lookupflag IgnoreMarks;
+	sub arHeh by arHeh.i;
+} init;
+
+
+feature medi {
+	lookupflag IgnoreMarks;
+	sub arHeh by arHeh.m;
+} medi;
+
+
+feature fina {
+	sub [ arHeh arYehBarree ]  by [ arHeh.f arYehBarree.f ];
+} fina;
+
+
+feature calt {
+	lookup HEHDOACHASHMEE_PRE_YEHBARREE {
+		lookupflag IgnoreMarks;
+		# three before Yeh Barree ligs
+		sub arHeh.m'  [ arHeh.m arHeh.mc ] arYehBarree.f by arHeh.mc;
+
+		# two before Yeh Barree ligs
+		sub arHeh.m' [ arHeh.i arHeh.m arHeh.mc ] [ arHeh.i arHeh.m arHeh.mc]  arYehBarree.f by arHeh.mc;
+
+		# one before Yeh Barree ligs
+		sub arHeh.m' [ arHeh.i arHeh.m arHeh.mc ] arYehBarree.f by arHeh.mc;
+
+		# one before Yeh Barree lig
+		sub arHeh.m' arYehBarree.f by arHeh.mc;
+
+	} HEHDOACHASHMEE_PRE_YEHBARREE;
+} calt;
+
+
+feature liga {
+	lookup COMPOSE_LIGA_YEHBARREE {
+		lookupflag IgnoreMarks;
+
+		sub arHeh.i arYehBarree.f by arHehYehBarree;
+		sub [ arHeh.m arHeh.mc ] arYehBarree.f by arHehYehBarree.f;
+	} COMPOSE_LIGA_YEHBARREE;
+} liga;
