@@ -800,13 +800,8 @@ class run(object):
             )
 
         # Check if RTL pairs exist
-        rtl_pairs_exist = False
-        for container_dict, _, _, _ in order_rtl_ext + order_rtl:
-            if container_dict.keys():
-                rtl_pairs_exist = True
-                break
-
-        if rtl_pairs_exist:
+        rtl_container_dicts = [i[0] for i in order_rtl_ext + order_rtl]
+        if any(rtl_container_dicts):
 
             lookup_rtl_open = (
                 '\n\nlookup RTL_kerning {\n'
