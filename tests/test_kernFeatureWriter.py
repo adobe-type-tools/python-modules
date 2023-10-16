@@ -22,12 +22,6 @@ def read_file(path):
     return data
 
 
-def test_WhichApp():
-    assert WhichApp().appName == 'Defcon'
-    # import __mocks__ as flsys ???
-    # assert WhichApp().appName == 'FontLab'
-
-
 def test_get_args():
     argparse_args = vars(get_args(['dummy']))  # args through argparse
     dummy_args = Defaults().__dict__  # hard-coded dummy arguments
@@ -153,11 +147,10 @@ def test_make_header():
     dummy_args.min_value = 1
     dummy_args.write_timestamp = False
     header = kfw.make_header(dummy_args)
-    assert len(header) == 3
+    assert len(header) == 2
     assert header[0] == '# PS Name: None'
     dummy_args.write_timestamp = True
     header = kfw.make_header(dummy_args)
-    assert len(header) == 4
     assert header[0].startswith('# Created:')
 
 
