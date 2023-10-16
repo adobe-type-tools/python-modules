@@ -248,7 +248,7 @@ def test_no_kerning(capsys):
     assert f'has no kerning' in out
 
 
-def test_ss4(capsys):
+def test_ss4():
     '''
     kern feature for Source Serif 4 Regular
     '''
@@ -259,5 +259,27 @@ def test_ss4(capsys):
     args.input_file = ufo_path
     args.output_name = kern_tmp
     main([str(ufo_path), '--output_name', str(kern_tmp), '--write_subtables'])
+    assert read_file(kern_example) == read_file(kern_tmp)
+    kern_tmp.unlink()
+
+
+def test_all_zero(capsys):
+    ufo_path = TEST_DIR / 'kern_all_zero_value.ufo'
+    f = defcon.Font(ufo_path)
+    args = Defaults()
+    run(f, args)
+    out, err = capsys.readouterr()
+    assert f'All kerning values are zero' in out
+
+
+def test_unused_groups():
+    ufo_path = TEST_DIR / 'kern_unused_groups.ufo'
+    kern_example = TEST_DIR / 'kern_unused_groups.fea'
+    kern_tmp = TEST_DIR / 'tmp_kern_unused_groups.fea'
+    f = defcon.Font(ufo_path)
+    args = Defaults()
+    args.input_file = ufo_path
+    args.output_name = kern_tmp
+    run(f, args)
     assert read_file(kern_example) == read_file(kern_tmp)
     kern_tmp.unlink()

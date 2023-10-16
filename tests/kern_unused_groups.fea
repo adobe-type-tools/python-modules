@@ -1,0 +1,13 @@
+# PS Name: SourceSerif4-Regular
+# MinKern: +/- 3 inclusive
+
+
+# glyph, glyph:
+pos A A 20;
+pos A C 25;
+pos B A -10;
+pos B B 5;
+pos B C -25;
+pos C A 15;
+pos C B -50;
+pos C C 5;
