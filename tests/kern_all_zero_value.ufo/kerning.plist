@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>B</key>
+		<dict>
+			<key>public.kern2.LAT_A</key>
+			<integer>0</integer>
+			<key>public.kern2.LAT_E</key>
+			<integer>0</integer>
+			<key>public.kern2.LAT_O</key>
+			<integer>0</integer>
+		</dict>
+		<key>public.kern1.LAT_A</key>
+		<dict>
+			<key>public.kern2.LAT_A</key>
+			<integer>0</integer>
+			<key>public.kern2.LAT_E</key>
+			<integer>0</integer>
+			<key>public.kern2.LAT_O</key>
+			<integer>0</integer>
+		</dict>
+	</dict>
+</plist>

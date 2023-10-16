@@ -619,6 +619,9 @@ class run(object):
             if not self.f.kerning:
                 print('ERROR: The font has no kerning!')
                 return
+            if set(self.f.kerning.values()) == {0}:
+                print('ERROR: All kerning values are zero!')
+                return
 
             fea_data = self._make_fea_data()
             if fea_data:
