@@ -109,15 +109,14 @@ class KernProcessor(object):
                 self.groups = self._remap_groups(used_groups)
                 self.kerning = self._remap_kerning(sanitized_kerning)
 
+            self.group_order = sorted(self.groups.keys())
             self.grouped_left = self._get_grouped_glyphs(left=True)
             self.grouped_right = self._get_grouped_glyphs(left=False)
             self.rtl_glyphs = self._get_rtl_glyphs(self.groups)
 
             self._find_exceptions()
 
-            if self.kerning and len(self.kerning.keys()):
-                self.group_order = sorted(
-                    [gr_name for gr_name in self.groups])
+            if self.kerning:
                 self._sanityCheck()
 
     def sanitize_kerning(self, groups, kerning):
@@ -621,11 +620,7 @@ class run(object):
                 print('ERROR: The font has no kerning!')
                 return
 
-            self.kerning = self.f.kerning
-            self.groups = self.f.groups
-            self.group_order = sorted(self.groups.keys())
-
-            fea_data = self._make_fea_data(args)
+            fea_data = self._make_fea_data()
             if fea_data:
                 self.header = self.make_header(args)
                 output_dir = os.path.abspath(os.path.dirname(self.f.path))
@@ -704,13 +699,13 @@ class run(object):
         print('%s subtables created' % self.num_subtables)
         return st_output
 
-    def _make_fea_data(self, args):
+    def _make_fea_data(self):
         # Build the output data.
 
         output = []
         kp = KernProcessor(
-            self.groups,
-            self.kerning,
+            self.f.groups,
+            self.f.kerning,
             self.dissolve_single
         )
 
