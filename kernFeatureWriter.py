@@ -776,28 +776,32 @@ class run(object):
             order_ltr.extend(order_ltr_ext)
             order_rtl.extend(order_rtl_ext)
 
-        for container_dict, minKern, comment, enum in order_ltr:
-            if container_dict:
-                output.append(comment)
-                output.append(
-                    self._dict2pos(container_dict, minKern, enum))
+        # Check if LTR pairs exist
+        ltr_container_dicts = [i[0] for i in order_ltr_ext + order_ltr]
+        if any(ltr_container_dicts):
 
-        if self.write_subtables:
-            self.num_subtables = 0
+            for container_dict, minKern, comment, enum in order_ltr:
+                if container_dict:
+                    output.append(comment)
+                    output.append(
+                        self._dict2pos(container_dict, minKern, enum))
 
-            glyph_to_class_subtables = MakeMeasuredSubtables(
-                kp.glyph_group, kp.kerning, kp.groups,
-                self.subtable_size).subtables
-            output.extend(self._build_st_output(
-                glyph_to_class_subtables, '\n# glyph, group:'))
+            if self.write_subtables:
+                self.num_subtables = 0
 
-            class_to_class_subtables = MakeMeasuredSubtables(
-                kp.group_group, kp.kerning, kp.groups,
-                self.subtable_size).subtables
-            output.extend(self._build_st_output(
-                class_to_class_subtables,
-                '\n# group, glyph and group, group:')
-            )
+                glyph_to_class_subtables = MakeMeasuredSubtables(
+                    kp.glyph_group, kp.kerning, kp.groups,
+                    self.subtable_size).subtables
+                output.extend(self._build_st_output(
+                    glyph_to_class_subtables, '\n# glyph, group:'))
+
+                class_to_class_subtables = MakeMeasuredSubtables(
+                    kp.group_group, kp.kerning, kp.groups,
+                    self.subtable_size).subtables
+                output.extend(self._build_st_output(
+                    class_to_class_subtables,
+                    '\n# group, glyph and group, group:')
+                )
 
         # Check if RTL pairs exist
         rtl_container_dicts = [i[0] for i in order_rtl_ext + order_rtl]
