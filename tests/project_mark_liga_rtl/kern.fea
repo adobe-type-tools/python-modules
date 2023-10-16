@@ -1,0 +1,21 @@
+# PS Name: MyriadArabic-Light
+# MinKern: +/- 3 inclusive
+# exported from Defcon
+
+@MMK_L_HEH_1ST_ARA = [arHeh];
+@MMK_L_SPACE = [space];
+@MMK_L_YEHBARREE_LIGS_1ST_ARA = [arHehYehBarree arHehYehBarree.f];
+@MMK_R_SPACE = [space];
+
+
+lookup RTL_kerning {
+lookupflag RightToLeft IgnoreMarks;
+
+
+# RTL group, group/glyph:
+pos @MMK_L_SPACE arHehYehBarree <300 0 300 0>;
+pos @MMK_L_YEHBARREE_LIGS_1ST_ARA arHehYehBarree <360 0 360 0>;
+
+
+} RTL_kerning;
+

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>.notdef</key>
+		<string>_notdef.glif</string>
+		<key>arFatha</key>
+		<string>arF_atha.glif</string>
+		<key>arFathatan</key>
+		<string>arF_athatan.glif</string>
+		<key>arHeh</key>
+		<string>arH_eh.glif</string>
+		<key>arHeh.f</key>
+		<string>arH_eh.f.glif</string>
+		<key>arHeh.i</key>
+		<string>arH_eh.i.glif</string>
+		<key>arHeh.m</key>
+		<string>arH_eh.m.glif</string>
+		<key>arHeh.mc</key>
+		<string>arH_eh.mc.glif</string>
+		<key>arHeh.s</key>
+		<string>arH_eh.s.glif</string>
+		<key>arHehYehBarree</key>
+		<string>arH_ehY_ehB_arree.glif</string>
+		<key>arHehYehBarree.f</key>
+		<string>arH_ehY_ehB_arree.f.glif</string>
+		<key>arKasra</key>
+		<string>arK_asra.glif</string>
+		<key>arKasratan</key>
+		<string>arK_asratan.glif</string>
+		<key>arYehBarree</key>
+		<string>arY_ehB_arree.glif</string>
+		<key>arYehBarree.f</key>
+		<string>arY_ehB_arree.f.glif</string>
+		<key>space</key>
+		<string>space.glif</string>
+	</dict>
+</plist>

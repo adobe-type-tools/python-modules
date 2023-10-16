@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arFatha" format="2">
+	<unicode hex="064E"/>
+	<outline>
+		<contour>
+			<point x="-43" y="765" type="line"/>
+			<point x="42" y="791"/>
+			<point x="139" y="823"/>
+			<point x="204" y="851" type="curve"/>
+			<point x="194" y="895" type="line"/>
+			<point x="127" y="867"/>
+			<point x="32" y="833"/>
+			<point x="-53" y="807" type="curve"/>
+		</contour>
+	</outline>
+	<anchor name="_aboveAR" x="85" y="770"/>
+	<anchor name="aboveAR" x="80" y="830"/>
+</glyph>

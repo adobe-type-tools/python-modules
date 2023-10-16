@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 '''
-Current draft for modernized mark feature writer module.
+Mark Feature Writer for the FDK font production workflow.
+
 '''
 
-import sys
 import argparse
+import sys
 from defcon import Font
 from pathlib import Path
 
@@ -589,5 +590,5 @@ if __name__ == '__main__':
 # constants from contextual mark feature writer, to be included in future iterations
 # kPREMarkFileName = "mark-pre.fea"
 # kPOSTMarkFileName = "mark-post.fea"
-# kCasingTagsList = ['LC', 'UC', 'SC', 'AC']  # All the tags must have the same number of characters, and that number must be equal to kCasingTagSize
+# kCasingTagsList = ['LC', 'UC', 'SC', 'AC']
 # kIgnoreAnchorTag = "CXT"

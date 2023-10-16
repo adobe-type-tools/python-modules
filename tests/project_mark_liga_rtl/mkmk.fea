@@ -1,0 +1,15 @@
+lookup MKMK_MARK_aboveAR {
+	lookupflag RightToLeft MarkAttachmentType @MC_aboveAR;
+
+	pos mark arFatha <anchor 80 830> mark @MC_aboveAR;
+	pos mark arFathatan <anchor 75 1010> mark @MC_aboveAR;
+} MKMK_MARK_aboveAR;
+
+
+lookup MKMK_MARK_belowAR {
+	lookupflag RightToLeft MarkAttachmentType @MC_belowAR;
+
+	pos mark arKasra <anchor 5 -120> mark @MC_belowAR;
+	pos mark arKasratan <anchor 10 -240> mark @MC_belowAR;
+} MKMK_MARK_belowAR;
+

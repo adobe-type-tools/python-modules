@@ -213,3 +213,28 @@ def test_liga_ltr():
 
     assert read_file(tmp_fea_mark) == read_file(example_fea_mark)
     tmp_fea_mark.unlink()
+
+
+def test_liga_rtl():
+    input_file = TEST_DIR / 'project_mark_liga_rtl' / 'liga_rtl.ufo'
+    tmp_fea_mark = TEST_DIR / 'tmp_mark_liga_rtl.fea'
+    tmp_fea_mkmk = TEST_DIR / 'tmp_mkmk_liga_rtl.fea'
+    tmp_fea_classes = TEST_DIR / 'tmp_markclasses_liga_rtl.fea'
+    example_fea_mark = TEST_DIR / 'project_mark_liga_rtl' / 'mark.fea'
+    example_fea_mkmk = TEST_DIR / 'project_mark_liga_rtl' / 'mkmk.fea'
+    example_fea_classes = TEST_DIR / 'project_mark_liga_rtl' / 'markclasses.fea'
+    args = Defaults()
+    args.input_file = input_file
+    args.mark_file = tmp_fea_mark
+    args.mkmk_file = tmp_fea_mkmk
+    args.mkclass_file = tmp_fea_classes
+    args.write_mkmk = True
+    args.write_classes = True
+    MarkFeatureWriter(args)
+
+    assert read_file(tmp_fea_mark) == read_file(example_fea_mark)
+    assert read_file(tmp_fea_mkmk) == read_file(example_fea_mkmk)
+    assert read_file(tmp_fea_classes) == read_file(example_fea_classes)
+    tmp_fea_mark.unlink()
+    tmp_fea_mkmk.unlink()
+    tmp_fea_classes.unlink()
