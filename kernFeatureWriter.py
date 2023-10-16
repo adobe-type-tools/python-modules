@@ -99,8 +99,8 @@ class KernProcessor(object):
             used_groups = self._get_used_groups(groups, sanitized_kerning)
             self.reference_groups = self._get_reference_groups(groups)
 
-            if used_groups and option_dissolve:
-                dissolved_groups, dissolved_kerning = self._dissolve_single_groups(
+            if option_dissolve:
+                dissolved_groups, dissolved_kerning = self._dissolve_singleton_groups(
                     used_groups, sanitized_kerning)
                 self.groups = self._remap_groups(dissolved_groups)
                 self.kerning = self._remap_kerning(dissolved_kerning)
@@ -289,7 +289,7 @@ class KernProcessor(object):
 
         return sorted(set(grouped))
 
-    def _dissolve_single_groups(self, groups, kerning):
+    def _dissolve_singleton_groups(self, groups, kerning):
         '''
         Find any (non-RTL) group with a single-item glyph list.
         This group can be dissolved into a single glyph to create more
@@ -298,19 +298,19 @@ class KernProcessor(object):
 
         The actual effect of this depends on the group setup.
         '''
-        single_groups = dict(
+        singleton_groups = dict(
             [(group_name, glyphs) for group_name, glyphs in groups.items() if(
                 len(glyphs) == 1 and not self._is_rtl_group(group_name))])
-        if single_groups:
+        if singleton_groups:
             dissolved_kerning = {}
             for (left, right), value in kerning.items():
-                dissolvedLeft = single_groups.get(left, [left])[0]
-                dissolvedRight = single_groups.get(right, [right])[0]
-                dissolved_kerning[(dissolvedLeft, dissolvedRight)] = value
+                dissolved_left = singleton_groups.get(left, [left])[0]
+                dissolved_right = singleton_groups.get(right, [right])[0]
+                dissolved_kerning[(dissolved_left, dissolved_right)] = value
 
             remaining_groups = dict(
                 [(gr_name, glyphs) for gr_name, glyphs in groups.items() if(
-                    gr_name not in single_groups)]
+                    gr_name not in singleton_groups)]
             )
             return remaining_groups, dissolved_kerning
 
