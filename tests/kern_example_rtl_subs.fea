@@ -1,6 +1,5 @@
 # PS Name: kern_example_rtl
 # MinKern: +/- 3 inclusive
-# exported from Defcon
 
 @MMK_L_ALEF_1ST_ARA = [arAlef arAlefMadda];
 @MMK_L_F_UC_LEFT = [F];

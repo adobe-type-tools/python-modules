@@ -1,6 +1,5 @@
 # PS Name: Pantelleria-Regular
 # MinKern: +/- 3 inclusive
-# exported from Defcon
 
 @MMK_L_A = [A Aacute Abreve Acircumflex Adieresis Agrave Amacron Aogonek Aring Atilde];
 @MMK_L_O = [O Oacute Ocircumflex Odieresis Ograve Ohungarumlaut Omacron Oslash Otilde];

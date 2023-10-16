@@ -1,6 +1,5 @@
 # PS Name: SourceSerif4-Regular
 # MinKern: +/- 3 inclusive
-# exported from Defcon
 
 @MMK_L_CYR_Acyr = [Acyr Abrevecyr El.bgr];
 @MMK_L_CYR_Acyr.sc = [Acyr.sc Abrevecyr.sc El.scbgr];

@@ -1,6 +1,5 @@
 # PS Name: MyriadArabic-Light
 # MinKern: +/- 3 inclusive
-# exported from Defcon
 
 @MMK_L_HEH_1ST_ARA = [arHeh];
 @MMK_L_SPACE = [space];

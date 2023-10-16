@@ -71,35 +71,6 @@ class Defaults(object):
         self.dissolve_single = False
 
 
-class WhichApp(object):
-    '''
-    Test the environment.
-    When running from the command line,
-    'Defcon' is the expected environment
-    '''
-
-    def __init__(self):
-        self.inRF = False
-        self.inDC = False
-        self.appName = 'noApp'
-
-        if not any((self.inRF, self.inDC)):
-            try:
-                import mojo.roboFont
-                self.inRF = True
-                self.appName = 'Robofont'
-            except ImportError:
-                pass
-
-        if not any((self.inRF, self.inDC)):
-            try:
-                import defcon
-                self.inDC = True
-                self.appName = 'Defcon'
-            except ImportError:
-                pass
-
-
 class KernProcessor(object):
     def __init__(self, groups=None, kerning=None, option_dissolve=False):
 
@@ -423,7 +394,6 @@ class KernProcessor(object):
                 for grouped_glyph in self.groups[group]:
                     gr_pair = (glyph, grouped_glyph)
                     if gr_pair in glyph_2_glyph:
-                        print(pair, gr_pair)
                         gr_value = self.kerning[gr_pair]
                         # that pair is a glyph_to_glyph exception!
                         if is_rtl_pair:
@@ -663,7 +633,6 @@ class run(object):
                 self.write_fea_data(fea_data, output_path)
 
     def make_header(self, args):
-        app = WhichApp()
         try:
             ps_name = self.f.info.postscriptFontName
         except Exception:
@@ -674,7 +643,6 @@ class run(object):
             header.append('# Created: %s' % time.ctime())
         header.append('# PS Name: %s' % ps_name)
         header.append('# MinKern: +/- %s inclusive' % args.min_value)
-        header.append('# exported from %s' % app.appName)
         return header
 
     def _dict2pos(self, pair_value_dict, minimum=0, enum=False, rtl=False):

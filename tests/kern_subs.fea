@@ -1,6 +1,5 @@
 # PS Name: SourceSerif4Variable-Roman
 # MinKern: +/- 3 inclusive
-# exported from Defcon
 
 @MMK_L_LAT_A = [A Adieresis];
 @MMK_L_LAT_L = [L Lcaron];
