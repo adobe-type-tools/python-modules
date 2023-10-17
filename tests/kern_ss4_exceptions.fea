@@ -1,4 +1,4 @@
-# PS Name: SourceSerif4-Regular
+# PS Name: SS4-Exceptions
 # MinKern: +/- 3 inclusive
 
 @MMK_L_GRK_alpha = [iota iotadieresistonos];
