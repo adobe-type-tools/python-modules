@@ -382,4 +382,30 @@ def test_example_trim(capsys):
     assert 'Trimmed pairs: 33' in out
 
     assert read_file(fea_example) == read_file(fea_temp)
-    fea_temp.unlink()
+
+
+def test_nightmare(capsys):
+    '''
+    A nightmare project which contains many problems in groups and kerning
+    '''
+    ufo_path = TEST_DIR / 'kern_nightmare.ufo'
+    fea_example = TEST_DIR / 'kern_nightmare.fea'
+    fea_temp = TEMP_DIR / fea_example.name
+    f = defcon.Font(ufo_path)
+    args = Defaults()
+    args.input_file = ufo_path
+    args.output_name = fea_temp
+    run(f, args)
+    assert read_file(fea_example) == read_file(fea_temp)
+
+    out, err = capsys.readouterr()
+    expected_output = (
+        'group public.kern1.empty is empty\n'
+        'group public.kern2.empty is empty\n'
+        'group public.kern1.invalid contains extraneous glyph(s): [a]\n'
+        'group public.kern1.lowercase contains extraneous glyph(s): [x, y, z]\n'
+        'pair (A public.kern2.invalid) references non-existent group public.kern2.invalid\n'
+        'pair (public.kern1.LAT_A a) references non-existent glyph a\n'
+        'pair (public.kern1.empty a) references non-existent glyph a\n'
+    )
+    assert expected_output in out
