@@ -953,7 +953,7 @@ def get_args(args=None):
 def main(test_args=None):
     args = get_args(test_args)
     f_path = Path(args.input_file)
-    if f_path.exists:
+    if f_path.exists():
         f = defcon.Font(f_path)
         run(f, args)
 
