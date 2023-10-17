@@ -1,14 +1,22 @@
 import defcon
 import sys
+
+from afdko.fdkutils import get_temp_dir_path
 from pathlib import Path
+
 
 sys.path.append("..")
 from kernFeatureWriter import *
 
+
 TEST_DIR = Path(__file__).parent
+TEMP_DIR = Path(get_temp_dir_path())
 
 
 class Dummy(object):
+    '''
+    for ad-hoc arguments
+    '''
     pass
 
 
@@ -129,6 +137,20 @@ def test_remap_kerning():
     assert list(kp._remap_kerning(f.kerning).keys()) == remapped_pairs
 
 
+def test_sanityCheck(capsys):
+    '''
+    somehow trigger that sanity check (not sure how useful)
+    '''
+    ufo_path = TEST_DIR / 'kern_example.ufo'
+    f = defcon.Font(ufo_path)
+    kp = KernProcessor()
+    kp.pairs_processed = ['some pair']
+    kp.kerning = f.kerning
+    kp._sanityCheck()
+    out, err = capsys.readouterr()
+    assert 'Something went wrong' in out
+
+
 # integration tests
 # -----------------
 
@@ -157,13 +179,13 @@ def test_default():
     '''
     args = Defaults()
     ufo_path = TEST_DIR / 'kern_example.ufo'
-    fea_temp = TEST_DIR / 'tmp_kern_example.fea'
-    fea_example = read_file(TEST_DIR / 'kern_example.fea')
+    fea_example = TEST_DIR / 'kern_example.fea'
+    fea_temp = TEMP_DIR / fea_example.name
     args.input_file = ufo_path
     args.output_name = fea_temp
     f = defcon.Font(ufo_path)
     run(f, args)
-    assert read_file(fea_temp) == fea_example
+    assert read_file(fea_temp) == read_file(fea_example)
 
     '''
     test with --dissolve_single option, which should not make a difference
@@ -171,8 +193,22 @@ def test_default():
     '''
     args.dissolve_single = True
     run(f, args)
-    assert read_file(fea_temp) == fea_example
-    fea_temp.unlink()
+    assert read_file(fea_temp) == read_file(fea_example)
+
+
+def test_default_ufo2():
+    '''
+    normal LTR test for a UFO2 file
+    '''
+    args = Defaults()
+    ufo_path = TEST_DIR / 'kern_example_ufo2.ufo'
+    fea_example = TEST_DIR / 'kern_example.fea'
+    fea_temp = TEMP_DIR / fea_example.name
+    args.input_file = ufo_path
+    args.output_name = fea_temp
+    f = defcon.Font(ufo_path)
+    run(f, args)
+    assert read_file(fea_temp) == read_file(fea_example)
 
 
 def test_main():
@@ -181,26 +217,24 @@ def test_main():
     '''
     ufo_path = TEST_DIR / 'kern_example.ufo'
     fea_example = TEST_DIR / 'kern_example.fea'
-    fea_temp = TEST_DIR / 'tmp_kern_example.fea'
+    fea_temp = TEMP_DIR / fea_example.name
     args = Defaults()
     args.input_file = ufo_path
     args.output_name = fea_temp
     main([str(ufo_path), '--output_name', str(fea_temp)])
     assert read_file(fea_example) == read_file(fea_temp)
-    fea_temp.unlink()
 
 
 def test_default_rtl():
     args = Defaults()
     ufo_path = TEST_DIR / 'kern_example_rtl.ufo'
-    fea_temp = TEST_DIR / 'tmp_kern_example_rtl.fea'
-    fea_example = read_file(TEST_DIR / 'kern_example_rtl.fea')
+    fea_example = TEST_DIR / 'kern_example_rtl.fea'
+    fea_temp = TEMP_DIR / fea_example.name
     args.input_file = ufo_path
     args.output_name = fea_temp
     f = defcon.Font(ufo_path)
     run(f, args)
-    assert read_file(fea_temp) == fea_example
-    fea_temp.unlink()
+    assert read_file(fea_temp) == read_file(fea_example)
 
 
 def test_subtable():
@@ -209,16 +243,15 @@ def test_subtable():
     '''
     args = Defaults()
     ufo_path = TEST_DIR / 'kern_example.ufo'
-    fea_temp = TEST_DIR / 'tmp_kern_example_subs.fea'
-    fea_example = read_file(TEST_DIR / 'kern_example_subs.fea')
+    fea_example = TEST_DIR / 'kern_example_subs.fea'
+    fea_temp = TEMP_DIR / fea_example.name
     args.input_file = ufo_path
     args.write_subtables = True
     args.subtable_size = 128
     args.output_name = fea_temp
     f = defcon.Font(ufo_path)
     run(f, args)
-    assert read_file(fea_temp) == fea_example
-    fea_temp.unlink()
+    assert read_file(fea_temp) == read_file(fea_example)
 
 
 def test_subtable_rtl():
@@ -227,16 +260,15 @@ def test_subtable_rtl():
     '''
     args = Defaults()
     ufo_path = TEST_DIR / 'kern_example_rtl.ufo'
-    fea_temp = TEST_DIR / 'tmp_kern_example_rtl_subs.fea'
-    fea_example = read_file(TEST_DIR / 'kern_example_rtl_subs.fea')
+    fea_example = TEST_DIR / 'kern_example_rtl_subs.fea'
+    fea_temp = TEMP_DIR / fea_example.name
     args.input_file = ufo_path
     args.write_subtables = True
     args.subtable_size = 128
     args.output_name = fea_temp
     f = defcon.Font(ufo_path)
     run(f, args)
-    assert read_file(fea_temp) == fea_example
-    fea_temp.unlink()
+    assert read_file(fea_temp) == read_file(fea_example)
 
 
 def test_dissolve():
@@ -245,23 +277,20 @@ def test_dissolve():
     '''
     args = Defaults()
     ufo_path = TEST_DIR / 'kern_AV.ufo'
-    tmp_feature_undissolved = TEST_DIR / 'tmp_kern_AV_undissolved.fea'
-    tmp_feature_dissolved = TEST_DIR / 'tmp_kern_AV_dissolved.fea'
-    example_feature_undissolved = read_file(
-        TEST_DIR / 'kern_AV_undissolved.fea')
-    example_feature_dissolved = read_file(
-        TEST_DIR / 'kern_AV_dissolved.fea')
+    fea_example_singletons = TEST_DIR / 'kern_AV_singletons.fea'
+    fea_temp_singletons = TEMP_DIR / fea_example_singletons.name
+    fea_example_dissolved = TEST_DIR / 'kern_AV_dissolved.fea'
+    fea_temp_dissolved = TEMP_DIR / fea_example_dissolved.name
     args.input_file = ufo_path
-    args.output_name = tmp_feature_undissolved
+    args.output_name = fea_temp_singletons
     f = defcon.Font(ufo_path)
     run(f, args)
-    assert read_file(tmp_feature_undissolved) == example_feature_undissolved
+    assert read_file(fea_temp_singletons) == read_file(fea_example_singletons)
+
     args.dissolve_single = True
-    args.output_name = tmp_feature_dissolved
+    args.output_name = fea_temp_dissolved
     run(f, args)
-    assert read_file(tmp_feature_dissolved) == example_feature_dissolved
-    tmp_feature_undissolved.unlink()
-    tmp_feature_dissolved.unlink()
+    assert read_file(fea_temp_dissolved) == read_file(fea_example_dissolved)
 
 
 def test_left_side_exception():
@@ -271,27 +300,25 @@ def test_left_side_exception():
     '''
     args = Defaults()
     ufo_path = TEST_DIR / 'kern_left_side_exception.ufo'
-    fea_temp = TEST_DIR / 'tmp_left_side_exception.fea'
-    fea_example = read_file(TEST_DIR / 'kern_left_side_exception.fea')
+    fea_example = TEST_DIR / 'kern_left_side_exception.fea'
+    fea_temp = TEMP_DIR / fea_example.name
     args.input_file = ufo_path
     args.output_name = fea_temp
     f = defcon.Font(ufo_path)
     run(f, args)
-    assert read_file(fea_temp) == fea_example
-    fea_temp.unlink()
+    assert read_file(fea_temp) == read_file(fea_example)
 
 
 def test_unused_groups():
     ufo_path = TEST_DIR / 'kern_unused_groups.ufo'
     fea_example = TEST_DIR / 'kern_unused_groups.fea'
-    fea_temp = TEST_DIR / 'tmp_kern_unused_groups.fea'
+    fea_temp = TEMP_DIR / fea_example.name
     f = defcon.Font(ufo_path)
     args = Defaults()
     args.input_file = ufo_path
     args.output_name = fea_temp
     run(f, args)
     assert read_file(fea_example) == read_file(fea_temp)
-    fea_temp.unlink()
 
 
 def test_ignored_groups():
@@ -300,28 +327,13 @@ def test_ignored_groups():
     '''
     ufo_path = TEST_DIR / 'kern_ignored_groups.ufo'
     fea_example = TEST_DIR / 'kern_ignored_groups.fea'
-    fea_temp = TEST_DIR / 'tmp_kern_ignored_groups.fea'
+    fea_temp = TEMP_DIR / fea_example.name
     f = defcon.Font(ufo_path)
     args = Defaults()
     args.input_file = ufo_path
     args.output_name = fea_temp
     run(f, args)
     assert read_file(fea_example) == read_file(fea_temp)
-    fea_temp.unlink()
-
-
-def test_sanityCheck(capsys):
-    '''
-    somehow trigger that sanity check (not sure how useful)
-    '''
-    ufo_path = TEST_DIR / 'kern_example.ufo'
-    f = defcon.Font(ufo_path)
-    kp = KernProcessor()
-    kp.pairs_processed = ['some pair']
-    kp.kerning = f.kerning
-    kp._sanityCheck()
-    out, err = capsys.readouterr()
-    assert 'Something went wrong' in out
 
 
 def test_ss4_exceptions():
@@ -330,14 +342,13 @@ def test_ss4_exceptions():
     '''
     ufo_path = TEST_DIR / 'kern_ss4_exceptions.ufo'
     fea_example = TEST_DIR / 'kern_ss4_exceptions.fea'
-    fea_temp = TEST_DIR / 'tmp_kern_ss4_exceptions.fea'
+    fea_temp = TEMP_DIR / fea_example.name
     f = defcon.Font(ufo_path)
     args = Defaults()
     args.input_file = ufo_path
     args.output_name = fea_temp
     run(f, args)
     assert read_file(fea_example) == read_file(fea_temp)
-    fea_temp.unlink()
 
 
 def test_mock_rtl():
@@ -346,20 +357,19 @@ def test_mock_rtl():
     '''
     ufo_path = TEST_DIR / 'kern_mock_rtl.ufo'
     fea_example = TEST_DIR / 'kern_mock_rtl.fea'
-    fea_temp = TEST_DIR / 'tmp_kern_mock_rtl.fea'
+    fea_temp = TEMP_DIR / fea_example.name
     f = defcon.Font(ufo_path)
     args = Defaults()
     args.input_file = ufo_path
     args.output_name = fea_temp
     run(f, args)
     assert read_file(fea_example) == read_file(fea_temp)
-    fea_temp.unlink()
 
 
 def test_example_trim(capsys):
     ufo_path = TEST_DIR / 'kern_example.ufo'
     fea_example = TEST_DIR / 'kern_example_trim.fea'
-    fea_temp = TEST_DIR / 'tmp_kern_example_trim.fea'
+    fea_temp = TEMP_DIR / fea_example.name
     f = defcon.Font(ufo_path)
     args = Defaults()
     args.input_file = ufo_path
