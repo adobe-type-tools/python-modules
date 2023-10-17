@@ -9,7 +9,7 @@ Optional functionality of this tool includes:
     (helping with subtable optimization)
 -   identify glyph-to-glyph RTL kerning
     (requirement: all RTL glyphs are part of a RTL-specific kerning group,
-    or are members of the catch-all @RTL_KERNING group)
+    or are members of the catch-all RTL_KERNING group)
 
 '''
 
@@ -21,11 +21,10 @@ import time
 from pathlib import Path
 
 
-group_rtl = 'RTL_KERNING'
+# constants
 
-tag_ara = '_ARA'
-tag_heb = '_HEB'
-tag_rtl = '_RTL'
+RTL_GROUP = 'RTL_KERNING'
+RTL_TAGS = ['_ARA', '_HEB', '_RTL']
 
 
 # helpers
@@ -54,8 +53,7 @@ def is_rtl_group(grp_name):
     '''
     Check if a given group is a RTL group
     '''
-    rtl_tags = [tag_ara, tag_heb, tag_rtl]
-    return any([tag in grp_name for tag in rtl_tags])
+    return any([tag in grp_name for tag in RTL_TAGS])
 
 
 class Defaults(object):
@@ -282,15 +280,14 @@ class KernProcessor(object):
         tag, or membership in an RTL group
         '''
 
-        rtl_group = self.reference_groups.get(group_rtl, [])
+        rtl_group = self.reference_groups.get(RTL_GROUP, [])
         all_rtl_glyphs = set(rtl_group) | set(self.rtl_glyphs)
-        rtl_tags = [tag_ara, tag_heb, tag_rtl]
 
         if set(pair) & set(all_rtl_glyphs):
             # Any item in the pair is an RTL glyph.
             return True
 
-        for tag in rtl_tags:
+        for tag in RTL_TAGS:
             # Group tags indicate presence of RTL item.
             # This will work for any pair including a RTL group.
             if any([tag in item for item in pair]):
