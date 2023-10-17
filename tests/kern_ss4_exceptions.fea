@@ -1,0 +1,56 @@
+# PS Name: SourceSerif4-Regular
+# MinKern: +/- 3 inclusive
+
+@MMK_L_GRK_alpha = [iota iotadieresistonos];
+@MMK_L_LAT_L = [L Lacute Lcaron Lcommaaccent Ldotbelow Ldotbelowmacron Llinebelow Lslash];
+@MMK_L_LAT_a = [a agrave aacute acircumflex atilde adieresis amacron];
+@MMK_L_LAT_i = [i igrave iacute dotlessi];
+@MMK_L_LAT_icircumflex = [icircumflex idieresis];
+@MMK_L_LAT_t = [t tcaron tcedilla tcommaaccent];
+@MMK_R_GRK_iota = [iota];
+@MMK_R_GRK_iotadieresis = [iotadieresistonos];
+@MMK_R_LAT_E = [L Lacute Lcaron Lcommaaccent Ldot Ldotbelow Ldotbelowmacron Llinebelow Lslash];
+@MMK_R_LAT_a = [a agrave aacute acircumflex atilde adieresis amacron];
+@MMK_R_LAT_i = [i igrave iacute];
+@MMK_R_LAT_icircumflex = [icircumflex idieresis];
+@MMK_R_LAT_m = [dotlessi];
+@MMK_R_LAT_t = [t tcaron tcedilla tcommaaccent];
+
+# glyph, glyph:
+pos V backslash 10;
+pos backslash V -100;
+pos backslash backslash -82;
+pos lambda lambda 5;
+
+# glyph, glyph exceptions:
+pos Lcaron V -57;
+pos V adieresis -60;
+pos V atilde -50;
+pos V idieresis 30;
+pos iotadieresistonos lambda 60;
+pos tcaron backslash 40;
+
+# glyph, group:
+pos V @MMK_R_LAT_a -80;
+pos V @MMK_R_LAT_i -30;
+pos V @MMK_R_LAT_icircumflex 10;
+pos V @MMK_R_LAT_m -60;
+pos V @MMK_R_LAT_t -31;
+pos backslash @MMK_R_LAT_t -11;
+pos lambda @MMK_R_GRK_iota -10;
+pos lambda @MMK_R_GRK_iotadieresis -10;
+
+# group, group/glyph:
+pos @MMK_L_GRK_alpha backslash 21;
+pos @MMK_L_LAT_L @MMK_R_LAT_E -19;
+pos @MMK_L_LAT_L @MMK_R_LAT_t -10;
+pos @MMK_L_LAT_L V -119;
+pos @MMK_L_LAT_L backslash -59;
+pos @MMK_L_LAT_a @MMK_R_LAT_m -5;
+pos @MMK_L_LAT_a V -99;
+pos @MMK_L_LAT_a backslash -40;
+pos @MMK_L_LAT_i V -21;
+pos @MMK_L_LAT_icircumflex @MMK_R_LAT_icircumflex 40;
+pos @MMK_L_LAT_icircumflex backslash 21;
+pos @MMK_L_LAT_t @MMK_R_LAT_t 9;
+pos @MMK_L_LAT_t V -40;

@@ -1,0 +1,19 @@
+# PS Name: SourceSerif4-Regular
+# MinKern: +/- 3 inclusive
+
+@MMK_L_LAT_ABC = [A B C];
+@MMK_R_LAT_ABC = [A B C];
+
+# glyph, glyph exceptions:
+pos A A 20;
+pos A B 0;
+pos A C 25;
+pos B A -10;
+pos B B 5;
+pos B C -25;
+pos C A 15;
+pos C B -50;
+pos C C 5;
+pos D A 20;
+pos D B 10;
+pos D C -5;

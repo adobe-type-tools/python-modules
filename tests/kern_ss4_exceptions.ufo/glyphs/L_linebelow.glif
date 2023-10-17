@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="Llinebelow" format="2">
+	<unicode hex="1E3A"/>
+	<advance width="596"/>
+	<outline>
+		<contour>
+			<point x="197" y="-176" type="line"/>
+			<point x="437" y="-176" type="line"/>
+			<point x="437" y="-113" type="line"/>
+			<point x="197" y="-113" type="line"/>
+		</contour>
+		<component base="L"/>
+	</outline>
+</glyph>

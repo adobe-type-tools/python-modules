@@ -1,0 +1,65 @@
+# PS Name: MockRTL-Regular
+# MinKern: +/- 3 inclusive
+
+@MMK_L_GRK_alpha_RTL = [iota iotadieresistonos];
+@MMK_L_LAT_L_RTL = [L Lacute Lcaron Lcommaaccent Ldotbelow Ldotbelowmacron Llinebelow Lslash];
+@MMK_L_LAT_a_RTL = [a agrave aacute acircumflex atilde adieresis amacron];
+@MMK_L_LAT_i_RTL = [i igrave iacute dotlessi];
+@MMK_L_LAT_icircumflex_RTL = [icircumflex idieresis];
+@MMK_L_LAT_t_RTL = [t tcaron tcedilla tcommaaccent];
+@MMK_R_GRK_iota_RTL = [iota];
+@MMK_R_GRK_iotadieresis_RTL = [iotadieresistonos];
+@MMK_R_LAT_E_RTL = [L Lacute Lcaron Lcommaaccent Ldot Ldotbelow Ldotbelowmacron Llinebelow Lslash];
+@MMK_R_LAT_a_RTL = [a agrave aacute acircumflex atilde adieresis amacron];
+@MMK_R_LAT_i_RTL = [i igrave iacute];
+@MMK_R_LAT_icircumflex_RTL = [icircumflex idieresis];
+@MMK_R_LAT_m_RTL = [dotlessi];
+@MMK_R_LAT_t_RTL = [t tcaron tcedilla tcommaaccent];
+
+
+lookup RTL_kerning {
+lookupflag RightToLeft IgnoreMarks;
+
+
+# RTL glyph, glyph:
+pos V backslash <10 0 10 0>;
+pos backslash V <-100 0 -100 0>;
+pos backslash backslash <-82 0 -82 0>;
+pos lambda lambda <5 0 5 0>;
+
+# RTL glyph, glyph exceptions:
+pos Lcaron V <-57 0 -57 0>;
+pos V adieresis <-60 0 -60 0>;
+pos V atilde <-50 0 -50 0>;
+pos V idieresis <30 0 30 0>;
+pos iotadieresistonos lambda <60 0 60 0>;
+pos tcaron backslash <40 0 40 0>;
+
+# RTL glyph, group:
+pos V @MMK_R_LAT_a_RTL <-80 0 -80 0>;
+pos V @MMK_R_LAT_i_RTL <-30 0 -30 0>;
+pos V @MMK_R_LAT_icircumflex_RTL <10 0 10 0>;
+pos V @MMK_R_LAT_m_RTL <-60 0 -60 0>;
+pos V @MMK_R_LAT_t_RTL <-31 0 -31 0>;
+pos backslash @MMK_R_LAT_t_RTL <-11 0 -11 0>;
+pos lambda @MMK_R_GRK_iota_RTL <-10 0 -10 0>;
+pos lambda @MMK_R_GRK_iotadieresis_RTL <-10 0 -10 0>;
+
+# RTL group, group/glyph:
+pos @MMK_L_GRK_alpha_RTL backslash <21 0 21 0>;
+pos @MMK_L_LAT_L_RTL @MMK_R_LAT_E_RTL <-19 0 -19 0>;
+pos @MMK_L_LAT_L_RTL @MMK_R_LAT_t_RTL <-10 0 -10 0>;
+pos @MMK_L_LAT_L_RTL V <-119 0 -119 0>;
+pos @MMK_L_LAT_L_RTL backslash <-59 0 -59 0>;
+pos @MMK_L_LAT_a_RTL @MMK_R_LAT_m_RTL <-5 0 -5 0>;
+pos @MMK_L_LAT_a_RTL V <-99 0 -99 0>;
+pos @MMK_L_LAT_a_RTL backslash <-40 0 -40 0>;
+pos @MMK_L_LAT_i_RTL V <-21 0 -21 0>;
+pos @MMK_L_LAT_icircumflex_RTL @MMK_R_LAT_icircumflex_RTL <40 0 40 0>;
+pos @MMK_L_LAT_icircumflex_RTL backslash <21 0 21 0>;
+pos @MMK_L_LAT_t_RTL @MMK_R_LAT_t_RTL <9 0 9 0>;
+pos @MMK_L_LAT_t_RTL V <-40 0 -40 0>;
+
+
+} RTL_kerning;
+
