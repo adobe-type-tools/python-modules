@@ -225,6 +225,19 @@ def test_main():
     assert read_file(fea_example) == read_file(fea_temp)
 
 
+def test_main_invalid_input_file(capsys):
+    '''
+    invalid input file
+    '''
+    ufo_path = TEST_DIR / 'invalid_input_file.ufo'
+    args = Defaults()
+    args.input_file = ufo_path
+    main([str(ufo_path)])
+    out, err = capsys.readouterr()
+
+    assert 'does not exist' in out
+
+
 def test_default_rtl():
     args = Defaults()
     ufo_path = TEST_DIR / 'kern_example_rtl.ufo'
