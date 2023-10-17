@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="dotlessi" format="2">
+  <advance width="298"/>
+  <unicode hex="0131"/>
+  <anchor x="149" y="495" name="aboveLC"/>
+  <anchor x="149" y="-20" name="belowLC"/>
+  <anchor x="111" y="0" name="ogonek"/>
+  <outline>
+    <contour>
+      <point x="263" y="0" type="line"/>
+      <point x="31" y="0" type="line"/>
+      <point x="31" y="36" type="line"/>
+      <point x="131" y="56" type="line"/>
+      <point x="154" y="56" type="line"/>
+      <point x="263" y="36" type="line"/>
+    </contour>
+    <contour>
+      <point x="190" y="0" type="curve"/>
+      <point x="99" y="0" type="line"/>
+      <point x="101" y="45"/>
+      <point x="102" y="148"/>
+      <point x="102" y="210" type="curve" smooth="yes"/>
+      <point x="102" y="342" type="line"/>
+      <point x="99" y="478" type="line"/>
+      <point x="114" y="488" type="line"/>
+      <point x="269" y="427" type="line"/>
+      <point x="269" y="392" type="line"/>
+      <point x="190" y="383" type="line"/>
+      <point x="188" y="343"/>
+      <point x="187" y="312"/>
+      <point x="187" y="257" type="curve" smooth="yes"/>
+      <point x="187" y="210" type="line" smooth="yes"/>
+      <point x="187" y="148"/>
+      <point x="188" y="45"/>
+    </contour>
+  </outline>
+</glyph>

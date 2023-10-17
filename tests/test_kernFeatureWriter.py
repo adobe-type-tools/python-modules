@@ -50,6 +50,21 @@ def test_full_run():
     tmp_feature.unlink()
 
 
+def test_main():
+    '''
+    use main() path into the module
+    '''
+    ufo_path = TEST_DIR / 'kern_example.ufo'
+    kern_example = TEST_DIR / 'kern_example.fea'
+    kern_tmp = TEST_DIR / 'tmp_kern_example.fea'
+    args = Defaults()
+    args.input_file = ufo_path
+    args.output_name = kern_tmp
+    main([str(ufo_path), '--output_name', str(kern_tmp)])
+    assert read_file(kern_example) == read_file(kern_tmp)
+    kern_tmp.unlink()
+
+
 def test_full_run_rtl():
     args = Defaults()
     ufo_path = TEST_DIR / 'kern_example_rtl.ufo'
@@ -248,21 +263,6 @@ def test_no_kerning(capsys):
     assert f'has no kerning' in out
 
 
-def test_ss4():
-    '''
-    kern feature for Source Serif 4 Regular
-    '''
-    ufo_path = TEST_DIR / 'kern_ss4.ufo'
-    kern_example = TEST_DIR / 'kern_ss4.fea'
-    kern_tmp = TEST_DIR / 'tmp_kern_ss4.fea'
-    args = Defaults()
-    args.input_file = ufo_path
-    args.output_name = kern_tmp
-    main([str(ufo_path), '--output_name', str(kern_tmp), '--write_subtables'])
-    assert read_file(kern_example) == read_file(kern_tmp)
-    kern_tmp.unlink()
-
-
 def test_all_zero(capsys):
     ufo_path = TEST_DIR / 'kern_all_zero_value.ufo'
     f = defcon.Font(ufo_path)
@@ -276,6 +276,68 @@ def test_unused_groups():
     ufo_path = TEST_DIR / 'kern_unused_groups.ufo'
     kern_example = TEST_DIR / 'kern_unused_groups.fea'
     kern_tmp = TEST_DIR / 'tmp_kern_unused_groups.fea'
+    f = defcon.Font(ufo_path)
+    args = Defaults()
+    args.input_file = ufo_path
+    args.output_name = kern_tmp
+    run(f, args)
+    assert read_file(kern_example) == read_file(kern_tmp)
+    kern_tmp.unlink()
+
+
+def test_ignored_groups():
+    '''
+    group/group kern value is 0, all pairs are exceptions
+    '''
+    ufo_path = TEST_DIR / 'kern_ignored_groups.ufo'
+    kern_example = TEST_DIR / 'kern_ignored_groups.fea'
+    kern_tmp = TEST_DIR / 'tmp_kern_ignored_groups.fea'
+    f = defcon.Font(ufo_path)
+    args = Defaults()
+    args.input_file = ufo_path
+    args.output_name = kern_tmp
+    run(f, args)
+    assert read_file(kern_example) == read_file(kern_tmp)
+    kern_tmp.unlink()
+
+
+def test_sanityCheck(capsys):
+    '''
+    somehow trigger that sanity check (not sure how useful)
+    '''
+    ufo_path = TEST_DIR / 'kern_example.ufo'
+    f = defcon.Font(ufo_path)
+    kp = KernProcessor()
+    kp.pairs_processed = ['some pair']
+    kp.kerning = f.kerning
+    kp._sanityCheck()
+    out, err = capsys.readouterr()
+    assert 'Something went wrong' in out
+
+
+def test_mock_rtl():
+    '''
+    a RTL project which is just a mirrored LTR project.
+    '''
+    ufo_path = TEST_DIR / 'kern_mock_rtl.ufo'
+    kern_example = TEST_DIR / 'kern_mock_rtl.fea'
+    kern_tmp = TEST_DIR / 'tmp_kern_mock_rtl.fea'
+    f = defcon.Font(ufo_path)
+    args = Defaults()
+    args.input_file = ufo_path
+    args.output_name = kern_tmp
+    run(f, args)
+    assert read_file(kern_example) == read_file(kern_tmp)
+    kern_tmp.unlink()
+
+
+def test_ss4_exceptions():
+    '''
+    a RTL project which is just a mirrored LTR project.
+    '''
+    ufo_path = TEST_DIR / 'kern_ss4_exceptions.ufo'
+    kern_example = TEST_DIR / 'kern_ss4_exceptions.fea'
+    kern_tmp = TEST_DIR / 'tmp_kern_ss4_exceptions.fea'
     f = defcon.Font(ufo_path)
     args = Defaults()
     args.input_file = ufo_path

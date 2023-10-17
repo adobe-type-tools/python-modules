@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="Ldotbelow" format="2">
+	<unicode hex="1E36"/>
+	<advance width="596"/>
+	<outline>
+		<contour>
+			<point x="317" y="-203" type="curve" smooth="yes"/>
+			<point x="355" y="-203"/>
+			<point x="384" y="-177"/>
+			<point x="384" y="-139" type="curve" smooth="yes"/>
+			<point x="384" y="-102"/>
+			<point x="355" y="-75"/>
+			<point x="317" y="-75" type="curve" smooth="yes"/>
+			<point x="279" y="-75"/>
+			<point x="250" y="-102"/>
+			<point x="250" y="-139" type="curve" smooth="yes"/>
+			<point x="250" y="-177"/>
+			<point x="279" y="-203"/>
+		</contour>
+		<component base="L"/>
+	</outline>
+</glyph>
