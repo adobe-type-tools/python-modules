@@ -139,15 +139,15 @@ def test_dissolve():
     tmp_feature_dissolved.unlink()
 
 
-def test_case_01():
+def test_left_side_exception():
     '''
     test a kerning exception of a single member of a left-side group
     (Adieresis for the A-group, Oslash for the O-group) to a right-side item.
     '''
     args = Defaults()
-    ufo_path = TEST_DIR / 'kern_case_01.ufo'
-    tmp_feature = TEST_DIR / 'tmp_case_01.fea'
-    example_feature = read_file(TEST_DIR / 'kern_case_01.fea')
+    ufo_path = TEST_DIR / 'kern_left_side_exception.ufo'
+    tmp_feature = TEST_DIR / 'tmp_left_side_exception.fea'
+    example_feature = read_file(TEST_DIR / 'kern_left_side_exception.fea')
     args.input_file = ufo_path
     args.output_name = tmp_feature
     f = defcon.Font(ufo_path)
@@ -315,9 +315,25 @@ def test_sanityCheck(capsys):
     assert 'Something went wrong' in out
 
 
+def test_ss4_exceptions():
+    '''
+    This contains most exceptions from SS4.
+    '''
+    ufo_path = TEST_DIR / 'kern_ss4_exceptions.ufo'
+    kern_example = TEST_DIR / 'kern_ss4_exceptions.fea'
+    kern_tmp = TEST_DIR / 'tmp_kern_ss4_exceptions.fea'
+    f = defcon.Font(ufo_path)
+    args = Defaults()
+    args.input_file = ufo_path
+    args.output_name = kern_tmp
+    run(f, args)
+    assert read_file(kern_example) == read_file(kern_tmp)
+    kern_tmp.unlink()
+
+
 def test_mock_rtl():
     '''
-    a RTL project which is just a mirrored LTR project.
+    A mock RTL project (mirrored version of ss4_exceptions)
     '''
     ufo_path = TEST_DIR / 'kern_mock_rtl.ufo'
     kern_example = TEST_DIR / 'kern_mock_rtl.fea'
@@ -331,17 +347,20 @@ def test_mock_rtl():
     kern_tmp.unlink()
 
 
-def test_ss4_exceptions():
-    '''
-    a RTL project which is just a mirrored LTR project.
-    '''
-    ufo_path = TEST_DIR / 'kern_ss4_exceptions.ufo'
-    kern_example = TEST_DIR / 'kern_ss4_exceptions.fea'
-    kern_tmp = TEST_DIR / 'tmp_kern_ss4_exceptions.fea'
+def test_example_trim(capsys):
+    ufo_path = TEST_DIR / 'kern_example.ufo'
+    kern_example = TEST_DIR / 'kern_example_trim.fea'
+    kern_tmp = TEST_DIR / 'tmp_kern_example_trim.fea'
     f = defcon.Font(ufo_path)
     args = Defaults()
     args.input_file = ufo_path
     args.output_name = kern_tmp
+    args.min_value = 100
+    args.write_trimmed_pairs = True
     run(f, args)
+
+    out, err = capsys.readouterr()
+    assert 'Trimmed pairs: 33' in out
+
     assert read_file(kern_example) == read_file(kern_tmp)
     kern_tmp.unlink()

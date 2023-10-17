@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-	<dict>
-		<key>public.glyphOrder</key>
-		<array>
-			<string>.notdef</string>
-			<string>space</string>
-			<string>arHeh</string>
-			<string>arHeh.s</string>
-			<string>arHeh.i</string>
-			<string>arHeh.m</string>
-			<string>arHeh.f</string>
-			<string>arHeh.mc</string>
-			<string>arYehBarree</string>
-			<string>arYehBarree.f</string>
-			<string>arHehYehBarree</string>
-			<string>arHehYehBarree.f</string>
-			<string>arFatha</string>
-			<string>arFathatan</string>
-			<string>arKasra</string>
-			<string>arKasratan</string>
-		</array>
-	</dict>
+<dict>
+	<key>public.glyphOrder</key>
+	<array>
+		<string>.notdef</string>
+		<string>space</string>
+		<string>arHeh</string>
+		<string>arHeh.s</string>
+		<string>arHeh.i</string>
+		<string>arHeh.m</string>
+		<string>arHeh.f</string>
+		<string>arHeh.mc</string>
+		<string>arYehBarree</string>
+		<string>arYehBarree.f</string>
+		<string>arHehYehBarree</string>
+		<string>arHehYehBarree.f</string>
+		<string>arFatha</string>
+		<string>arFathatan</string>
+		<string>arKasra</string>
+		<string>arKasratan</string>
+	</array>
+</dict>
 </plist>

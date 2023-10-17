@@ -36,20 +36,5 @@
 			<string>lambda</string>
 			<string>iotadieresistonos</string>
 		</array>
-		<key>public.postscriptNames</key>
-		<dict>
-			<key>Lcommaaccent</key>
-			<string>uni013B</string>
-			<key>Ldotbelow</key>
-			<string>uni1E36</string>
-			<key>Ldotbelowmacron</key>
-			<string>uni1E38</string>
-			<key>Llinebelow</key>
-			<string>uni1E3A</string>
-			<key>tcedilla</key>
-			<string>uni0163</string>
-			<key>tcommaaccent</key>
-			<string>uni021B</string>
-		</dict>
 	</dict>
 </plist>

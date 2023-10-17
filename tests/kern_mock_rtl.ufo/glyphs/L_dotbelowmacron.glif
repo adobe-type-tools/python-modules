@@ -1,14 +1,14 @@
-<?xml version='1.0' encoding='UTF-8'?>
+<?xml version="1.0" encoding="UTF-8"?>
 <glyph name="Ldotbelowmacron" format="2">
-  <advance width="596"/>
-  <unicode hex="1E38"/>
-  <outline>
-    <contour>
-      <point x="546" y="759" type="line"/>
-      <point x="266" y="759" type="line"/>
-      <point x="266" y="822" type="line"/>
-      <point x="546" y="822" type="line"/>
-    </contour>
-    <component base="Ldotbelow"/>
-  </outline>
+	<unicode hex="1E38"/>
+	<advance width="596"/>
+	<outline>
+		<contour>
+			<point x="546" y="759" type="line"/>
+			<point x="266" y="759" type="line"/>
+			<point x="266" y="822" type="line"/>
+			<point x="546" y="822" type="line"/>
+		</contour>
+		<component base="Ldotbelow"/>
+	</outline>
 </glyph>
