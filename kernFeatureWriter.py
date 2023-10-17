@@ -28,11 +28,41 @@ tag_exception = 'EXC_'
 tag_ignore = '.cxt'
 
 
+# helpers
+
+def is_group(item_name):
+    '''
+    Check if an item name implies a group.
+    '''
+
+    return any([
+        item_name.startswith('@'),
+        item_name.startswith('public.')])
+
+
+def is_kerning_group(grp_name):
+    '''
+    Check if a group name implies a kerning group.
+    '''
+
+    return any([
+        grp_name.startswith('@MMK_'),
+        grp_name.startswith('public.kern')])
+
+
+def is_rtl_group(grp_name):
+    '''
+    Check if a given group is a RTL group
+    '''
+    rtl_tags = [tag_ara, tag_heb, tag_rtl]
+    return any([tag in grp_name for tag in rtl_tags])
+
+
 class Defaults(object):
-    """
+    '''
     default values
     These can later be overridden by argparse.
-    """
+    '''
 
     def __init__(self):
 
@@ -40,22 +70,20 @@ class Defaults(object):
         self.output_name = 'kern.fea'
 
         # Default mimimum kerning value. This value is _inclusive_, which
-        # means that pairs that equal this absolute value will NOT be
-        # ignored/trimmed. Anything in range of +/- value will be trimmed.
+        # means that pairs that equal this absolute value will not be
+        # ignored/trimmed. Pairs in range of +/- value will be trimmed.
+        # Exceptions within the value range will not be trimmed.
         self.min_value = 3
 
         # The maximum possible subtable size is 2 ** 16 = 65536.
-        # Since every other GPOS feature counts against that size, the
+        # Every other GPOS feature counts against that size, so the
         # subtable size chosen needs to be quite a bit smaller.
-        # 2 ** 14 has been a good value for Source Serif
-        # (but failed for master_2, where 2 ** 13 was used)
         self.subtable_size = 2 ** 13
 
-        # If 'False', trimmed pairs will not be processed and therefore
-        # not be written to the output file.
+        # Write trimmed pairs to the output file (as comments).
         self.write_trimmed_pairs = False
 
-        # Write subtables -- yes or no?
+        # Write subtables?
         self.write_subtables = False
 
         # Write time stamp in .fea file header?
@@ -68,8 +96,98 @@ class Defaults(object):
         self.dissolve_single = False
 
 
+class KerningSanitizer(object):
+    '''
+    Sanitize UFO kerning and groups:
+        - check groups for emtpy glyph list and extraneous glyphs
+        - check pairs for extraneous glyphs or groups
+        - return filtered kerning and groups dictionaries
+
+    Output a report, if needed.
+
+    '''
+
+    def __init__(self, f):
+        self.f = f
+        self.kerning = {}
+        self.groups = {}
+        self.reference_groups = {}
+
+        # empty groups
+        self.empty_groups = [
+            g for (g, gl) in self.f.groups.items() if not gl]
+        # groups containing glyphs not in the UFO
+        self.invalid_groups = [
+            g for (g, gl) in self.f.groups.items() if not
+            set(gl) <= set(self.f.keys())]
+        # remaining groups
+        self.valid_groups = [
+            g for g in self.f.groups.keys() if
+            g not in [set(self.invalid_groups) | set(self.empty_groups)] and
+            is_kerning_group(g)
+        ]
+
+        self.valid_items = set(self.f.keys()) | set(self.valid_groups)
+        # pairs containing an invalid glyph or group
+        self.invalid_pairs = [
+            pair for pair in self.f.kerning.keys() if not
+            set(pair) <= set(self.valid_items)]
+
+        self.kerning = {
+            pair: value for pair, value in self.f.kerning.items() if
+            pair not in self.invalid_pairs
+        }
+        self.groups = {
+            gn: self.f.groups.get(gn) for gn in self.get_used_group_names()}
+
+        self.reference_groups = {
+            gn: g_list for gn, g_list in self.f.groups.items() if not
+            is_kerning_group(gn)}
+
+    def get_used_group_names(self):
+        '''
+        Return all groups which are actually used in kerning,
+        by iterating through valid kerning pairs.
+        '''
+        groups = list(self.f.groups.keys())
+        used_groups = []
+        for pair in self.kerning.keys():
+            used_groups.extend([item for item in pair if is_group(item)])
+        return sorted(set(used_groups), key=groups.index)
+
+    def report(self):
+        '''
+        Report findings of invalid pairs and groups.
+        '''
+        for group in self.empty_groups:
+            print(f'group {group} is empty')
+        for group in self.invalid_groups:
+            glyph_list = self.f.groups[group]
+            extraneous_glyphs = sorted(
+                set(glyph_list) - set(self.f.keys()), key=glyph_list.index)
+            print(
+                f'group {group} contains extraneous glyph(s): '
+                f'[{", ".join(extraneous_glyphs)}]')
+
+        for pair in self.invalid_pairs:
+            invalid_items = sorted(
+                set(pair) - self.valid_items, key=pair.index)
+            for item in invalid_items:
+                if is_group(item):
+                    item_type = 'group'
+                else:
+                    item_type = 'glyph'
+                print(
+                    f'pair ({pair[0]} {pair[1]}) references non-existent '
+                    f'{item_type} {item}'
+                )
+
+
 class KernProcessor(object):
-    def __init__(self, groups=None, kerning=None, option_dissolve=False):
+    def __init__(
+        self, groups=None, kerning=None, reference_groups=None,
+        option_dissolve=False
+    ):
 
         # kerning dicts containing pair-value combinations
         self.glyph_glyph = {}
@@ -90,23 +208,21 @@ class KernProcessor(object):
 
         self.pairs_unprocessed = []
         self.pairs_processed = []
+        self.group_order = []
+
+        self.groups = groups
+        self.kerning = kerning
+        self.reference_groups = reference_groups
 
         if kerning:
-            sanitized_kerning = self.sanitize_kerning(groups, kerning)
-            used_groups = self._get_used_groups(groups, sanitized_kerning)
-            self.reference_groups = self._get_reference_groups(groups)
-
             if option_dissolve:
-                dissolved_groups, dissolved_kerning = self._dissolve_singleton_groups(
-                    used_groups, sanitized_kerning)
-                self.groups = self._remap_groups(dissolved_groups)
-                self.kerning = self._remap_kerning(dissolved_kerning)
+                groups, kerning = self._dissolve_singleton_groups(
+                    groups, kerning)
 
-            else:
-                self.groups = self._remap_groups(used_groups)
-                self.kerning = self._remap_kerning(sanitized_kerning)
-
+            self.groups = self._remap_groups(groups)
             self.group_order = sorted(self.groups.keys())
+            self.kerning = self._remap_kerning(kerning)
+
             self.grouped_left = self._get_grouped_glyphs(left=True)
             self.grouped_right = self._get_grouped_glyphs(left=False)
             self.rtl_glyphs = self._get_rtl_glyphs(self.groups)
@@ -115,38 +231,6 @@ class KernProcessor(object):
 
             if self.kerning:
                 self._sanityCheck()
-
-    def sanitize_kerning(self, groups, kerning):
-        '''
-        Check kerning dict for pairs referencing items that do not exist
-        in the groups dict.
-
-        This solution is not ideal since there is another chance for producing
-        an invalid kerning pair -- by referencing a glyph name which is not in
-        the font. The font object is not present in this class, so a comparison
-        would be difficult to achieve. This check is better than nothing for
-        the moment, since crashing downstream is avoided.
-        '''
-        all_pairs = [pair for pair in kerning.keys()]
-        all_kerned_items = set([item for pair in all_pairs for item in pair])
-        all_kerned_groups = [
-            item for item in all_kerned_items if self._is_group(item)]
-
-        bad_groups = set(all_kerned_groups) - set(groups.keys())
-        sanitized_kerning = {
-            pair: value for
-            pair, value in kerning.items() if
-            not set(pair).intersection(bad_groups)}
-
-        bad_kerning = sorted([
-            pair for pair in kerning.keys() if
-            pair not in sanitized_kerning.keys()])
-
-        for pair in bad_kerning:
-            print(
-                'pair {} {} references non-existent group'.format(*pair))
-
-        return sanitized_kerning
 
     def _remap_name(self, item_name):
         '''
@@ -189,24 +273,6 @@ class KernProcessor(object):
 
         return remapped_kerning
 
-    def _is_group(self, item_name):
-        '''
-        Check if an item name implies a group.
-        '''
-
-        return any([
-            item_name.startswith('@'),
-            item_name.startswith('public.')])
-
-    def _is_kerning_group(self, grp_name):
-        '''
-        Check if a group name implies a kerning group.
-        '''
-
-        return any([
-            grp_name.startswith('@MMK_'),
-            grp_name.startswith('public.kern')])
-
     def _is_rtl(self, pair):
         '''
         Check if a given pair is RTL, by looking for a RTL-specific group
@@ -228,40 +294,8 @@ class KernProcessor(object):
                 return True
         return False
 
-    def _is_rtl_group(self, grp_name):
-        '''
-        Check if a given group is a RTL group
-        '''
-        rtl_tags = [tag_ara, tag_heb, tag_rtl]
-
-        if any([tag in grp_name for tag in rtl_tags]):
-            return True
-        return False
-
-    def _get_used_groups(self, groups, kerning):
-        '''
-        Return all groups which are actually used in kerning,
-        by iterating through the kerning pairs.
-        '''
-        used_group_names = []
-        for left, right in kerning.keys():
-            if self._is_group(left):
-                used_group_names.append(left)
-            if self._is_group(right):
-                used_group_names.append(right)
-        used_groups = {
-            g_name: groups.get(g_name) for g_name in used_group_names
-        }
-        return used_groups
-
-    def _get_reference_groups(self, groups):
-        reference_grp_names = [
-            gn for gn in groups if not self._is_kerning_group(gn)]
-        reference_groups = {gn: groups.get(gn) for gn in reference_grp_names}
-        return reference_groups
-
     def _get_rtl_glyphs(self, groups):
-        rtl_groups = [gn for gn in groups if self._is_rtl_group(gn)]
+        rtl_groups = [gn for gn in groups if is_rtl_group(gn)]
         rtl_glyphs = list(itertools.chain.from_iterable(
             groups.get(rtl_group) for rtl_group in rtl_groups))
         return rtl_glyphs
@@ -276,11 +310,11 @@ class KernProcessor(object):
 
         if left:
             for left, right in self.kerning.keys():
-                if self._is_group(left):
+                if is_group(left):
                     grouped.extend(self.groups.get(left))
         else:
             for left, right in self.kerning.keys():
-                if self._is_group(right):
+                if is_group(right):
                     grouped.extend(self.groups.get(right))
 
         return sorted(set(grouped))
@@ -296,7 +330,7 @@ class KernProcessor(object):
         '''
         singleton_groups = dict(
             [(group_name, glyphs) for group_name, glyphs in groups.items() if(
-                len(glyphs) == 1 and not self._is_rtl_group(group_name))])
+                len(glyphs) == 1 and not is_rtl_group(group_name))])
         if singleton_groups:
             dissolved_kerning = {}
             for (left, right), value in kerning.items():
@@ -359,17 +393,17 @@ class KernProcessor(object):
 
         glyph_2_glyph = sorted(
             [pair for pair in self.kerning.keys() if(
-                not self._is_group(pair[0]) and
-                not self._is_group(pair[1]))]
+                not is_group(pair[0]) and
+                not is_group(pair[1]))]
         )
         glyph_2_group = sorted(
             [pair for pair in self.kerning.keys() if(
-                not self._is_group(pair[0]) and
-                self._is_group(pair[1]))]
+                not is_group(pair[0]) and
+                is_group(pair[1]))]
         )
         group_2_item = sorted(
             [pair for pair in self.kerning.keys() if(
-                self._is_group(pair[0]))]
+                is_group(pair[0]))]
         )
 
         # glyph to group pairs:
@@ -420,7 +454,7 @@ class KernProcessor(object):
             is_rtl_pair = self._is_rtl(pair)
             l_group_glyphs = self.groups[group_l]
 
-            if self._is_group(item_r):
+            if is_group(item_r):
                 r_group_glyphs = self.groups[item_r]
             else:
                 # not a group, therefore a glyph
@@ -620,12 +654,17 @@ class run(object):
                 print('ERROR: All kerning values are zero!')
                 return
 
-            fea_data = self._make_fea_data()
-            if fea_data:
-                self.header = self.make_header(args)
-                output_dir = os.path.abspath(os.path.dirname(self.f.path))
-                output_path = os.path.join(output_dir, args.output_name)
-                self.write_fea_data(fea_data, output_path)
+            ks = KerningSanitizer(self.f)
+            ks.report()
+            kp = KernProcessor(
+                ks.groups, ks.kerning, ks.reference_groups,
+                self.dissolve_single)
+
+            fea_data = self._make_fea_data(kp)
+            self.header = self.make_header(args)
+            output_dir = os.path.abspath(os.path.dirname(self.f.path))
+            output_path = os.path.join(output_dir, args.output_name)
+            self.write_fea_data(fea_data, output_path)
 
     def make_header(self, args):
         try:
@@ -699,25 +738,16 @@ class run(object):
         print('%s subtables created' % self.num_subtables)
         return st_output
 
-    def _make_fea_data(self):
+    def _make_fea_data(self, kp):
         # Build the output data.
 
         output = []
-        kp = KernProcessor(
-            self.f.groups,
-            self.f.kerning,
-            self.dissolve_single
-        )
-
         # ---------------
         # list of groups:
         # ---------------
         for grp_name in kp.group_order:
             glyphList = kp.groups[grp_name]
-            if not glyphList:
-                print('WARNING: Kerning group %s has no glyphs.' % grp_name)
-                continue
-            output.append('%s = [%s];' % (grp_name, ' '.join(glyphList)))
+            output.append(f'{grp_name} = [{" ".join(glyphList)}];')
 
         # ------------------
         # LTR kerning pairs:
