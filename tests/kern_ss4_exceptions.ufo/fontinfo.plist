@@ -11,10 +11,7 @@
 		<key>descender</key>
 		<integer>-240</integer>
 		<key>familyName</key>
-		<string>Source Serif 4</string>
-		<key>guidelines</key>
-		<array>
-		</array>
+		<string>SS4</string>
 		<key>italicAngle</key>
 		<integer>0</integer>
 		<key>openTypeHheaAscender</key>
@@ -127,7 +124,7 @@
 			<integer>-240</integer>
 		</array>
 		<key>postscriptFontName</key>
-		<string>SourceSerif4-Regular</string>
+		<string>SS4-Exceptions</string>
 		<key>postscriptForceBold</key>
 		<false/>
 		<key>postscriptOtherBlues</key>
@@ -150,7 +147,7 @@
 		<key>postscriptUnderlineThickness</key>
 		<integer>50</integer>
 		<key>styleName</key>
-		<string>Regular</string>
+		<string>Exceptions</string>
 		<key>trademark</key>
 		<string>Source is a trademark of Adobe in the United States and/or other countries.</string>
 		<key>unitsPerEm</key>
