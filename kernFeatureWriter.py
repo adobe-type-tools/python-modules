@@ -26,7 +26,6 @@ group_rtl = 'RTL_KERNING'
 tag_ara = '_ARA'
 tag_heb = '_HEB'
 tag_rtl = '_RTL'
-tag_exception = 'EXC_'
 
 
 # helpers
@@ -200,7 +199,6 @@ class KernProcessor(object):
         self.glyph_group_exceptions = {}
         self.group_glyph_exceptions = {}
         self.group_group = {}
-        self.predefined_exceptions = {}
 
         self.rtl_glyph_glyph = {}
         self.rtl_glyph_glyph_exceptions = {}
@@ -208,7 +206,6 @@ class KernProcessor(object):
         self.rtl_glyph_group_exceptions = {}
         self.rtl_group_glyph_exceptions = {}
         self.rtl_group_group = {}
-        self.rtl_predefined_exceptions = {}
 
         self.pairs_unprocessed = []
         self.pairs_processed = []
@@ -394,11 +391,6 @@ class KernProcessor(object):
                 if any([item.endswith(self.ignore_suffix) for item in pair]):
                     del self.kerning[pair]
                     continue
-
-            # Filter pre-defined exception pairs.
-            if any([tag_exception in item for item in pair]):
-                self.predefined_exceptions[pair] = self.kerning[pair]
-                del self.kerning[pair]
 
         glyph_2_glyph = sorted(
             [pair for pair in self.kerning.keys() if(
@@ -763,8 +755,6 @@ class run(object):
         # ------------------
         order_ltr = [
             # container_dict, minKern, comment, enum
-            (kp.predefined_exceptions, 0,
-                '\n# pre-defined exceptions:', True),
             (kp.glyph_glyph, self.minKern,
                 '\n# glyph, glyph:', False),
             (kp.glyph_glyph_exceptions, 0,
@@ -786,8 +776,6 @@ class run(object):
         # ------------------
         order_rtl = [
             # container_dict, minKern, comment, enum
-            (kp.rtl_predefined_exceptions, 0,
-                '\n# RTL pre-defined exceptions:', True),
             (kp.rtl_glyph_glyph, self.minKern,
                 '\n# RTL glyph, glyph:', False),
             (kp.rtl_glyph_glyph_exceptions, 0,
