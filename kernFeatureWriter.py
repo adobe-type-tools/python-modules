@@ -21,9 +21,6 @@ import time
 
 group_rtl = 'RTL_KERNING'
 
-tags_left = ['_LEFT', '_1ST', '_L_']
-tags_right = ['_RIGHT', '_2ND', '_R_']
-
 tag_ara = '_ARA'
 tag_heb = '_HEB'
 tag_rtl = '_RTL'
