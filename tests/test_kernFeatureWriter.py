@@ -409,3 +409,22 @@ def test_nightmare(capsys):
         'pair (public.kern1.empty a) references non-existent glyph a\n'
     )
     assert expected_output in out
+
+
+def test_ignore_suffix():
+    ufo_path = TEST_DIR / 'kern_suffix.ufo'
+    fea_example = TEST_DIR / 'kern_suffix_present.fea'
+    fea_temp = TEMP_DIR / fea_example.name
+    f = defcon.Font(ufo_path)
+    args = Defaults()
+    args.input_file = ufo_path
+    args.output_name = fea_temp
+    run(f, args)
+    assert read_file(fea_example) == read_file(fea_temp)
+
+    fea_example = TEST_DIR / 'kern_suffix_ignored.fea'
+    fea_temp = TEMP_DIR / fea_example.name
+    args.ignore_suffix = '.cxt'
+    args.output_name = fea_temp
+    run(f, args)
+    assert read_file(fea_example) == read_file(fea_temp)

@@ -27,7 +27,6 @@ tag_ara = '_ARA'
 tag_heb = '_HEB'
 tag_rtl = '_RTL'
 tag_exception = 'EXC_'
-tag_ignore = '.cxt'
 
 
 # helpers
@@ -96,6 +95,9 @@ class Defaults(object):
         # balancing subtables, and potentially makes the number of kerning
         # pairs involving groups a bit smaller).
         self.dissolve_single = False
+
+        # ignore pairs which contain glyphs using the following suffix
+        self.ignore_suffix = None
 
 
 class KerningSanitizer(object):
@@ -188,7 +190,7 @@ class KerningSanitizer(object):
 class KernProcessor(object):
     def __init__(
         self, groups=None, kerning=None, reference_groups=None,
-        option_dissolve=False
+        option_dissolve=False, ignore_suffix=None
     ):
 
         # kerning dicts containing pair-value combinations
@@ -215,6 +217,8 @@ class KernProcessor(object):
         self.groups = groups
         self.kerning = kerning
         self.reference_groups = reference_groups
+
+        self.ignore_suffix = ignore_suffix
 
         if kerning:
             if option_dissolve:
@@ -368,13 +372,13 @@ class KernProcessor(object):
                 f'Pairs not processed: {num_unprocessed}\n'
             )
 
-    def _explode(self, leftGlyphList, rightGlyphList):
+    def _explode(self, glyph_list_a, glyph_list_b):
         '''
         Return a list of tuples, containing all possible combinations
         of elements in both input lists.
         '''
 
-        return list(itertools.product(leftGlyphList, rightGlyphList))
+        return list(itertools.product(glyph_list_a, glyph_list_b))
 
     def _find_exceptions(self):
         '''
@@ -384,13 +388,14 @@ class KernProcessor(object):
 
         for pair in list(self.kerning.keys())[::-1]:
 
-            # Skip pairs in which the name of the
-            # left glyph contains the ignore tag.
-            if tag_ignore in pair[0]:
-                del self.kerning[pair]
-                continue
+            # Skip pairs containing the ignore suffix.
+            # Not a very sophisticated feature.
+            if self.ignore_suffix:
+                if any([item.endswith(self.ignore_suffix) for item in pair]):
+                    del self.kerning[pair]
+                    continue
 
-            # Looking for pre-defined exception pairs, and filtering them out.
+            # Filter pre-defined exception pairs.
             if any([tag_exception in item for item in pair]):
                 self.predefined_exceptions[pair] = self.kerning[pair]
                 del self.kerning[pair]
@@ -648,6 +653,7 @@ class run(object):
         self.subtable_size = args.subtable_size
         self.write_trimmed_pairs = args.write_trimmed_pairs
         self.dissolve_single = args.dissolve_single
+        self.ignore_suffix = args.ignore_suffix
         self.trimmedPairs = 0
 
         if self.f:
@@ -662,7 +668,7 @@ class run(object):
             ks.report()
             kp = KernProcessor(
                 ks.groups, ks.kerning, ks.reference_groups,
-                self.dissolve_single)
+                self.dissolve_single, self.ignore_suffix)
 
             fea_data = self._make_fea_data(kp)
             self.header = self.make_header(args)
@@ -943,6 +949,18 @@ def get_args(args=None):
         action='store_true',
         default=defaults.dissolve_single,
         help='dissolve single-element groups to glyph names')
+
+    parser.add_argument(
+        '--ignore_suffix',
+        action='store',
+        default=defaults.ignore_suffix,
+        metavar='.xxx',
+        help=(
+            'do not write pairs containing this suffix. '
+            'This is a rudimentary feature, not working if a '
+            'suffixed glyph is part of a kerning group.'
+        )
+    )
 
     return parser.parse_args(args)
 
