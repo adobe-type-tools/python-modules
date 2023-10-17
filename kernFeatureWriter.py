@@ -14,9 +14,11 @@ Optional functionality of this tool includes:
 '''
 
 import argparse
+import defcon
 import itertools
-import os
 import time
+
+from pathlib import Path
 
 
 group_rtl = 'RTL_KERNING'
@@ -357,12 +359,14 @@ class KernProcessor(object):
         num_pairs_unprocessed = len(self.pairs_unprocessed)
 
         if num_pairs_total != num_pairs_processed + num_pairs_unprocessed:
-            print('Something went wrong...')
-            print('Kerning pairs provided: %s' % num_pairs_total)
-            print('Kern entries generated: %s' % (
-                num_pairs_processed + num_pairs_unprocessed))
-            print('Pairs not processed: %s' % (
-                num_pairs_total - (num_pairs_processed + num_pairs_unprocessed)))
+            num_entries = num_pairs_processed + num_pairs_unprocessed
+            num_unprocessed = num_pairs_total - num_entries
+            print(
+                'Something went wrong ...\n'
+                f'Kerning pairs provided: {num_pairs_total}\n'
+                f'Kern entries generated: {num_entries}\n'
+                f'Pairs not processed: {num_unprocessed}\n'
+            )
 
     def _explode(self, leftGlyphList, rightGlyphList):
         '''
@@ -662,8 +666,7 @@ class run(object):
 
             fea_data = self._make_fea_data(kp)
             self.header = self.make_header(args)
-            output_dir = os.path.abspath(os.path.dirname(self.f.path))
-            output_path = os.path.join(output_dir, args.output_name)
+            output_path = Path(self.f.path).parent / args.output_name
             self.write_fea_data(fea_data, output_path)
 
     def make_header(self, args):
@@ -674,9 +677,9 @@ class run(object):
 
         header = []
         if args.write_timestamp:
-            header.append('# Created: %s' % time.ctime())
-        header.append('# PS Name: %s' % ps_name)
-        header.append('# MinKern: +/- %s inclusive' % args.min_value)
+            header.append(f'# Created: {time.ctime()}')
+        header.append(f'# PS Name: {ps_name}')
+        header.append(f'# MinKern: +/- {args.min_value} inclusive')
         return header
 
     def _dict2pos(self, pair_value_dict, minimum=0, enum=False, rtl=False):
@@ -687,14 +690,14 @@ class run(object):
 
         data = []
         trimmed = 0
-        for pair, value in pair_value_dict.items():
+        for (item_1, item_2), value in pair_value_dict.items():
 
             if rtl:
                 value_str = '<{0} 0 {0} 0>'.format(value)
             else:
                 value_str = str(value)
 
-            posLine = 'pos %s %s;' % (' '.join(pair), value_str)
+            posLine = f'pos {item_1} {item_2} {value_str};'
 
             if enum:
                 data.append('enum ' + posLine)
@@ -735,7 +738,7 @@ class run(object):
 
                 st_output.append(
                     self._dict2pos(table, self.minKern, rtl=rtl))
-        print('%s subtables created' % self.num_subtables)
+        print(f'{self.num_subtables} subtables created')
         return st_output
 
     def _make_fea_data(self, kp):
@@ -869,10 +872,10 @@ class run(object):
 
     def write_fea_data(self, data, output_path):
 
-        print('Saving %s file...' % os.path.basename(output_path))
+        print(f'Saving {output_path.name} file...')
 
         if self.trimmedPairs > 0:
-            print('Trimmed pairs: %s' % self.trimmedPairs)
+            print(f'Trimmed pairs: {self.trimmedPairs}')
 
         with open(output_path, 'w') as blob:
             blob.write('\n'.join(self.header))
@@ -881,7 +884,7 @@ class run(object):
                 blob.write('\n'.join(data))
                 blob.write('\n')
 
-        print('Output file written to %s' % output_path)
+        print(f'Output file written to {output_path}')
 
 
 def get_args(args=None):
@@ -946,10 +949,8 @@ def get_args(args=None):
 
 def main(test_args=None):
     args = get_args(test_args)
-    f_path = os.path.normpath(args.input_file)
-    import defcon
-    if os.path.exists(f_path):
-
+    f_path = Path(args.input_file)
+    if f_path.exists:
         f = defcon.Font(f_path)
         run(f, args)
 
