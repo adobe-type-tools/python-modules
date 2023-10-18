@@ -21,7 +21,8 @@ kDefaultWriteMarkClassesFile = False
 kDefaultIndianScriptsFormat = False
 kCasingTagsList = ['LC', 'UC', 'SC', 'AC']  # All the tags must have the same number of characters, and that number must be equal to kCasingTagSize
 kCasingTagSize = 2
-kRTLtagsList = ['_AR', '_HE']  # Arabic, Hebrew
+# kRTLtagsList = ['_AR', '_HE']  # Arabic, Hebrew
+kRTLtagsList = ['AR', 'HE']  # Arabic, Hebrew
 kIgnoreAnchorTag = "CXT"
 kLigatureComponentOrderTags = ['1ST', '2ND', '3RD', '4TH']  # Add more as necessary to a maximum of 9 (nine)
 kIndianAboveMarks = "abvm"
@@ -468,7 +469,7 @@ class MarkDataClass(object):
             # Do base lookups
             if len(baseLinesList):
                 self.baseRelatedBasePosLinesList.append('lookup MARK_BASE_%s {\n' % markType)
-                if markType[-3:] in kRTLtagsList:
+                if markType[-2:] in kRTLtagsList:
                     self.baseRelatedBasePosLinesList.append('\tlookupflag RightToLeft;\n\n')
                 self.baseRelatedBasePosLinesList.extend(baseLinesList)
                 self.baseRelatedBasePosLinesList.append('} MARK_BASE_%s;\n\n\n' % markType)
@@ -481,7 +482,7 @@ class MarkDataClass(object):
 
                 if len(ligatureLinesList):
                     self.ligatureRelatedBasePosLinesList.append('lookup MARK_LIGATURE_%s {\n' % markType)
-                    if markType[-3:] in kRTLtagsList:
+                    if markType[-2:] in kRTLtagsList:
                         self.ligatureRelatedBasePosLinesList.append('\tlookupflag RightToLeft;\n\n')
                     self.ligatureRelatedBasePosLinesList.extend(ligatureLinesList)
                     self.ligatureRelatedBasePosLinesList.append('} MARK_LIGATURE_%s;\n\n\n' % markType)
@@ -662,7 +663,7 @@ class MarkDataClass(object):
         anchorGroupList = list(self.anchorsDataInCombMkmksDict.keys())
         anchorGroupList.sort()
         for anchorName in anchorGroupList:
-            if anchorName[-3:] in kRTLtagsList: rtlFlag = 'RightToLeft ' # Check the last two characters of the anchor's name
+            if anchorName[-2:] in kRTLtagsList: rtlFlag = 'RightToLeft ' # Check the last two characters of the anchor's name
             else: rtlFlag = ''
             lookupName = "MKMK_MARK_%s" % anchorName
             markClassName = "@MC_%s" % anchorName

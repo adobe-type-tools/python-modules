@@ -211,7 +211,7 @@ class ReadFontLabClasses(object):
 					rep = glyphList[0]
 
 			if repFound == False:
-				print "\tWARNING: Kerning class %s has no explicit key glyph.\n\tUsing first glyph found (%s)." % (c, rep)
+				print("\tWARNING: Kerning class %s has no explicit key glyph.\n\tUsing first glyph found (%s)." % (c, rep))
 
 			self.groupOrder.append(OTgroupName)
 			self.keyGlyphs[OTgroupName] = rep
@@ -299,13 +299,14 @@ class KernDataClass(object):
 			self.header.append('# PS Name: %s' % self.f.info.postscriptFontName)
 			self.header.append('# MM Inst: %s' % self.f.info.styleMapFamilyName)
 
-			groupsUsedInKerning = self.findGroupsUsedInKerning()
+			self.kerning = self.stripped_kerning(self.f.kerning)
+			groupsUsedInKerning = self.findGroupsUsedInKerning(self.kerning, self.stripped_groups(self.f.groups))
 			self.groups.update(groupsUsedInKerning)
 			self.groupOrder = sorted(self.groups.keys())
 			# self.groupOrder.sort(key=lambda x: (x.split('_')[1], len(x)))
 
 			self.analyzeGroups()
-			self.kerning = self.stripPublicPrefix(self.f.kerning)
+			# self.kerning = self.f.kerning
 
 
 		self.header.append('# MinKern: +/- %s inclusive' % self.minKern)
@@ -314,7 +315,7 @@ class KernDataClass(object):
 
 		self.totalKernPairs = len(self.kerning)
 		if not len(self.kerning):
-			print "\tERROR: The font has no kerning!"
+			print("\tERROR: The font has no kerning!")
 			return
 
 
@@ -324,19 +325,28 @@ class KernDataClass(object):
 		self.sanityCheck()
 		self.writeDataToFile()
 
-
-	def stripPublicPrefix(self, kerningDict):
+	def stripped_kerning(self, kerningDict):
 		newKerningDict = {}
-		for (first, second), value in kerningDict.items():
+		for (first, second), value in list(kerningDict.items()):
 			if 'public.kern1.' in first:
-				first = first.replace('public.kern1.', '')
+				first = first.replace('public.kern1.', '@MMK_L_')
 			if 'public.kern2.' in second:
-				second = second.replace('public.kern2.', '')
+				second = second.replace('public.kern2.', '@MMK_R_')
 			newKerningDict[(first, second)] = value
 		return newKerningDict
 
+	def stripped_groups(self, groupDict):
+		newGroupDict = {}
+		for name, glyphlist in list(groupDict.items()):
+			if 'public.kern1.' in name:
+				name = name.replace('public.kern1.', '@MMK_L_')
+			if 'public.kern2.' in name:
+				name = name.replace('public.kern2.', '@MMK_R_')
+			newGroupDict[name] = glyphlist
+		return newGroupDict
 
-	def findGroupsUsedInKerning(self):
+
+	def findGroupsUsedInKerning(self, kernDict, groupDict):
 		'''
 		Finds all groups used in kerning, and filters all other groups.
 		(e.g. MetricsMachine reference groups).
@@ -344,15 +354,16 @@ class KernDataClass(object):
 		it will likely not be used in a kerning pair.
 		'''
 		kerningGroupDict = {}
-		for (first, second), value in self.f.kerning.items():
-			if 'public.kern1.' in first:
-				first = first.replace('public.kern1.', '')
-			if 'public.kern2.' in second:
-				second = second.replace('public.kern2.', '')
+		for (first, second), value in list(kernDict.items()):
+			# if 'public.kern1.' in first:
+			# 	first = first.replace('public.kern1.', '@MMK_L_')
+			# if 'public.kern2.' in second:
+			# 	second = second.replace('public.kern2.', '@MMK_R_')
 			if self.isGroup(first):
-				kerningGroupDict.setdefault(first, self.f.groups[first])
+				kerningGroupDict.setdefault(first, groupDict[first])
 			if self.isGroup(second):
-				kerningGroupDict.setdefault(second, self.f.groups[second])
+				kerningGroupDict.setdefault(second, groupDict[second])
+
 		return kerningGroupDict
 
 
@@ -365,6 +376,8 @@ class KernDataClass(object):
 	def isGroup(self, name):
 		'Checks for the first character of a group name. Returns True if it is "@" (OT KerningClass).'
 		if name[0] == '@':
+			return True
+		elif name.startswith('public.kern'):
 			return True
 		else:
 			return False
@@ -511,7 +524,7 @@ class KernDataClass(object):
 				data.append(enumstring)
 
 			else:
-				if abs(kernValue) < min:
+				if abs(kernValue) < int(min):
 					if self.writeTrimmed:
 						data.append('# %s' % string)
 					trimmed += 1
@@ -528,7 +541,7 @@ class KernDataClass(object):
 	def analyzeGroups(self):
 		'Uses self.groups for analysis and splitting.'
 		if not len(self.groups):
-			print "\tWARNING: The font has no kerning classes! Trimming switched off."
+			print("\tWARNING: The font has no kerning classes! Trimming switched off.")
 			# If there are no kerning classes present, there is no way to distinguish between
 			# low-value pairs that just result from interpolation; and exception pairs.
 			# Consequently, trimming is switched off here.
@@ -553,9 +566,9 @@ class KernDataClass(object):
 	def processKerningPairs(self):
 		'Sorting the kerning into various buckets.'
 
-		print '\tProcessing kerning pairs...'
+		print('\tProcessing kerning pairs...')
 
-		for (left, right), value in sorted(self.kerning.items()[::-1]):
+		for (left, right), value in sorted(list(self.kerning.items())[::-1]):
 			pair = (left, right)
 
 			# Skip pairs in which the name of the left glyph contains the ignore tag.
@@ -582,7 +595,7 @@ class KernDataClass(object):
 
 		# Quick sanity check
 		if len(self.glyph_group) + len(self.glyph_glyph) + len(self.group_group) != len(self.kerning)-self.notProcessed:
-			print 'Something went wrong: kerning lists do not match the amount of kerning pairs present in the font.'
+			print('Something went wrong: kerning lists do not match the amount of kerning pairs present in the font.')
 
 
 
@@ -851,10 +864,10 @@ class KernDataClass(object):
 		'Checks if the number of kerning pairs input equals the number of kerning entries output.'
 
 		if self.totalKernPairs != self.processedPairs + self.notProcessed: # len(self.allKernPairs) + self.notProcessed - self.numBreaks + self.trimmedPairs:
-			print 'Something went wrong...'
-			print 'Kerning pairs provided: %s' % self.totalKernPairs
-			print 'Kern entries generated: %s' % (self.processedPairs + self.notProcessed)
-			print 'Pairs not processed: %s' % (self.totalKernPairs - (self.processedPairs+self.notProcessed))
+			print('Something went wrong...')
+			print('Kerning pairs provided: %s' % self.totalKernPairs)
+			print('Kern entries generated: %s' % (self.processedPairs + self.notProcessed))
+			print('Pairs not processed: %s' % (self.totalKernPairs - (self.processedPairs+self.notProcessed)))
 
 
 	def writeDataToFile(self):
@@ -864,9 +877,9 @@ class KernDataClass(object):
 		else:
 			kKernFeatureFile = self.fileName
 
-		print '\tSaving %s file...' % kKernFeatureFile
+		print('\tSaving %s file...' % kKernFeatureFile)
 		if self.trimmedPairs > 0:
-			print '\tTrimmed pairs: %s' % self.trimmedPairs
+			print('\tTrimmed pairs: %s' % self.trimmedPairs)
 
 		filePath = os.path.join(self.folder, kKernFeatureFile)
 
@@ -877,7 +890,7 @@ class KernDataClass(object):
 			outfile.write('\n'.join(self.output))
 			outfile.write('\n')
 		outfile.close()
-		if not self.inFL: print '\tOutput file written to %s' % filePath
+		if not self.inFL: print('\tOutput file written to %s' % filePath)
 
 
 
@@ -921,7 +934,7 @@ class MakeSubtables(KernDataClass):
 		'Split class-to-class kerning into subtables.'
 		if self.checkSide == 'first':
 			# Creates 'traditional' subtables, for class-to-class, and class-to-glyph kerning.
-			for pair in self.kernDict.keys()[::-1]:
+			for pair in list(self.kernDict.keys())[::-1]:
 				first, second, tagDict = self.analyzePair(pair)
 
 				for tag in tagDict:
@@ -944,7 +957,7 @@ class MakeSubtables(KernDataClass):
 					kernPartnerLanguageTags[first] = set([])
 				kernPartnerLanguageTags[first].add(self.returnGroupTag(pair[1]))
 
-			for pair in self.kernDict.keys()[::-1]:
+			for pair in list(self.kernDict.keys())[::-1]:
 				first, second, tagDict = self.analyzePair(pair)
 
 				for tag in tagDict:
