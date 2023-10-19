@@ -1,16 +1,45 @@
 #!/usr/bin/env python3
 
 '''
-Kern Feature Writer for the FDK font production workflow.
+This tool exports the kerning and groups data within a UFO to a
+`makeotf`-compatible GPOS kern feature file.
 
-Optional functionality of this tool includes:
+#### Default functionality:
+
+-   writing of a sorted kern.fea file, which organizes pairs in order of
+    specificity (exceptions first, then glyph-to-glyph, then group pairs)
+-   filtering of small pairs (often results of interpolation).
+    Exceptions (even though they may be small) are not filtered.
+-   processing of right-to-left pairs (given that kerning groups containing
+    those glyphs are suffixed with `_ARA`, `_HEB`, or `_RTL`)
+
+#### Optional functionality:
+
+-   dissolving single-element groups into glyph pairs – this helps with
+    subtable optimization, and can be seen as a means to avoid kerning overflow
 -   subtable measuring and automatic insertion of subtable breaks
--   dissolving of single-element groups into glyph pairs
-    (helping with subtable optimization)
--   identify glyph-to-glyph RTL kerning
-    (requirement: all RTL glyphs are part of a RTL-specific kerning group,
-    or are members of the catch-all RTL_KERNING group)
+-   specifying a maximum subtable size
+-   identification of glyph-to-glyph RTL pairs by way of a global `RTL_KERNING`
+    reference group
+-   specifying a glyph name suffix for glyphs to be ignored when writing the
+    kern feature
 
+#### Usage:
+```zsh
+
+    # write a basic kern feature file
+    python kernFeatureWriter.py font.ufo
+
+    # write a kern feature file with minimum absolute kerning value of 5
+    python kernFeatureWriter.py -min 5 font.ufo
+
+    # write a kern feature with subtable breaks
+    python kernFeatureWriter.py -s font.ufo
+
+    # further usage information
+    python kernFeatureWriter.py -h
+
+```
 '''
 
 import argparse
@@ -22,13 +51,11 @@ from pathlib import Path
 
 
 # constants
-
 RTL_GROUP = 'RTL_KERNING'
 RTL_TAGS = ['_ARA', '_HEB', '_RTL']
 
 
 # helpers
-
 def is_group(item_name):
     '''
     Check if an item name implies a group.

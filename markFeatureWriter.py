@@ -1,8 +1,63 @@
 #!/usr/bin/env python3
 
 '''
-Mark Feature Writer for the FDK font production workflow.
+This tool interprets glyphs and anchor points within a UFO to write a
+`makeotf`-compatible GPOS mark feature file.
 
+The input UFO file needs to have base glyphs and zero-width combining
+marks. Base- and mark glyphs attach via anchor pairs (e.g. `above` and
+`_above`, or `top`, and `_top`).
+Combining marks must be members of a `COMBINING_MARKS` reference group.
+
+#### Default functionality:
+
+-   writing a `mark.fea` file, which contains mark classes/groups, and
+    per-anchor mark-to-base positioning lookups (GPOS lookup type 4)
+-   writing mark-to-ligature positioning lookups (GPOS lookup type 5).
+    This requires anchor names to be suffixed with an ordinal (`1ST`, `2ND`,
+    `3RD`, etc). For example – if a mark with an `_above` anchor is to be
+    attached to a ligature, the ligature’s anchor names would be `above1ST`,
+    `above2ND`, etc – depending on the amount of ligature elements.
+
+#### Optional functionality:
+
+-   writing `mkmk.fea`, for mark-to-mark positioning (GPOS lookup type 6)
+-   writing `abvm.fea`/`blwm.fea` files, as used in Indic scripts (anchor pairs
+    are `abvm`, `_abvm`, and `blwm`, `_blwm`, respectively)
+-   writing mark classes into a separate file (in case classes need to be
+    shared across multiple lookup types)
+-   trimming casing tags (`UC`, `LC`, or `SC`)
+
+    Trimming tags is a somewhat specific feature, but it is quite essential:
+    In a UFO, anchors can be used to build composite glyphs – for example
+    `aacute`, and `Aacute`. Since those glyphs would often receive a
+    differently-shaped accent, the anchor pairs (on bases `a`/`A` and
+    marks `acutecmb`/`acutecmb.cap`) would be `aboveLC`/`_aboveLC`, and
+    `aboveUC/_aboveUC`, respectively.
+
+    When writing the mark feature, we care more about which group of combining
+    marks triggers a certain behavior, so removing those casing tags allows
+    grouping all `_above` marks together, hence attaching to a base glyph –
+    no matter if it is upper- or lowercase. The aesthetic substitution of the
+    mark (e.g. smaller mark on the uppercase letter) can happen later, in the
+    `ccmp` feature.
+
+#### Usage:
+```zsh
+
+    # write a basic mark feature
+    python markFeatureWriter.py font.ufo
+
+    # write mark and mkmk feature files
+    python markFeatureWriter.py -m font.ufo
+
+    # trim casing tags
+    python markFeatureWriter.py -t font.ufo
+
+    # further usage information
+    python markFeatureWriter.py -h
+
+```
 '''
 
 import argparse
