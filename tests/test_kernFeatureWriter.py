@@ -349,6 +349,21 @@ def test_ignored_groups():
     assert read_file(fea_example) == read_file(fea_temp)
 
 
+def test_no_groups():
+    '''
+    input file with no groups at all
+    '''
+    ufo_path = TEST_DIR / 'kern_no_groups.ufo'
+    fea_example = TEST_DIR / 'kern_no_groups.fea'
+    fea_temp = TEMP_DIR / fea_example.name
+    f = defcon.Font(ufo_path)
+    args = Defaults()
+    args.input_file = ufo_path
+    args.output_name = fea_temp
+    run(f, args)
+    assert read_file(fea_example) == read_file(fea_temp)
+
+
 def test_ss4_exceptions():
     '''
     This contains most exceptions from SS4.
