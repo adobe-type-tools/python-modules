@@ -123,7 +123,7 @@ The benefit of this is that different feature flags can be used ([example](https
 
 ## [utilities (folder `/utilities`)](/utilities)
 
-* `kernExport.py`  
+* `flKernExport.py`  
 FLS5 script to export class kerning to UFO. Superseded by [vfb3ufo](https://github.com/LucasFonts/vfbLib).
 
 
