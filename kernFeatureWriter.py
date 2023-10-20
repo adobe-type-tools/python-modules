@@ -905,6 +905,15 @@ class run(object):
         print(f'Output file written to {output_path}')
 
 
+def check_input_file(parser, file_name):
+    fn = Path(file_name)
+    if fn.suffix.lower() != '.ufo':
+        parser.error(f'{fn.name} is not a UFO file')
+    if not fn.exists():
+        parser.error(f'{fn.name} does not exist')
+    return file_name
+
+
 def get_args(args=None):
 
     defaults = Defaults()
@@ -912,9 +921,11 @@ def get_args(args=None):
         description=__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
+
     parser.add_argument(
         'input_file',
-        help='input font file')
+        type=lambda f: check_input_file(parser, f),
+        help='input UFO file')
 
     parser.add_argument(
         '-o', '--output_name',
@@ -979,13 +990,8 @@ def get_args(args=None):
 
 def main(test_args=None):
     args = get_args(test_args)
-    f_path = Path(args.input_file)
-    if f_path.exists():
-        f = defcon.Font(f_path)
-        run(f, args)
-
-    else:
-        print(f_path, 'does not exist.')
+    f = defcon.Font(args.input_file)
+    run(f, args)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 import defcon
+import pytest
 import sys
 
 from afdko.fdkutils import get_temp_dir_path
@@ -34,9 +35,12 @@ def read_file(path):
 # ----------
 
 def test_get_args():
-    argparse_args = vars(get_args(['dummy']))  # args through argparse
-    dummy_args = Defaults().__dict__  # hard-coded dummy arguments
-    dummy_args['input_file'] = 'dummy'
+    # args through argparse
+    input_ufo = str(TEST_DIR / 'kern_example.ufo')
+    argparse_args = vars(get_args([input_ufo]))
+    # hard-coded dummy arguments
+    dummy_args = Defaults().__dict__
+    dummy_args['input_file'] = input_ufo
     assert argparse_args == dummy_args
 
 
@@ -225,17 +229,30 @@ def test_main():
     assert read_file(fea_example) == read_file(fea_temp)
 
 
-def test_main_invalid_input_file(capsys):
+def test_phantom_input_ufo(capsys):
+    '''
+    non-existent input UFO
+    '''
+    ufo_path = TEST_DIR / 'phantom.ufo'
+    args = Defaults()
+    args.input_file = ufo_path
+    with pytest.raises(SystemExit):
+        main([str(ufo_path)])
+    out, err = capsys.readouterr()
+    assert 'phantom.ufo does not exist' in err
+
+
+def test_invalid_input_file(capsys):
     '''
     invalid input file
     '''
-    ufo_path = TEST_DIR / 'invalid_input_file.ufo'
+    ufo_path = TEST_DIR / 'some_file.xxx'
     args = Defaults()
     args.input_file = ufo_path
-    main([str(ufo_path)])
+    with pytest.raises(SystemExit):
+        main([str(ufo_path)])
     out, err = capsys.readouterr()
-
-    assert 'does not exist' in out
+    assert 'some_file.xxx is not a UFO file' in err
 
 
 def test_default_rtl():

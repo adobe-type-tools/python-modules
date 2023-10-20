@@ -92,6 +92,15 @@ class Defaults(object):
         self.mkgrp_name = 'COMBINING_MARKS'
 
 
+def check_input_file(parser, file_name):
+    fn = Path(file_name)
+    if fn.suffix.lower() != '.ufo':
+        parser.error(f'{fn.name} is not a UFO file')
+    if not fn.exists():
+        parser.error(f'{fn.name} does not exist')
+    return file_name
+
+
 def get_args(args=None):
 
     defaults = Defaults()
@@ -104,6 +113,7 @@ def get_args(args=None):
 
     parser.add_argument(
         'input_file',
+        type=lambda f: check_input_file(parser, f),
         help='input UFO file')
 
     parser.add_argument(
