@@ -11,7 +11,7 @@ This tool exports the kerning and groups data within a UFO to a
 
 -   writing of a sorted kern.fea file, which organizes pairs in order of
     specificity (exceptions first, then glyph-to-glyph, then group pairs)
--   filtering of small pairs (often results of interpolation).
+-   filtering of small pairs (often results of interpolation).  
     Exceptions (even though they may be small) are not filtered.
 -   processing of right-to-left pairs (given that kerning groups containing
     those glyphs are suffixed with `_ARA`, `_HEB`, or `_RTL`)
@@ -116,7 +116,7 @@ feature kern{
 } kern;
 ```
 
-The benefit of this is that different feature flags can be used (example)[https://github.com/adobe-fonts/source-serif/blob/main/familyGPOS.fea#L12-L13]. Also, the (sometimes volatile) GPOS feature data can be re-generated periodically without affecting the overal structure of the feature tree.
+The benefit of this is that different feature flags can be used ([example](https://github.com/adobe-fonts/source-serif/blob/main/familyGPOS.fea#L12-L13)), or that mark groups can be shared across `mark`/`mkmk` features. Also, the (sometimes volatile) GPOS feature data can be re-generated periodically without affecting the overall structure of the feature tree.
 
 
 ----
