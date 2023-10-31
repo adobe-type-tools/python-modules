@@ -3,6 +3,13 @@
 AFDKO Python Modules
 ====================
 
+### Installation
+
+```
+pip3 install git+https://github.com/adobe-type-tools/python-modules
+```
+
+
 ## `kernFeatureWriter.py`
 This tool exports the kerning and groups data within a UFO to a
 `makeotf`-compatible GPOS kern feature file.
