@@ -48,6 +48,9 @@ Combining marks must be members of a `COMBINING_MARKS` reference group.
     # write a basic mark feature
     python markFeatureWriter.py font.ufo
 
+    # write mark feature for all sources and instances in a designspace file
+    python markFeatureWriter.py dummy.designspace
+
     # write mark and mkmk feature files
     python markFeatureWriter.py -m font.ufo
 
@@ -63,6 +66,7 @@ Combining marks must be members of a `COMBINING_MARKS` reference group.
 import argparse
 import sys
 from defcon import Font
+from fontTools.designspaceLib import DesignSpaceDocument
 from pathlib import Path
 
 # ligature anchors end with 1ST, 2ND, 3RD, etc.
@@ -94,8 +98,8 @@ class Defaults(object):
 
 def check_input_file(parser, file_name):
     fn = Path(file_name)
-    if fn.suffix.lower() != '.ufo':
-        parser.error(f'{fn.name} is not a UFO file')
+    if fn.suffix.lower() not in ['.designspace', '.ufo']:
+        parser.error(f'{fn.name} is not a valid input file')
     if not fn.exists():
         parser.error(f'{fn.name} does not exist')
     return file_name
@@ -248,8 +252,16 @@ class MarkFeatureWriter(object):
         self.write_classes = args.write_classes
 
         if args.input_file:
-            ufo_path = Path(args.input_file)
-            self.run(ufo_path)
+            input_path = Path(args.input_file)
+            if input_path.suffix == '.designspace':
+                doc = DesignSpaceDocument.fromfile(input_path)
+                ds_ufos = doc.sources + doc.instances
+                for ds_ufo in ds_ufos:
+                    ufo_path = Path(ds_ufo.path).resolve()
+                    self.run(ufo_path)
+            else:
+                # UFO
+                self.run(input_path)
 
     def run(self, ufo_path):
         f = Font(ufo_path)
