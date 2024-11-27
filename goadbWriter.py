@@ -1,0 +1,408 @@
+#!/usr/bin/env python3
+
+'''
+GOADB writer -- write a GOADB file using a UFO as an input.
+Relies on the agl glyph names which come in fontTools’ agl module.
+
+More reading on the GOADB format:
+https://github.com/adobe-type-tools/afdko/issues/1662
+https://github.com/adobe-type-tools/afdko/issues/1273
+
+
+'''
+
+import argparse
+import re
+from fontTools import agl
+from defcon import Font, Glyph
+
+
+def get_args():
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+    )
+
+    parser.add_argument(
+        '-t', '--template',
+        action='store_true',
+        default=False,
+        help='include template glyphs in GOADB',
+    )
+
+    parser.add_argument(
+        '-o', '--output',
+        action='store',
+        help='output file. If not defined, the GOABD is written to stdout.',
+        default=None,
+    )
+
+    parser.add_argument(
+        'ufo',
+        action='store',
+        help='UFO file',
+    )
+
+    return parser.parse_args()
+
+
+def get_glyph_order(f, include_template_glyphs=False):
+    '''
+    Figure out the glyph order.
+    * make sure .notdef is first,
+    * respect skipExportGlyphs,
+    * include (un-filled) template glyphs if desired
+
+    In the case that the public.glyphOrder key does not exist, resort to
+    unrefined sorting:
+    * by code point (if encoded)
+    * alphabetically by name (if unencoded)
+
+    NB: defcon and RF have different ways of determining template glyphs.
+    in defcon, f.glyphOrder includes template glyphs
+    in RF, f.glyphOrder excludes them
+    '''
+
+    glyph_order = f.glyphOrder
+    skip = f.lib.get('public.skipExportGlyphs', [])
+    if glyph_order:
+        if include_template_glyphs:
+            order_wo_notdef = [
+                gn for gn in glyph_order if
+                gn != '.notdef' and
+                gn not in skip]
+        else:
+            # only filled-in glyphs, not template glyphs
+            order_wo_notdef = [
+                gn for gn in glyph_order if
+                gn in f.keys() and
+                gn != '.notdef' and
+                gn not in skip
+            ]
+
+        order = ['.notdef'] + order_wo_notdef
+
+    else:
+        # first, all encoded glyphs are sorted by code point
+        # then, the rest is sorted alphabetically.
+        glyphs_encoded = sorted(
+            [g for g in f if g.unicode], key=lambda g: g.unicode)
+        glyphs_unencoded = sorted(
+            [g for g in f if g.unicode is None and g.name != '.notdef'],
+            key=lambda g: g.name)
+        order = (
+            ['.notdef'] +
+            [g.name for g in glyphs_encoded] +
+            [g.name for g in glyphs_unencoded])
+
+    return order
+
+
+def is_agl_name(input_name):
+    return input_name in agl.AGL2UV.keys()
+
+
+def get_uni_name(cp):
+    '''
+    convert codepoint to uniXXXX (or uXXXXX) glyph name
+    '''
+    if cp <= 0xFFFF:
+        uni_name = f'uni{cp:0>4X}'
+    else:
+        uni_name = f'u{cp:0>5X}'
+    return uni_name
+
+
+def get_uni_override(cp_list):
+    '''
+    comma-separated Unicode override string
+    '''
+    if len(cp_list) == 1:
+        unicode_override = get_uni_name(cp_list[0])
+    else:
+        # more than one codepoint
+        unicode_override = ','.join([get_uni_name(cp) for cp in cp_list])
+    return unicode_override
+
+
+def make_unique_final_name(gname):
+    '''
+    Since final glyph names need to be sanitized, a duplication of final glyph
+    names is possible. This adds a 4-digit index to the glyph name.
+
+    If the glyph name has already a 4-digit index, the index is incremented.
+    '''
+
+    # glyph name already has an index
+    index_match = re.match(r'(.+?)(\d{4})', gname)
+    if index_match:
+        gname_stem = index_match.group(1)
+        index = int(index_match.group(2)) + 1
+    # no index yet
+    else:
+        gname_stem = gname
+        index = 0
+    return f'{gname_stem}{index:0>4}'
+
+
+def sanitize_final_name(gname):
+    '''
+    The following characters are allowed in friendly but not in final names:
+    U+002A * asterisk
+    U+002B + plus sign
+    U+002D - hyphen-minus
+    U+003A : colon
+    U+005E ^ circumflex accent
+    U+007C | vertical bar
+    U+007E ~ tilde
+
+    In addition to that, final glyph names
+    * may not start with a period
+    * may not start with a digit
+
+    see also
+    https://adobe-type-tools.github.io/afdko/OpenTypeFeatureFileSpecification.html#2fi-glyph-name
+    '''
+    sorts = '*+-:^|~._'
+    alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    digits = '0123456789'
+
+    # remove any unexpected chars
+    chars_allowed = (alphabet + alphabet.lower() + digits + sorts)
+    chars_illegal = sorted(set(gname) - set(chars_allowed))
+    if chars_illegal:
+        for char in chars_illegal:
+            gname = gname.replace(char, '')
+
+    # remove any chars not allowed in final names
+    for char in '*+-:^|~':
+        gname = gname.replace(char, '')
+
+    # make sure final name does not start with period (except .notdef)
+    if gname.startswith('.') and gname != '.notdef':
+        gname = gname[1:]
+
+    # make sure name does not start with digit
+    figure_match = re.match(r'\d+?(\D*)', gname)
+    if figure_match:
+        gname = figure_match.group(1)
+
+    if gname == '':  # nothing left, original name all digits (or illegal)
+        gname = 'dummy'
+
+    return gname
+
+
+class GlyphBaptism(object):
+    '''
+    Simple deduction of final glyph name.
+    Not dealing with ligatures/alternates here.
+
+    Either
+    - glyph name is in the AGD, and makeotf finds the code point that way
+    - glyph name is not in the AGD, but the glyph has attached code point(s)
+    - glyph name implies a code point
+    - glyph is not encoded
+
+    '''
+
+    def __init__(self, gn_friendly, glyph=None, gn_final=None, cp_override=None):
+        if glyph is None:
+            self.glyph = Glyph()
+        else:
+            self.glyph = glyph
+
+        self.gn_friendly = gn_friendly
+        self.gn_final = gn_final
+        self.cp_override = cp_override
+
+        # this is the normal expectation for most glyphs
+        if self.gn_final is None:
+            self.assign_final_and_cp_override()
+            self.gn_final = sanitize_final_name(self.gn_final)
+
+        # in other cases (alternates/ligatures), we generate the final name
+        # outside, and use this object for data storage only.
+
+    def assign_final_and_cp_override(self):
+        rx_uni_name = r'(?:u|uni)?([0-9A-F]{4,5}).*'  # ?: is non-capturing
+        uni_name_match = re.match(rx_uni_name, self.gn_friendly)
+
+        # glyph name is in AGL
+        if is_agl_name(self.gn_friendly):
+            if self.glyph.unicodes == []:
+                # no codepoint assigned to glyph, codepoint will be assigned
+                # through the glyph name only
+                self.gn_final = self.gn_friendly
+            elif len(self.glyph.unicodes) > 1:
+                # glyph name is in AGL, but multiple code points attached;
+                # override is needed
+                self.gn_final = self.gn_friendly
+                self.cp_override = get_uni_override(self.glyph.unicodes)
+            else:
+                # just one codepoint
+                expected_codepoint = agl.AGL2UV.get(self.gn_friendly)
+                actual_codepoint = self.glyph.unicode
+                if expected_codepoint == actual_codepoint:
+                    # codepoint is the expected one.
+                    self.gn_final = self.gn_friendly
+                else:
+                    # codepoint is different from what we expect
+                    self.gn_final = get_uni_name(self.glyph.unicode)
+
+        # glyph name implies Unicode value (uniXXXX or uXXXXX)
+        elif uni_name_match:
+            cp_hex = uni_name_match.group(1)
+            if self.glyph.unicodes == []:
+                # no codepoint assigned to glyph, codepoint will be assigned
+                # through the glyph name only
+                self.gn_final = self.gn_friendly
+            elif len(self.glyph.unicodes) > 1:
+                # glyph name implies one code point, but multiple code points
+                # are attached -- override needed.
+                # Overriding a uniXXXX name used to be a makeotf problem, but
+                # this has been solved here:
+                # https://github.com/adobe-type-tools/afdko/pull/1615
+                self.gn_final = self.gn_friendly
+                self.cp_override = get_uni_override(self.glyph.unicodes)
+            else:
+                # just one codepoint
+                expected_codepoint = int(cp_hex, 16)
+                actual_codepoint = self.glyph.unicode
+                if expected_codepoint == actual_codepoint:
+                    # codepoint is the expected one.
+                    self.gn_final = self.gn_friendly
+                else:
+                    # codepoint is different from what we expect
+                    # (weird but OK)
+                    self.gn_final = get_uni_name(self.glyph.unicode)
+
+        # custom glyph name
+        else:
+            if self.glyph.unicodes == []:
+                # no codepoint assigned to glyph, unencoded glyph
+                self.gn_final = self.gn_friendly
+            elif len(self.glyph.unicodes) > 1:
+                # multiple code points are attached -- override needed
+                self.gn_final = self.gn_friendly
+                self.cp_override = get_uni_override(self.glyph.unicodes)
+            else:
+                # just one codepoint, the final name will tell makeotf about it
+                self.gn_final = get_uni_name(self.glyph.unicode)
+
+
+def fill_gn_dict(gb, glyph_name_dict):
+    '''
+    This slightly awkward method of adding values to a dictionary ensures that
+    the final glyph name is unique.
+    '''
+    final_name = gb.gn_final
+    while final_name in [gb.gn_final for gb in glyph_name_dict.values()]:
+        final_name = make_unique_final_name(final_name)
+    gb.gn_final = final_name
+    glyph_name_dict[gb.gn_friendly] = gb
+    return glyph_name_dict
+
+
+def make_glyph_name_dict(f):
+    '''
+    make a dictionary:
+        {friendly name: gb object}
+
+    the gb (GlyphBaptism) object contains:
+        .gn_final (name)
+        .gn_friendly (name)
+        .cp_override (unicode override(s) as a string)
+        .glyph (glyph object)
+    '''
+
+    glyph_name_dict = {
+        '.notdef': GlyphBaptism('.notdef', gn_final='.notdef')
+    }
+
+    # break the glyphs down into three categories:
+    # 1. any glyphs that are neither ligatures nor alternates
+    # 2. alternate glyphs (which are not also ligatures) (. but not _ in name)
+    # 3. ligatures (_ in name)
+
+    # The thinking behind (2) is that ligatures like f_f_l.alt are possible.
+    # It’s a bit of a confusing glyph name -- does this mean that l is an
+    # alternate, or is it an alternate ligature in itself?
+    # I interpret it as a combination of two fs and one l.alt.
+
+    base_glyphs = [g for g in f if not any(['.' in g.name, '_' in g.name])]
+    alt_glyphs = [
+        g for g in f if '.' in g.name and
+        '_' not in g.name and
+        g.name != '.notdef']
+    liga_glyphs = {g for g in f if '_' in g.name}
+
+    for g in base_glyphs:
+        gb = GlyphBaptism(g.name, g)
+        glyph_name_dict = fill_gn_dict(gb, glyph_name_dict)
+
+    for g in alt_glyphs:
+        stem, suffixes = g.name.split('.', 1)
+        if stem in glyph_name_dict:
+            final_name_stem = glyph_name_dict.get(stem).gn_final
+            final_name = f'{final_name_stem}.{suffixes}'
+            gb = GlyphBaptism(g.name, g, gn_final=final_name)
+
+        else:
+            gb = GlyphBaptism(g.name, g)
+            final_name = gb.gn_final
+
+        if g.unicodes:
+            # the alt glyph itself may have a codepoint
+            gb.cp_override = get_uni_override(g.unicodes)
+
+        glyph_name_dict = fill_gn_dict(gb, glyph_name_dict)
+
+    for g in liga_glyphs:
+        liga_chunks = g.name.split('_')
+        liga_chunks_final = []
+        for chunk in liga_chunks:
+            if chunk in glyph_name_dict:
+                # chunk with known glyph name
+                final_name_chunk = glyph_name_dict.get(chunk).gn_final
+            else:
+                # chunk with unknown glyph name
+                final_name_chunk = GlyphBaptism(chunk).gn_final
+            liga_chunks_final.append(final_name_chunk)
+        final_name = '_'.join(liga_chunks_final)
+        gb = GlyphBaptism(g.name, g, gn_final=final_name)
+
+        if g.unicodes:
+            # some ligatures have codepoints
+            gb.cp_override = get_uni_override(g.unicodes)
+
+        glyph_name_dict = fill_gn_dict(gb, glyph_name_dict)
+
+    return glyph_name_dict
+
+
+def get_goadb(glyph_order, glyph_name_dict):
+    goadb = []
+    for gname in glyph_order:
+        gb = glyph_name_dict.get(gname)
+        goadb_line = [gb.gn_final, gb.gn_friendly]
+        if gb.cp_override:
+            goadb_line.append(gb.cp_override)
+        goadb.append('\t'.join(goadb_line))
+    return '\n'.join(goadb)
+
+
+def main():
+    args = get_args()
+    f = Font(args.ufo)
+    glyph_order = get_glyph_order(f, args.template)
+    glyph_name_dict = make_glyph_name_dict(f)
+    goadb = get_goadb(glyph_order, glyph_name_dict)
+    if args.output:
+        with open(args.output, 'w') as blob:
+            blob.write(goadb)
+    else:
+        print(goadb)
+
+
+if __name__ == '__main__':
+    main()
