@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>public.glyphOrder</key>
+		<array>
+			<string>A</string>
+			<string>B</string>
+			<string>C</string>
+			<string>Zacute</string>
+			<string>asd</string>
+			<string>asdasd</string>
+			<string>eiurwoue</string>
+			<string>.notdef</string>
+			<string>Zglibber</string>
+			<string>Zglibber.alt</string>
+			<string>uni6666</string>
+			<string>uni6667</string>
+			<string>uni6669</string>
+			<string>uniFFFF</string>
+			<string>u10000</string>
+			<string>Zglibber.01</string>
+			<string>Zglibber.02</string>
+			<string>Z-glibber</string>
+			<string>A_B</string>
+			<string>idieresistonos</string>
+			<string>idieresistonos.alt</string>
+			<string>idieresistonos.alt_idieresistonos</string>
+			<string>.illegal</string>
+			<string>2cents</string>
+			<string>666</string>
+			<string>667</string>
+			<string>f_f_idieresistonos</string>
+			<string>f_f_i</string>
+			<string>668</string>
+			<string>669</string>
+			<string>wät</string>
+			<string>🥳</string>
+			<string>beyondFFFF</string>
+			<string>multitude</string>
+			<string>zero</string>
+			<string>zero.sups</string>
+		</array>
+	</dict>
+</plist>

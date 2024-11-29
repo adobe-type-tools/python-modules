@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 '''
-GOADB writer -- write a GOADB file using a UFO as an input.
+GOADB writer -- write a GlyphOrderAndAliasDB file using a UFO as an input.
 Relies on the agl glyph names which come in fontTools’ agl module.
 
 More reading on the GOADB format:
@@ -13,11 +13,21 @@ https://github.com/adobe-type-tools/afdko/issues/1273
 
 import argparse
 import re
+from pathlib import Path
 from fontTools import agl
 from defcon import Font, Glyph
 
 
-def get_args():
+def check_input_file(parser, file_name):
+    fn = Path(file_name)
+    if fn.suffix.lower() != '.ufo':
+        parser.error(f'{fn.name} is not a UFO file')
+    if not fn.exists():
+        parser.error(f'{fn.name} does not exist')
+    return file_name
+
+
+def get_args(args=None):
     parser = argparse.ArgumentParser(
         description=__doc__,
     )
@@ -37,12 +47,13 @@ def get_args():
     )
 
     parser.add_argument(
-        'ufo',
+        'input_file',
+        type=lambda f: check_input_file(parser, f),
         action='store',
         help='UFO file',
     )
 
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
 def get_glyph_order(f, include_template_glyphs=False):
@@ -54,8 +65,9 @@ def get_glyph_order(f, include_template_glyphs=False):
 
     In the case that the public.glyphOrder key does not exist, resort to
     unrefined sorting:
-    * by code point (if encoded)
-    * alphabetically by name (if unencoded)
+    * encoded: by code point
+    * unencoded: following code point sorting (deduced by glyph name)
+    * unencoded: alphabetically by name (for the rest)
 
     NB: defcon and RF have different ways of determining template glyphs.
     in defcon, f.glyphOrder includes template glyphs
@@ -84,15 +96,32 @@ def get_glyph_order(f, include_template_glyphs=False):
     else:
         # first, all encoded glyphs are sorted by code point
         # then, the rest is sorted alphabetically.
+
+        # all glyphs
         glyphs_encoded = sorted(
             [g for g in f if g.unicode], key=lambda g: g.unicode)
-        glyphs_unencoded = sorted(
-            [g for g in f if g.unicode is None and g.name != '.notdef'],
-            key=lambda g: g.name)
-        order = (
-            ['.notdef'] +
-            [g.name for g in glyphs_encoded] +
-            [g.name for g in glyphs_unencoded])
+        gnames_encoded = [g.name for g in glyphs_encoded]
+
+        glyphs_unencoded = [
+            g for g in f if g.unicode is None and g.name != '.notdef']
+
+        # more specific sub-groups:
+        # glyphs which alternates of the encoded glyphs
+        glyphs_alternates = [
+            g for g in glyphs_unencoded if
+            g.name.split('.')[0] in gnames_encoded]
+        # sort names by their suffix first,
+        # then by the order of related names of encoded glyphs.
+        gnames_alternates = sorted(
+            [g.name for g in glyphs_alternates],
+            key=lambda gn: (gn.split('.')[1], gnames_encoded.index(gn.split('.')[0])))
+
+        # glyphs not related to encoded glyphs are sorted alphabetically
+        glyphs_rest = [
+            g for g in glyphs_unencoded if g not in glyphs_alternates]
+        gnames_rest = sorted([g.name for g in glyphs_rest])
+
+        order = ['.notdef'] + gnames_encoded + gnames_alternates + gnames_rest
 
     return order
 
@@ -205,11 +234,11 @@ class GlyphBaptism(object):
 
     '''
 
-    def __init__(self, gn_friendly, glyph=None, gn_final=None, cp_override=None):
-        if glyph is None:
+    def __init__(self, gn_friendly, g=None, gn_final=None, cp_override=None):
+        if g is None:
             self.glyph = Glyph()
         else:
-            self.glyph = glyph
+            self.glyph = g
 
         self.gn_friendly = gn_friendly
         self.gn_final = gn_final
@@ -269,11 +298,11 @@ class GlyphBaptism(object):
                 expected_codepoint = int(cp_hex, 16)
                 actual_codepoint = self.glyph.unicode
                 if expected_codepoint == actual_codepoint:
-                    # codepoint is the expected one.
+                    # codepoint is the expected one
                     self.gn_final = self.gn_friendly
                 else:
-                    # codepoint is different from what we expect
-                    # (weird but OK)
+                    # codepoint is different from what the name implies
+                    # (weird flex but OK)
                     self.gn_final = get_uni_name(self.glyph.unicode)
 
         # custom glyph name
@@ -303,7 +332,17 @@ def fill_gn_dict(gb, glyph_name_dict):
     return glyph_name_dict
 
 
-def make_glyph_name_dict(f):
+def get_glyph(f, gname):
+    try:
+        glyph = f[gname]
+    except KeyError:
+        # template glyph
+        glyph = Glyph()
+        glyph.name = gname
+    return glyph
+
+
+def make_glyph_name_dict(f, glyph_order):
     '''
     make a dictionary:
         {friendly name: gb object}
@@ -329,18 +368,19 @@ def make_glyph_name_dict(f):
     # alternate, or is it an alternate ligature in itself?
     # I interpret it as a combination of two fs and one l.alt.
 
-    base_glyphs = [g for g in f if not any(['.' in g.name, '_' in g.name])]
+    base_glyphs = [gn for gn in glyph_order if not any(['.' in gn, '_' in gn])]
     alt_glyphs = [
-        g for g in f if '.' in g.name and
-        '_' not in g.name and
-        g.name != '.notdef']
-    liga_glyphs = {g for g in f if '_' in g.name}
+        gn for gn in glyph_order if '.' in gn and '_' not in gn and
+        gn != '.notdef']
+    liga_glyphs = [gn for gn in glyph_order if '_' in gn]
 
-    for g in base_glyphs:
+    for gn in base_glyphs:
+        g = get_glyph(f, gn)
         gb = GlyphBaptism(g.name, g)
         glyph_name_dict = fill_gn_dict(gb, glyph_name_dict)
 
-    for g in alt_glyphs:
+    for gn in alt_glyphs:
+        g = get_glyph(f, gn)
         stem, suffixes = g.name.split('.', 1)
         if stem in glyph_name_dict:
             final_name_stem = glyph_name_dict.get(stem).gn_final
@@ -357,7 +397,8 @@ def make_glyph_name_dict(f):
 
         glyph_name_dict = fill_gn_dict(gb, glyph_name_dict)
 
-    for g in liga_glyphs:
+    for gn in liga_glyphs:
+        g = get_glyph(f, gn)
         liga_chunks = g.name.split('_')
         liga_chunks_final = []
         for chunk in liga_chunks:
@@ -380,7 +421,7 @@ def make_glyph_name_dict(f):
     return glyph_name_dict
 
 
-def get_goadb(glyph_order, glyph_name_dict):
+def build_goadb(glyph_order, glyph_name_dict):
     goadb = []
     for gname in glyph_order:
         gb = glyph_name_dict.get(gname)
@@ -391,12 +432,12 @@ def get_goadb(glyph_order, glyph_name_dict):
     return '\n'.join(goadb)
 
 
-def main():
-    args = get_args()
-    f = Font(args.ufo)
+def main(test_args=None):
+    args = get_args(test_args)
+    f = Font(args.input_file)
     glyph_order = get_glyph_order(f, args.template)
-    glyph_name_dict = make_glyph_name_dict(f)
-    goadb = get_goadb(glyph_order, glyph_name_dict)
+    glyph_name_dict = make_glyph_name_dict(f, glyph_order)
+    goadb = build_goadb(glyph_order, glyph_name_dict)
     if args.output:
         with open(args.output, 'w') as blob:
             blob.write(goadb)

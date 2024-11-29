@@ -1,0 +1,36 @@
+.notdef	.notdef
+A	A
+B	B
+uni0815	C
+Zacute	Zacute	uni0179,uni017A
+asd	asd
+asdasd	asdasd
+eiurwoue	eiurwoue
+uni348F	Zglibber
+uni348F.alt	Zglibber.alt
+uni6666	uni6666
+uni6668	uni6667
+uni6669	uni6669
+uniFFFF	uniFFFF	uni8888,uni8889
+u10000	u10000
+uni348F.01	Zglibber.01
+uni348F.02	Zglibber.02
+Zglibber	Z-glibber
+A_B	A_B
+uni0390	idieresistonos
+uni0390.alt	idieresistonos.alt
+uni0390.alt_uni0390	idieresistonos.alt_idieresistonos
+illegal	.illegal
+cents	2cents
+dummy	666
+dummy0000	667
+f_f_uni0390	f_f_idieresistonos
+f_f_i	f_f_i	uniFB03
+dummy0001	668
+dummy0002	669
+wt	wät
+dummy0003	🥳
+u55555	beyondFFFF
+multitude	multitude	uni0061,uni0062,uni0063,uni0064,uni0065,uni0066,uni0067,uni0068,uni0069,uni006A,uni006B,uni006C,uni006D,uni006E,uni006F,uni0070,uni0071,uni0072,uni0073,uni0074,uni0075,uni0076,uni0077,uni0078,uni0079,uni007A
+zero	zero
+zero.sups	zero.sups	uni2070
