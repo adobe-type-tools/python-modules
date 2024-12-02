@@ -202,12 +202,9 @@ def get_uni_name(cp):
 def get_uni_override(cp_list):
     '''
     comma-separated Unicode override string
+    (or a single string if len(cp_list) == 1)
     '''
-    if len(cp_list) == 1:
-        unicode_override = get_uni_name(cp_list[0])
-    else:
-        # more than one codepoint
-        unicode_override = ','.join([get_uni_name(cp) for cp in cp_list])
+    unicode_override = ','.join([get_uni_name(cp) for cp in cp_list])
     return unicode_override
 
 
@@ -216,7 +213,7 @@ def make_unique_final_name(gname):
     Since final glyph names need to be sanitized, a duplication of final glyph
     names is possible. This adds a 4-digit index to the glyph name.
 
-    If the glyph name has already a 4-digit index, the index is incremented.
+    If the glyph name already has a 4-digit index, the index is incremented.
     '''
 
     # glyph name already has an index
@@ -285,9 +282,9 @@ class GlyphBaptism(object):
     Not dealing with ligatures/alternates here.
 
     Either
-    - glyph name is in the AGD, and makeotf finds the code point that way
+    - glyph name is in the AGD dict, makeotf associates the code point
     - glyph name is not in the AGD, but the glyph has attached code point(s)
-    - glyph name implies a code point
+    - glyph name implies a code point (uniXXXX or uXXXXX)
     - glyph is not encoded
 
     '''
