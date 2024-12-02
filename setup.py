@@ -8,7 +8,7 @@ with open("README.md", "r", encoding="utf-8") as readme:
 setup(
     name="afdko-python-modules",
     use_scm_version=True,
-    description="Modules for writing kern feature and mark feature files",
+    description="Tools for writing GOADB, kern feature, and mark feature files",
     long_description=long_description,
     author="Frank Grießhammer",
     author_email="afdko@adobe.com",
@@ -18,11 +18,13 @@ setup(
     setup_requires=["setuptools_scm"],
     python_requires=">=3.6",
     py_modules=[
+        "goadbWriter",
         "kernFeatureWriter",
         "markFeatureWriter",
     ],
     entry_points={
         'console_scripts': [
+            'goadbWriter=goadbWriter:main',
             'kernFeatureWriter=kernFeatureWriter:main',
             'markFeatureWriter=markFeatureWriter:main',
         ],
