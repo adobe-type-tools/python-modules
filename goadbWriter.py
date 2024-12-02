@@ -2,7 +2,6 @@
 
 '''
 GOADB writer -- write a GlyphOrderAndAliasDB file using a UFO as an input.
-Relies on the agl glyph names which come in fontTools’ agl module.
 
 More reading on the GOADB format:
 https://github.com/adobe-type-tools/afdko/issues/1662
@@ -13,8 +12,8 @@ https://github.com/adobe-type-tools/afdko/issues/1273
 
 import argparse
 import re
+from afdko import agd, fdkutils
 from pathlib import Path
-from fontTools import agl
 from defcon import Font, Glyph
 
 
@@ -54,6 +53,68 @@ def get_args(args=None):
     )
 
     return parser.parse_args(args)
+
+
+def _load_agd_data():
+    '''
+    read and load the AGD.txt file
+    '''
+    agd_txt = Path(fdkutils.get_resources_dir()) / 'AGD.txt'
+
+    with open(agd_txt, "r") as agd_blob:
+        agd_data = agd_blob.read()
+
+    # This object is called “dictionary”, but it doesn’t have dict methods.
+    # However, it contains two dicts -- .glyphs and .unicode.
+    return agd.dictionary(agd_data)
+
+
+def _make_agd_dict():
+    '''
+    AGD glyph name mapped to final name (often equivalent to the AGD name),
+    and codepoint.
+
+    Mappings to private us codepoints (and mappings to esoteric final names)
+    are deliberately omitted.
+    '''
+    agd_data = _load_agd_data()
+    rx_uni_name = r'(?:u|uni)?([0-9A-F]{4,5}).*'  # ?: is non-capturing
+    agd_name_dict = {}
+
+    private_use = (
+        set(range(0xe000, 0xf8ff + 1)) |
+        set(range(0xf0000, 0xffffd + 1)) |
+        set(range(0x100000, 0x10fffd + 1)))
+
+    for gname, agdglyph in agd_data.glyphs.items():
+        if agdglyph.uni and not agdglyph.fin:
+            gname_final = gname
+            # The friendly name is equivalent to the final name.
+            # makeotf will know which code point to assign
+            # based on the name alone
+            codepoint = int(agdglyph.uni, 16)
+            # The AGD contains a number of private_use code points.
+            # Those are outdated, we do not need to consider them.
+            if codepoint not in private_use:
+                agd_name_dict[gname] = gname_final, codepoint
+
+        elif agdglyph.uni and agdglyph.fin:
+            gname_final = agdglyph.fin
+            # makeotf knows that a specific name is associated with a certain
+            # code point, but comparefamily complains about a “working name”
+            # being assigned. This includes florin, for example.
+            uni_match = re.match(rx_uni_name, agdglyph.fin)
+            if uni_match:
+                codepoint = int(uni_match.group(1), 16)
+                if codepoint not in private_use:
+                    agd_name_dict[gname] = gname_final, codepoint
+
+    return agd_name_dict
+
+
+# inspired by
+# https://github.com/fonttools/fonttools/blob/main/Lib/fontTools/agl.py#L5107
+AGD_DICT = _make_agd_dict()
 
 
 def get_glyph_order(f, include_template_glyphs=False):
@@ -114,7 +175,8 @@ def get_glyph_order(f, include_template_glyphs=False):
         # then by the order of related names of encoded glyphs.
         gnames_alternates = sorted(
             [g.name for g in glyphs_alternates],
-            key=lambda gn: (gn.split('.')[1], gnames_encoded.index(gn.split('.')[0])))
+            key=lambda gn:
+                (gn.split('.')[1], gnames_encoded.index(gn.split('.')[0])))
 
         # glyphs not related to encoded glyphs are sorted alphabetically
         glyphs_rest = [
@@ -124,10 +186,6 @@ def get_glyph_order(f, include_template_glyphs=False):
         order = ['.notdef'] + gnames_encoded + gnames_alternates + gnames_rest
 
     return order
-
-
-def is_agl_name(input_name):
-    return input_name in agl.AGL2UV.keys()
 
 
 def get_uni_name(cp):
@@ -175,7 +233,7 @@ def make_unique_final_name(gname):
 
 def sanitize_final_name(gname):
     '''
-    The following characters are allowed in friendly but not in final names:
+    The following characters are allowed in friendly- but not final names:
     U+002A * asterisk
     U+002B + plus sign
     U+002D - hyphen-minus
@@ -253,27 +311,30 @@ class GlyphBaptism(object):
         # outside, and use this object for data storage only.
 
     def assign_final_and_cp_override(self):
+        is_agd_name = self.gn_friendly in AGD_DICT.keys()
         rx_uni_name = r'(?:u|uni)?([0-9A-F]{4,5}).*'  # ?: is non-capturing
         uni_name_match = re.match(rx_uni_name, self.gn_friendly)
 
-        # glyph name is in AGL
-        if is_agl_name(self.gn_friendly):
+        # glyph name is in AGD
+        if is_agd_name:
+            agd_final, agd_cp = AGD_DICT.get(self.gn_friendly)
             if self.glyph.unicodes == []:
                 # no codepoint assigned to glyph, codepoint will be assigned
-                # through the glyph name only
-                self.gn_final = self.gn_friendly
+                # through the glyph name only (or, in some cases, the AGD
+                # dict has a different final name)
+                self.gn_final = agd_final
             elif len(self.glyph.unicodes) > 1:
-                # glyph name is in AGL, but multiple code points attached;
+                # glyph name is in AGD, but multiple code points attached;
                 # override is needed
                 self.gn_final = self.gn_friendly
                 self.cp_override = get_uni_override(self.glyph.unicodes)
             else:
                 # just one codepoint
-                expected_codepoint = agl.AGL2UV.get(self.gn_friendly)
+                expected_codepoint = agd_cp
                 actual_codepoint = self.glyph.unicode
                 if expected_codepoint == actual_codepoint:
                     # codepoint is the expected one.
-                    self.gn_final = self.gn_friendly
+                    self.gn_final = agd_final
                 else:
                     # codepoint is different from what we expect
                     self.gn_final = get_uni_name(self.glyph.unicode)
@@ -333,7 +394,12 @@ def fill_gn_dict(gb, glyph_name_dict):
 
 
 def get_glyph(f, gname):
+    '''
+    make sure a glyph object is present -- no matter if it exists in the UFO
+    or not.
+    '''
     try:
+        # glyph exists in the UFO
         glyph = f[gname]
     except KeyError:
         # template glyph
