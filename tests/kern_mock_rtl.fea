@@ -25,6 +25,7 @@ lookupflag RightToLeft IgnoreMarks;
 pos V backslash <10 0 10 0>;
 pos backslash V <-100 0 -100 0>;
 pos backslash backslash <-82 0 -82 0>;
+pos iotadieresistonos lambda <60 0 60 0>;
 pos lambda lambda <5 0 5 0>;
 
 # RTL glyph, glyph exceptions:
@@ -32,7 +33,6 @@ pos Lcaron V <-57 0 -57 0>;
 pos V adieresis <-60 0 -60 0>;
 pos V atilde <-50 0 -50 0>;
 pos V idieresis <30 0 30 0>;
-pos iotadieresistonos lambda <60 0 60 0>;
 pos tcaron backslash <40 0 40 0>;
 
 # RTL glyph, group:

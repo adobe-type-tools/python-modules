@@ -45,8 +45,11 @@ Combining marks must be members of a `COMBINING_MARKS` reference group.
 #### Usage:
 ```zsh
 
-    # write a basic mark feature
+    # write a basic mark feature for a static font
     python markFeatureWriter.py font.ufo
+
+    # write a basic mark feature for a variable font
+    python markFeatureWriter.py font.designspace
 
     # write mark and mkmk feature files
     python markFeatureWriter.py -m font.ufo
@@ -62,12 +65,22 @@ Combining marks must be members of a `COMBINING_MARKS` reference group.
 
 import argparse
 import sys
-from defcon import Font
+from abc import abstractmethod
 from pathlib import Path
+from collections import defaultdict, namedtuple
+from graphlib import TopologicalSorter, CycleError
+from math import inf
+
+from defcon import Font
+from fontTools.designspaceLib import (
+    DesignSpaceDocument,
+    DesignSpaceDocumentError,
+)
 
 # ligature anchors end with 1ST, 2ND, 3RD, etc.
 ORDINALS = ['1ST', '2ND', '3RD'] + [f'{i}TH' for i in range(4, 10)]
-
+SHORTINSTNAMEKEY = 'com.adobe.shortInstanceName'
+NONEPOS = (-inf, -inf)
 
 class Defaults(object):
     """
@@ -93,11 +106,19 @@ class Defaults(object):
 
 
 def check_input_file(parser, file_name):
-    fn = Path(file_name)
-    if fn.suffix.lower() != '.ufo':
-        parser.error(f'{fn.name} is not a UFO file')
-    if not fn.exists():
-        parser.error(f'{fn.name} does not exist')
+    file_path = Path(file_name)
+    if file_path.suffix.lower() == '.ufo':
+        if not file_path.exists():
+            parser.error(f'{file_name} does not exist')
+        elif not file_path.is_dir():
+            parser.error(f'{file_name} is not a directory')
+    elif file_path.suffix.lower() == '.designspace':
+        if not file_path.exists():
+            parser.error(f'{file_name} does not exist')
+        elif not file_path.is_file():
+            parser.error(f'{file_name} is not a file')
+    else:
+        parser.error(f'Unrecognized input file type')
     return file_name
 
 
@@ -105,16 +126,14 @@ def get_args(args=None):
 
     defaults = Defaults()
     parser = argparse.ArgumentParser(
-        description=(
-            'Mark Feature Writer'
-        ),
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
     parser.add_argument(
         'input_file',
         type=lambda f: check_input_file(parser, f),
-        help='input UFO file')
+        help='input UFO or designspace file')
 
     parser.add_argument(
         '-t', '--trim_tags',
@@ -215,11 +234,6 @@ def process_anchor_name(anchor_name, trim=False):
     return anchor_name
 
 
-def round_coordinate(coordinate):
-    rounded_coordinate = tuple(int(round(v)) for v in coordinate)
-    return rounded_coordinate
-
-
 class AnchorMate(object):
     '''
     AnchorMate lifts anchors from one or more glyphs and
@@ -228,6 +242,280 @@ class AnchorMate(object):
 
     def __init__(self, anchor):
         self.pos_name_dict = {}
+
+
+AnchorInfo = namedtuple('AnchorInfo', 'name, position')
+
+
+class GlyphAnchorInfo(object):
+    '''
+    The GlyphAnchorInfo object is just an attribute-based data structure
+    for communicating anchor parameters, somewhat based on the defcon
+    structure. It uses three attributes: "name", which is the the name of
+    the glyph, "width", which is the advance width, and "anchors", which
+    is a list of AnchorInfo named tuples.
+    '''
+
+    def __init__(self, name, width, anchor_list):
+        self.name = name
+        self.width = width
+        self.anchors = anchor_list
+
+
+class MarkAdapter(object):
+    '''
+    Interface between underlying data source and MarkFeatureWriter
+    '''
+
+    @abstractmethod
+    def anchor_glyphs(self):
+        '''
+        Returns a dict of GlyphAnchorInfo objects, one per named glyph
+        '''
+        pass
+
+    @abstractmethod
+    def glyph_order(self):
+        '''
+        Returns a dictionary of all the glyphs in the source font where
+        the key is the name and the value is the order of the glyph in
+        the font.
+        '''
+        pass
+
+    @abstractmethod
+    def groups(self):
+        '''
+        Returns a dict of all groups in the sources, with the name as a
+        key and a list of glyphs in the group as the value
+        '''
+        pass
+
+    @abstractmethod
+    def path(self):
+        '''
+        Returns path to the top of the source as a Path() object
+        '''
+        pass
+
+    @abstractmethod
+    def unique_name(self, prefix, position):
+        '''
+        Returns a name starting with prefix that is unique relative to
+        the position parameter. (Can assume it will be called once per
+        unique position, so it does not need to track names already
+        returned.)
+        '''
+        pass
+
+    @abstractmethod
+    def anchor_position_string(self, position):
+        '''
+        Returns the position as a string that can be used in an anchor
+        directive in a feature file.
+        '''
+        pass
+
+class UFOMarkAdapter(MarkAdapter):
+    '''
+    Adapter for a single UFO
+    '''
+
+    def __init__(self, path):
+        self.f = Font(path)
+        if not self.f:
+            sys.exit(f'Problem opening UFO file {path}')
+
+    def anchor_glyphs(self):
+        d = {}
+        for g in self.f:
+            anchor_list = [AnchorInfo(a.name, (round(a.x), round(a.y)))
+                           for a in g.anchors]
+            d[g.name] = GlyphAnchorInfo(g.name, g.width, anchor_list)
+        return d
+
+    def glyph_order(self):
+        return {gn: i for (i, gn)
+                in enumerate(self.f.lib['public.glyphOrder'])}
+
+    def groups(self):
+        return self.f.groups
+
+    def path(self):
+        return Path(self.f.path)
+
+    def unique_name(self, prefix, position):
+        # represent negative numbers with “n”, because minus is
+        # reserved for ranges:
+        str_x = str(position[0]).replace('-', 'n')
+        str_y = str(position[1]).replace('-', 'n')
+        return f'{prefix}_{str_x}_{str_y}'
+
+    def anchor_position_string(self, position):
+        return str(position[0]) + ' ' + str(position[1])
+
+
+class DesignspaceMarkAdapter(MarkAdapter):
+    '''
+    Adapter for a UFO-based variable font with a designspace file
+    '''
+
+    def __init__(self, dsDoc):
+        try:
+            self.fonts = dsDoc.loadSourceFonts(Font)
+        except DesignSpaceDocumentError as err:
+            sys.exit(err)
+
+        for i, f in enumerate(self.fonts):
+            f.sourceIndex = i
+
+        defaultSource = dsDoc.findDefault()
+        if defaultSource is not None:
+            defaultIndex = dsDoc.sources.index(defaultSource)
+            default_font = self.fonts.pop(defaultIndex)
+            self.fonts.insert(0, default_font)
+        else:
+            sys.exit('Error: did not find source for default instance')
+
+        # Add name map
+        self.shortNames = [None]
+        for f in self.fonts[1:]:
+            if SHORTINSTNAMEKEY in f.lib:
+                self.shortNames.append(f.lib[SHORTINSTNAMEKEY])
+            else:
+                self.shortNames.append(self.make_short_name(dsDoc,
+                                                            f.sourceIndex))
+
+        self.base_names = {}
+        self.dsDoc = dsDoc
+
+    # Must match function in kernFeatureWriter, which writes locations.fea
+    def make_short_name(self, dsDoc, sourceIndex):
+        source = dsDoc.sources[sourceIndex]
+        location = source.location
+        anames = []
+        for an in dsDoc.getAxisOrder():
+            avstr = "%c%g" % (an[0], location[an])
+            avstr = avstr.replace('.', 'p')
+            avstr = avstr.replace('-', 'n')
+            anames.append(avstr)
+        return '_'.join(anames)
+
+    def anchor_glyphs(self):
+        d = {}
+        f = self.fonts[0]
+        for g in f:
+            position_map = {}
+            for a in g.anchors:
+                # Put the default instance position first so that the
+                # position sorting groups those together
+                position_map[a.name] = [(round(a.x), round(a.y))]
+            anchorNameSet = set(position_map.keys())
+            ni = 0
+            for i, source in enumerate(self.fonts):
+                if i == 0:
+                    continue
+                # If the glyph is absent put NONEPOS as the position
+                if g.name not in source:
+                    for plist in position_map.values():
+                        postions.append(NONEPOS)
+                    continue
+                foundNameSet = set()
+                for sga in source[g.name].anchors:
+                    if sga.name not in anchorNameSet:
+                        sys.exit(f'Error: glyph {g.name} has anchor {a.name} '
+                                f'in source of instance {self.shortNames[i]} '
+                                'but not in source of default instance')
+                    else:
+                        plist = position_map[sga.name]
+                        plist.append((round(sga.x), round(sga.y)))
+                        foundNameSet.add(sga.name)
+                missingNames = anchorNameSet - foundNameSet
+                if missingNames:
+                    mnamestr = ', '.join(missingNames)
+                    sys.exit(f'Error: glyph {g.name} has anchors {mnamestr} '
+                             'in source of default instance but not '
+                             f'source of instance {self.shortNames[i]}')
+            anchor_list = [AnchorInfo(a.name, tuple(position_map[a.name]))
+                           for a in g.anchors]
+            d[g.name] = GlyphAnchorInfo(g.name, g.width, anchor_list)
+        return d
+
+    def glyph_order(self):
+        # Use the glyph ordering in the source for the default instance
+        # as that should (always?) have all the glyphs
+        f = self.fonts[0]
+        return {gn: i for (i, gn)
+                in enumerate(f.lib['public.glyphOrder'])}
+
+    def groups(self):
+        if hasattr(self, '_groups'):
+            return self._groups
+        # Calculate partial orderings for groups across all fonts
+        group_orderings = defaultdict(lambda: defaultdict(set))
+        for i, f in enumerate(self.fonts):
+            for g, gl in f.groups.items():
+                ordering = group_orderings[g]
+                for j, gn in enumerate(gl):
+                    ordering[gn] |= set(gl[j+1:])
+
+        # Use the partial orderings to calculate a total ordering,
+        # or failing that use the order in which the glyphs were
+        # encountered
+        self._groups = {}
+        for g, ordering in group_orderings.items():
+            try:
+                ts = TopologicalSorter(ordering)
+                l = list(ts.static_order())
+            except CycleError as err:
+                print(f'glyphs in group {g} have different orderings across '
+                      'different sources, ordering cannot be preserved')
+                l = ordering.keys()
+            self._groups[g] = l
+
+        return self._groups
+
+    def path(self):
+        return Path(self.dsDoc.path)
+
+    def unique_name(self, prefix, position):
+        # represent negative numbers with “n”, because minus is
+        # reserved for ranges:
+        str_x = str(position[0][0]).replace('-', 'n')
+        str_y = str(position[0][1]).replace('-', 'n')
+        # We choose names based on the position in the default instance
+        # but other position values could be different. A position is
+        # a tuple of two-tuples, one for each source, and are always the
+        # same length so they can be sorted and compared for identity.
+        # So all we need to do here is be careful not to hand out the
+        # same name for two different positions. Because unique_name
+        # will only be called with a prefix,position pair once, all we
+        # need to do is track how many we've handed out so far and add
+        # a unique suffix
+        base_name = f'{prefix}_{str_x}_{str_y}'
+        if base_name not in self.base_names:
+            self.base_names[base_name] = 0
+            return base_name
+        else:
+            rev = self.base_names[base_name] + 1
+            self.base_names[base_name] = rev
+            return base_name + '_' + str(rev)
+
+
+    def anchor_position_string(self, position):
+        assert len(position) == len(self.fonts)
+        def_pos = position[0]
+        def_str = str(def_pos[0]) + ' ' + str(def_pos[1])
+        if all(p == NONEPOS or p == def_pos for p in position[1:]):
+            return def_str
+
+        pos_strs = ['<' + def_str + '>']
+        for i, p in enumerate(position):
+            if i == 0 or p == NONEPOS:
+                continue
+            pos_strs.append('@' + self.shortNames[i] + ':<' +
+                            str(p[0]) + ' ' + str(p[1]) + '>')
+        return '(' + ' '.join(pos_strs) + ')'
 
 
 class MarkFeatureWriter(object):
@@ -248,33 +536,42 @@ class MarkFeatureWriter(object):
         self.write_classes = args.write_classes
 
         if args.input_file:
-            ufo_path = Path(args.input_file)
-            self.run(ufo_path)
+            input_path = Path(args.input_file)
+            if input_path.is_file():
+                dsDoc = DesignSpaceDocument.fromfile(input_path)
+                adapter = DesignspaceMarkAdapter(dsDoc)
+            else:
+                adapter = UFOMarkAdapter(Path(args.input_file))
+            self.run(adapter)
 
-    def run(self, ufo_path):
-        f = Font(ufo_path)
-        ufo_dir = ufo_path.parent
-        self.glyph_order = f.lib['public.glyphOrder']
+    def run(self, adapter):
+        self.adapter = adapter
+        self.glyphs = adapter.anchor_glyphs()
+        self.glyph_order = adapter.glyph_order()
+        self.groups = adapter.groups()
+        output_dir = adapter.path().parent
 
-        combining_marks_group = f.groups.get(self.mkgrp_name, [])
-        if not combining_marks_group:
+        if self.mkgrp_name not in self.groups:
             sys.exit(
                 f'No group named "{self.mkgrp_name}" found. '
                 'Please add it to your UFO file '
                 '(and combining marks to it).'
             )
 
-        combining_marks = [f[g_name] for g_name in combining_marks_group]
+        combining_marks_group = self.groups[self.mkgrp_name]
+
+        combining_marks = [self.glyphs[g_name]
+                           for g_name in combining_marks_group]
         # find out which attachment anchors exist in combining marks
-        combining_anchor_names = set([
+        combining_anchor_names = set((
             process_anchor_name(a.name, self.trim_tags) for
-            g in combining_marks for a in g.anchors if is_attaching(a.name)])
+            g in combining_marks for a in g.anchors if is_attaching(a.name)))
 
         mkmk_marks = [g for g in combining_marks if not all(
             [is_attaching(anchor.name) for anchor in g.anchors])]
 
         base_glyphs = [
-            g for g in f if
+            g for g in self.glyphs.values() if
             g.anchors and
             g not in combining_marks and
             g.width != 0 and
@@ -360,7 +657,7 @@ class MarkFeatureWriter(object):
         consolidated_content = []
         if self.write_classes:
             # write the classes into an external file if so requested
-            write_output(ufo_dir, self.mkclass_file, mark_class_content)
+            write_output(output_dir, self.mkclass_file, mark_class_content)
         else:
             # otherwise they go on top of the mark.fea file
             consolidated_content.extend(mark_class_content)
@@ -370,15 +667,15 @@ class MarkFeatureWriter(object):
 
         if self.write_mkmk:
             # write mkmk only if requested, in the adjacent mkmk.fea file
-            write_output(ufo_dir, self.mkmk_file, mkmk_feature_content)
+            write_output(output_dir, self.mkmk_file, mkmk_feature_content)
 
         if self.indic_format:
             # write abvm/blwm in adjacent files.
-            write_output(ufo_dir, self.abvm_file, abvm_feature_content)
-            write_output(ufo_dir, self.blwm_file, blwm_feature_content)
+            write_output(output_dir, self.abvm_file, abvm_feature_content)
+            write_output(output_dir, self.blwm_file, blwm_feature_content)
 
         # write the mark feature
-        write_output(ufo_dir, self.mark_file, consolidated_content)
+        write_output(output_dir, self.mark_file, consolidated_content)
 
     def make_liga_anchor_dict(self, glyph_list, attachment_list=None):
         '''
@@ -404,8 +701,7 @@ class MarkFeatureWriter(object):
                         trimmed_anchor_name, self.trim_tags)
                     ap = anchor_dict.setdefault(anchor_name, {})
                     index_pos_dict = ap.setdefault(g.name, {})
-                    position = round_coordinate((anchor.x, anchor.y))
-                    index_pos_dict[anchor_index] = position
+                    index_pos_dict[anchor_index] = anchor.position
         return anchor_dict
 
     def make_anchor_dict(self, glyph_list, attachment_list=None):
@@ -425,9 +721,8 @@ class MarkFeatureWriter(object):
         for g in glyph_list:
             for anchor in g.anchors:
                 anchor_name = process_anchor_name(anchor.name, self.trim_tags)
-                position = round_coordinate((anchor.x, anchor.y))
                 am = anchor_dict.setdefault(anchor_name, AnchorMate(anchor))
-                am.pos_name_dict.setdefault(position, []).append(g.name)
+                am.pos_name_dict.setdefault(anchor.position, []).append(g.name)
 
         if attachment_list:
             # remove anchors that do not have an attachment equivalent
@@ -442,7 +737,7 @@ class MarkFeatureWriter(object):
         '''
         Sort list of glyph names based on the glyph order
         '''
-        glyph_list.sort(key=lambda x: self.glyph_order.index(x))
+        glyph_list.sort(key=lambda x: self.glyph_order[x])
         return glyph_list
 
     def make_mark_class(self, anchor_name, a_mate):
@@ -452,25 +747,22 @@ class MarkFeatureWriter(object):
         single_attachments = []
 
         for position, g_names in pos_gname:
-            pos_x, pos_y = position
+            position_string = self.adapter.anchor_position_string(position)
             if len(g_names) > 1:
                 sorted_g_names = self.sort_gnames(g_names)
-                # represent negative numbers with “n”, because minus is
-                # reserved for ranges:
-                str_x = str(pos_x).replace('-', 'n')
-                str_y = str(pos_y).replace('-', 'n')
-                group_name = f'@mGC{anchor_name}_{str_x}_{str_y}'
+                group_name = self.adapter.unique_name(f'@mGC{anchor_name}',
+                                                      position)
                 group_glyphs = ' '.join(sorted_g_names)
                 mgroup_definitions.append(
                     f'{group_name} = [ {group_glyphs} ];')
                 mgroup_attachments.append(
-                    f'markClass {group_name} <anchor {pos_x} {pos_y}> '
+                    f'markClass {group_name} <anchor {position_string}> '
                     f'@MC{anchor_name};')
 
             else:
                 g_name = g_names[0]
                 single_attachments.append(
-                    f'markClass {g_name} <anchor {pos_x} {pos_y}> '
+                    f'markClass {g_name} <anchor {position_string}> '
                     f'@MC{anchor_name};')
 
         return mgroup_definitions, mgroup_attachments, single_attachments
@@ -545,7 +837,7 @@ class MarkFeatureWriter(object):
         for position, g_list in a_mate.pos_name_dict.items():
             pos_to_gname.append((position, self.sort_gnames(g_list)))
 
-        pos_to_gname.sort(key=lambda x: self.glyph_order.index(x[1][0]))
+        pos_to_gname.sort(key=lambda x: self.glyph_order[x[1][0]])
         # data looks like this:
         # [((235, 506), ['tonos']), ((269, 506), ['dieresistonos'])]
 
@@ -554,7 +846,7 @@ class MarkFeatureWriter(object):
         single_attachments = []
 
         for position, g_names in pos_to_gname:
-            pos_x, pos_y = position
+            position_string = self.adapter.anchor_position_string(position)
             if len(g_names) > 1:
                 sorted_g_names = self.sort_gnames(g_names)
                 # GNUFL introduces the colon as part of the glyph name,
@@ -566,14 +858,14 @@ class MarkFeatureWriter(object):
                 mgroup_definitions.append(
                     f'\t{group_name} = [ {group_glyphs} ];')
                 mgroup_attachments.append(
-                    f'\tpos base {group_name} <anchor {pos_x} {pos_y}> '
+                    f'\tpos base {group_name} <anchor {position_string}> '
                     f'mark @MC_{anchor_name};')
 
             else:
                 g_name = g_names[0]
                 single_attachments.append(
                     # pos base AE <anchor 559 683> mark @MC_above;
-                    f'\tpos base {g_name} <anchor {pos_x} {pos_y}> '
+                    f'\tpos base {g_name} <anchor {position_string}> '
                     f'mark @MC_{anchor_name};')
 
         output = [open_lookup]
@@ -597,14 +889,14 @@ class MarkFeatureWriter(object):
         for g_name in sorted_g_names:
             liga_attachment = f'\tpos ligature {g_name}'
             for a_index, position in sorted(gname_index_dict[g_name].items()):
-                pos_x, pos_y = position
+                position_string = self.adapter.anchor_position_string(position)
                 if a_index == 0:
                     liga_attachment += (
-                        f' <anchor {pos_x} {pos_y}> '
+                        f' <anchor {position_string}> '
                         f'mark @MC_{anchor_name}')
                 else:
                     liga_attachment += (
-                        f' ligComponent <anchor {pos_x} {pos_y}> '
+                        f' ligComponent <anchor {position_string}> '
                         f'mark @MC_{anchor_name}')
             liga_attachment += ';'
             liga_attachments.append(liga_attachment)
@@ -624,16 +916,16 @@ class MarkFeatureWriter(object):
         for position, g_list in a_mate.pos_name_dict.items():
             pos_to_gname.append((position, self.sort_gnames(g_list)))
 
-        pos_to_gname.sort(key=lambda x: self.glyph_order.index(x[1][0]))
+        pos_to_gname.sort(key=lambda x: self.glyph_order[x[1][0]])
         mkmk_attachments = []
 
         for position, g_names in pos_to_gname:
-            pos_x, pos_y = position
+            position_string = self.adapter.anchor_position_string(position)
             sorted_g_names = self.sort_gnames(g_names)
             for g_name in sorted_g_names:
                 mkmk_attachments.append(
                     # pos mark acmb <anchor 0 763> mark @MC_above;
-                    f'\tpos mark {g_name} <anchor {pos_x} {pos_y}> '
+                    f'\tpos mark {g_name} <anchor {position_string}> '
                     f'mark @MC_{anchor_name};')
 
         output = [open_lookup]
