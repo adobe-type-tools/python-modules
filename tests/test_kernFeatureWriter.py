@@ -14,6 +14,16 @@ TEST_DIR = Path(__file__).parent
 TEMP_DIR = Path(get_temp_dir_path())
 
 
+def run_local(input, args):
+    if input is None:
+        a = None
+    elif isinstance(input, defcon.Font):
+        a = UFOKernAdapter(input)
+    else:
+        a = DesignspaceKernAdapter(input)
+    return run(a, args)
+
+
 class Dummy(object):
     '''
     for ad-hoc arguments
@@ -45,7 +55,7 @@ def test_get_args():
 
 
 def test_make_header():
-    kfw = run(None, None)
+    kfw = run_local(None, None)
     dummy_args = Dummy()
     dummy_args.min_value = 1
     dummy_args.write_timestamp = False
@@ -58,7 +68,9 @@ def test_make_header():
 
 
 def test_dict2pos():
-    kfw = run(None, None)
+    ufo_path = TEST_DIR / 'kern_example.ufo'
+    f = defcon.Font(ufo_path)
+    kfw = run_local(f, None)
     kfw.write_trimmed_pairs = False
 
     pv_dict = {
@@ -90,7 +102,9 @@ def test_dict2pos():
 
 
 def test_remap_name():
-    kp = KernProcessor()
+    ufo_path = TEST_DIR / 'kern_example.ufo'
+    a = UFOKernAdapter(defcon.Font(ufo_path))
+    kp = KernProcessor(a)
     assert kp._remap_name('public.kern1.example') == '@MMK_L_example'
     assert kp._remap_name('public.kern1.@MMK_L_example') == '@MMK_L_example'
     assert kp._remap_name('public.kern2.example') == '@MMK_R_example'
@@ -113,7 +127,7 @@ def test_remap_groups():
         gr.replace('public.kern1.', '@MMK_L_'): gl for gr, gl in groups_l.items()}
     expected_groups_r = {
         gr.replace('public.kern2.', '@MMK_R_'): gl for gr, gl in groups_r.items()}
-    kp = KernProcessor()
+    kp = KernProcessor(UFOKernAdapter(f))
 
     assert kp._remap_groups(groups_l) == expected_groups_l
     assert kp._remap_groups(groups_r) == expected_groups_r
@@ -137,7 +151,7 @@ def test_remap_kerning():
             lambda mo: replacements[mo.group()], ' '.join(pair)).split()
         remapped_pairs.append(tuple(new_pair))
 
-    kp = KernProcessor()
+    kp = KernProcessor(UFOKernAdapter(f))
     assert list(kp._remap_kerning(f.kerning).keys()) == remapped_pairs
 
 
@@ -147,7 +161,7 @@ def test_sanityCheck(capsys):
     '''
     ufo_path = TEST_DIR / 'kern_example.ufo'
     f = defcon.Font(ufo_path)
-    kp = KernProcessor()
+    kp = KernProcessor(UFOKernAdapter(f))
     kp.pairs_processed = ['some pair']
     kp.kerning = f.kerning
     kp._sanityCheck()
@@ -163,7 +177,7 @@ def test_no_kerning(capsys):
     f = defcon.Font(ufo_path)
     f.kerning.clear()
     args = Defaults()
-    run(f, args)
+    run_local(f, args)
     out, err = capsys.readouterr()
     assert f'has no kerning' in out
 
@@ -172,7 +186,7 @@ def test_all_zero(capsys):
     ufo_path = TEST_DIR / 'kern_all_zero_value.ufo'
     f = defcon.Font(ufo_path)
     args = Defaults()
-    run(f, args)
+    run_local(f, args)
     out, err = capsys.readouterr()
     assert f'All kerning values are zero' in out
 
@@ -188,7 +202,7 @@ def test_default():
     args.input_file = ufo_path
     args.output_name = fea_temp
     f = defcon.Font(ufo_path)
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_temp) == read_file(fea_example)
 
     '''
@@ -196,7 +210,7 @@ def test_default():
     for this UFO (no single-item groups)
     '''
     args.dissolve_single = True
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_temp) == read_file(fea_example)
 
 
@@ -211,7 +225,7 @@ def test_default_ufo2():
     args.input_file = ufo_path
     args.output_name = fea_temp
     f = defcon.Font(ufo_path)
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_temp) == read_file(fea_example)
 
 
@@ -252,7 +266,7 @@ def test_invalid_input_file(capsys):
     with pytest.raises(SystemExit):
         main([str(ufo_path)])
     out, err = capsys.readouterr()
-    assert 'some_file.xxx is not a UFO file' in err
+    assert 'Unrecognized input file type' in err
 
 
 def test_default_rtl():
@@ -263,7 +277,7 @@ def test_default_rtl():
     args.input_file = ufo_path
     args.output_name = fea_temp
     f = defcon.Font(ufo_path)
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_temp) == read_file(fea_example)
 
 
@@ -280,7 +294,7 @@ def test_subtable():
     args.subtable_size = 128
     args.output_name = fea_temp
     f = defcon.Font(ufo_path)
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_temp) == read_file(fea_example)
 
 
@@ -297,7 +311,7 @@ def test_subtable_rtl():
     args.subtable_size = 128
     args.output_name = fea_temp
     f = defcon.Font(ufo_path)
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_temp) == read_file(fea_example)
 
 
@@ -314,12 +328,12 @@ def test_dissolve():
     args.input_file = ufo_path
     args.output_name = fea_temp_singletons
     f = defcon.Font(ufo_path)
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_temp_singletons) == read_file(fea_example_singletons)
 
     args.dissolve_single = True
     args.output_name = fea_temp_dissolved
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_temp_dissolved) == read_file(fea_example_dissolved)
 
 
@@ -335,7 +349,7 @@ def test_left_side_exception():
     args.input_file = ufo_path
     args.output_name = fea_temp
     f = defcon.Font(ufo_path)
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_temp) == read_file(fea_example)
 
 
@@ -347,7 +361,7 @@ def test_unused_groups():
     args = Defaults()
     args.input_file = ufo_path
     args.output_name = fea_temp
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_example) == read_file(fea_temp)
 
 
@@ -362,7 +376,7 @@ def test_ignored_groups():
     args = Defaults()
     args.input_file = ufo_path
     args.output_name = fea_temp
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_example) == read_file(fea_temp)
 
 
@@ -377,7 +391,7 @@ def test_no_groups():
     args = Defaults()
     args.input_file = ufo_path
     args.output_name = fea_temp
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_example) == read_file(fea_temp)
 
 
@@ -392,7 +406,7 @@ def test_ss4_exceptions():
     args = Defaults()
     args.input_file = ufo_path
     args.output_name = fea_temp
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_example) == read_file(fea_temp)
 
 
@@ -407,7 +421,7 @@ def test_mock_rtl():
     args = Defaults()
     args.input_file = ufo_path
     args.output_name = fea_temp
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_example) == read_file(fea_temp)
 
 
@@ -421,7 +435,7 @@ def test_example_trim(capsys):
     args.output_name = fea_temp
     args.min_value = 100
     args.write_trimmed_pairs = True
-    run(f, args)
+    run_local(f, args)
 
     out, err = capsys.readouterr()
     assert 'Trimmed pairs: 33' in out
@@ -440,17 +454,19 @@ def test_nightmare(capsys):
     args = Defaults()
     args.input_file = ufo_path
     args.output_name = fea_temp
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_example) == read_file(fea_temp)
 
     out, err = capsys.readouterr()
+    print(out)
     expected_output = (
         'group public.kern1.empty is empty\n'
         'group public.kern2.empty is empty\n'
         'group public.kern1.invalid contains extraneous glyph(s): [a]\n'
         'group public.kern1.lowercase contains extraneous glyph(s): [x, y, z]\n'
-        'pair (A public.kern2.invalid) references non-existent group public.kern2.invalid\n'
+        'pair (A public.kern2.invalid) references invalid group public.kern2.invalid\n'
         'pair (public.kern1.LAT_A a) references non-existent glyph a\n'
+        'pair (public.kern1.empty a) references invalid group public.kern1.empty\n'
         'pair (public.kern1.empty a) references non-existent glyph a\n'
     )
     assert expected_output in out
@@ -464,12 +480,12 @@ def test_ignore_suffix():
     args = Defaults()
     args.input_file = ufo_path
     args.output_name = fea_temp
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_example) == read_file(fea_temp)
 
     fea_example = TEST_DIR / 'kern_suffix_ignored.fea'
     fea_temp = TEMP_DIR / fea_example.name
     args.ignore_suffix = '.cxt'
     args.output_name = fea_temp
-    run(f, args)
+    run_local(f, args)
     assert read_file(fea_example) == read_file(fea_temp)

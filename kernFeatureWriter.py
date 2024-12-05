@@ -27,8 +27,11 @@ This tool exports the kerning and groups data within a UFO to a
 #### Usage:
 ```zsh
 
-    # write a basic kern feature file
+    # write a basic kern feature file for a static font
     python kernFeatureWriter.py font.ufo
+
+    # write a basic kern feature file for a variable font
+    python kernFeatureWriter.py font.designspace
 
     # write a kern feature file with minimum absolute kerning value of 5
     python kernFeatureWriter.py -min 5 font.ufo
@@ -43,16 +46,25 @@ This tool exports the kerning and groups data within a UFO to a
 '''
 
 import argparse
-import defcon
 import itertools
 import time
-
+from abc import abstractmethod
+from collections import defaultdict
+from graphlib import TopologicalSorter, CycleError
 from pathlib import Path
+from math import copysign
 
+import defcon
+from fontTools.designspaceLib import (
+    DesignSpaceDocument,
+    DesignSpaceDocumentError,
+)
 
 # constants
 RTL_GROUP = 'RTL_KERNING'
 RTL_TAGS = ['_ARA', '_HEB', '_RTL']
+SHORTINSTNAMEKEY = 'com.adobe.shortInstanceName'
+GROUPSPLITSUFFIX = '_split'
 
 
 # helpers
@@ -94,6 +106,9 @@ class Defaults(object):
         # The default output filename
         self.output_name = 'kern.fea'
 
+        # The default name for the locations file
+        self.locations_name = 'locations.fea'
+
         # Default mimimum kerning value. This value is _inclusive_, which
         # means that pairs that equal this absolute value will not be
         # ignored/trimmed. Pairs in range of +/- value will be trimmed.
@@ -108,11 +123,18 @@ class Defaults(object):
         # Write trimmed pairs to the output file (as comments).
         self.write_trimmed_pairs = False
 
+        # If variable, output user location values
+        # (default is design values)
+        self.user_values = False
+
         # Write subtables?
         self.write_subtables = False
 
         # Write time stamp in .fea file header?
         self.write_timestamp = False
+
+        # Do not write the locations file?
+        self.no_locations = False
 
         # Write single-element groups as glyphs?
         # (This has no influence on the output kerning data, but helps with
@@ -122,6 +144,430 @@ class Defaults(object):
 
         # ignore pairs which contain glyphs using the following suffix
         self.ignore_suffix = None
+
+
+class KernAdapter(object):
+    '''
+    Interface layer between underlying font source and the KerningSanitizer
+    '''
+
+    def has_data(self):
+        return self._has_data
+
+    def has_locations(self):
+        '''
+        Returns true when the source is variable and false otherwise
+        '''
+        return False
+
+    def get_locations(self, userUnits = False):
+        '''
+        Returns a dictionary of location name to axis coordinates
+        '''
+        assert False
+        return {}
+
+    @abstractmethod
+    def all_glyphs(self):
+        '''
+        Returns a set of the names of all glyphs in the sources
+        '''
+        pass
+
+    @abstractmethod
+    def glyph_order(self):
+        '''
+        Returns a dictionary of all the glyphs in the source font where
+        the key is the name and the value is the order of the glyph in
+        the font.
+        '''
+        pass
+
+    @abstractmethod
+    def groups(self):
+        '''
+        Returns a dict of all groups in the sources, with the name as a
+        key and a list of glyphs in the group as the value
+        '''
+        pass
+
+    @abstractmethod
+    def kerning(self):
+        '''
+        Returns a dict of all kerning pairs in the sources, with the
+        key being a tuple of (left, right) and the value being the kerning
+        value. The elements of the tuple can be glyph names or group names
+        '''
+        pass
+
+    @abstractmethod
+    def postscript_font_name(self):
+        '''
+        Returns the postscriptFontName stored in the sources, or None if
+        there is no name
+        '''
+        pass
+
+    @abstractmethod
+    def path(self):
+        '''
+        Returns path to the top of the source as a Path() object
+        '''
+        pass
+
+    @abstractmethod
+    def merge_values(self, v_fallback, v_exception):
+        '''
+        When v_exception is the value associated with a more specific
+        rule, and v_fallback is associated with a less specific but
+        matching rule, returns a combined value for the exception
+        filled in with parts of the fallback as needed.
+        '''
+        pass
+
+
+    @abstractmethod
+    def value_string(self, value, rtl=False):
+        '''
+        Returns the value as a string that can be used in a feature file.
+        When rtl is True the value will be for right-to-left use
+        '''
+        pass
+
+    @abstractmethod
+    def below_minimum(self, value, minimum):
+        '''
+        Returns True if the value is considered greater than minimum and
+        False otherwise. The value parameter must be from the kerning()
+        dictionary. The minimum parameter is an integer.
+        '''
+        pass
+
+    @abstractmethod
+    def value_is_zero(self, value):
+        '''
+        Returns True if the value is considered greater than minimum and
+        False otherwise. The value parameter must be from the kerning()
+        dictionary. The minimum parameter is an integer.
+        '''
+        pass
+
+
+class UFOKernAdapter(KernAdapter):
+    '''
+    Adapter for a single UFO
+    '''
+
+    def __init__(self, f):
+        self._has_data = True
+
+        if f:
+            if not f.kerning:
+                print('ERROR: The font has no kerning!')
+                self._has_data = False
+                return
+            if set(f.kerning.values()) == {0}:
+                print('ERROR: All kerning values are zero!')
+                self._has_data = False
+                return
+        self.f = f
+
+    def all_glyphs(self):
+        return set(self.f.keys())
+
+    def glyph_order(self):
+        return {gn: i for (i, gn) in enumerate(self.f.keys())}
+
+    def groups(self):
+        return self.f.groups
+
+    def kerning(self):
+        return self.f.kerning
+
+    def postscript_font_name(self):
+        try:
+            return self.f.info.postscriptFontName
+        except:
+            pass
+        return None
+
+    def path(self):
+        return Path(self.f.path)
+
+    def merge_values(self, v_fallback, v_exception):
+        return v_exception
+
+    def value_string(self, value, rtl=False):
+        # adding 0 makes a -0.0 into a 0.0
+        if rtl:
+            return '<{0:g} 0 {0:g} 0>'.format(value + 0)
+        else:
+            return '{0:g}'.format(value + 0)
+
+    def below_minimum(self, value, minimum):
+        return abs(value) < minimum
+
+    def value_is_zero(self, value):
+        return value == 0
+
+class DesignspaceKernAdapter(KernAdapter):
+    '''
+    Adapter for a UFO-based variable font with a designspace file
+    '''
+
+    def __init__(self, dsDoc):
+        self._has_data = True
+
+        try:
+            self.fonts = dsDoc.loadSourceFonts(defcon.Font)
+        except DesignSpaceDocumentError as err:
+            print(err)
+            self._has_data = False
+
+        for i, f in enumerate(self.fonts):
+            f.sourceIndex = i
+
+        defaultSource = dsDoc.findDefault()
+        if defaultSource is not None:
+            self.defaultIndex = dsDoc.sources.index(defaultSource)
+            defaultFont = self.fonts.pop(self.defaultIndex)
+            self.fonts.insert(0, defaultFont)
+        else:
+            print('ERROR: did not find source at default location')
+            self._has_data = False
+
+        default_location = dsDoc.sources[self.defaultIndex].location
+        self.defaultInstanceIndex = None
+        for i, inst in enumerate(dsDoc.instances):
+            if inst.designLocation == default_location:
+                self.defaultInstanceIndex = i
+                break
+
+        if self.defaultInstanceIndex is None:
+            print('could not find named instance for default location')
+
+        self.shortNames = [None]
+        for f in self.fonts[1:]:
+            if SHORTINSTNAMEKEY in f.lib:
+                self.shortNames.append(f.lib[SHORTINSTNAMEKEY])
+            else:
+                self.shortNames.append(self.make_short_name(dsDoc,
+                                                            f.sourceIndex))
+
+        self.dsDoc = dsDoc
+
+    def has_locations(self):
+        return True
+
+    def get_locations(self, userUnits = False):
+        tagDict = {}
+        for axisName in self.dsDoc.getAxisOrder():
+            tagDict[axisName] = self.dsDoc.getAxis(axisName).tag
+        locDict = {}
+        for i, f in enumerate(self.fonts):
+            if i == 0:
+                continue
+            axisLocs = self.dsDoc.sources[f.sourceIndex].designLocation
+            if userUnits:
+                axisLocs = self.dsDoc.map_backward(axisLocs)
+            axisLocsByTag = {}
+            for axisName, axisTag in tagDict.items():
+                axisLocsByTag[axisTag] = axisLocs[axisName]
+            locDict[self.shortNames[i]] = axisLocsByTag
+        return locDict
+
+    def make_short_name(self, dsDoc, sourceIndex):
+        source = dsDoc.sources[sourceIndex]
+        location = source.location
+        anames = []
+        for an in dsDoc.getAxisOrder():
+            avstr = "%c%g" % (an[0], location[an])
+            avstr = avstr.replace('.', 'p')
+            avstr = avstr.replace('-', 'n')
+            anames.append(avstr)
+        return '_'.join(anames)
+
+
+    def calc_glyph_data(self):
+        default_glyph_list = self.fonts[0].keys()
+        default_glyph_set = set(default_glyph_list)
+
+        all_extra_glyphs = set()
+        self.glyph_sets = [default_glyph_set]
+        for i, f in enumerate(self.fonts):
+            if i == 0:
+                continue
+            current_glyph_set = set(f.keys())
+            self.glyph_sets.append(current_glyph_set)
+            extra_glyphs = current_glyph_set - default_glyph_set
+            if extra_glyphs:
+                source_name = self.dsDoc.sources[f.sourceIndex].styleName
+                print(f'source {source_name} has these extra glyphs'
+                      f'not in default: [{", ".join(extra_glyphs)}]')
+                all_extra_glyphs |= extra_glyphs
+
+        self.glyph_set = default_glyph_set | all_extra_glyphs
+
+        self._glyph_order = {gn: i for (i, gn) in enumerate(default_glyph_list)}
+        if all_extra_glyphs:
+            extras_order = {gn: i for (i, gn) in
+                            enumerate(all_extra_glyphs,
+                                      start=default_glyph_set.size())}
+            self._glyph_order.update(extras_order)
+
+    def all_glyphs(self):
+        if not hasattr(self, 'glyph_set'):
+            self.calc_glyph_data()
+        return self.glyph_set
+
+    def glyph_order(self):
+        if not hasattr(self, '_glyph_order'):
+            self.calc_glyph_data()
+        return self._glyph_order
+
+    def groups(self):
+        if hasattr(self, '_groups'):
+            return self._groups
+        # Calculate partial orderings for groups across all fonts
+        group_orderings = defaultdict(lambda: defaultdict(set))
+        for f in self.fonts:
+            for g, gl in f.groups.items():
+                ordering = group_orderings[g]
+                for j, gn in enumerate(gl):
+                    ordering[gn] |= set(gl[j+1:])
+
+        # Use the partial orderings to calculate a total ordering,
+        # or failing that use the order in which the glyphs were
+        # encountered
+        self._groups = {}
+        for g, ordering in group_orderings.items():
+            try:
+                ts = TopologicalSorter(ordering)
+                l = list(ts.static_order())
+            except CycleError as err:
+                print(f'glyphs in group {g} have different orderings across '
+                      'different sources, ordering cannot be preserved')
+                l = ordering.keys()
+            self._groups[g] = l
+
+        return self._groups
+
+    def kerning(self):
+        if hasattr(self, '_kerning'):
+            return self._kerning
+        if not hasattr(self, 'glyph_sets'):
+            self.calc_glyph_data()
+
+        # Collect full set of kerning pairs across sources
+        used_kerning_groups = set()
+        all_pairs = set()
+        for f in self.fonts:
+            for l, r in f.kerning.keys():
+                all_pairs.add((l, r))
+                if is_kerning_group(l):
+                    used_kerning_groups.add(l)
+                if is_kerning_group(r):
+                    used_kerning_groups.add(r)
+
+        # Find and split groups with mixed sparseness
+        groups = self.groups()
+        group_remap = {}
+        for g in used_kerning_groups:
+            sparse_patterns = defaultdict(list)
+            for gl in groups[g]:
+                pattern = (i for i, glyphs in enumerate(self.glyph_sets)
+                           if gl in glyphs)
+                assert pattern
+                sparse_patterns[frozenset(pattern)].append(gl)
+            if len(sparse_patterns) == 1:
+                # Nothing sparse or all glyphs sparse in the same way
+                continue
+            remap_list = []
+            for i, group_list in enumerate(sparse_patterns.values()):
+                new_group_name = g + GROUPSPLITSUFFIX + str(i)
+                groups[new_group_name] = group_list
+                remap_list.append(new_group_name)
+            del groups[g]
+            group_remap[g] = remap_list
+
+        # Build up variable kerning values using remapped groups
+        self._kerning = {}
+        for l, r in all_pairs:
+            pair = (l, r)
+            left_list = group_remap.get(l, [l])
+            right_list = group_remap.get(r, [r])
+            for lelem in left_list:
+                lglyph = groups.get(lelem, [lelem])[0]
+                for relem in right_list:
+                    value = []
+                    rglyph = groups.get(relem, [relem])[0]
+                    for i, f in enumerate(self.fonts):
+                        # Glyph wasn't present in font, set value to None
+                        if (lglyph not in self.glyph_sets[i] or
+                            rglyph not in self.glyph_sets[i]):
+                            value.append(None)
+                            continue
+                        if pair in f.kerning:
+                            value.append(f.kerning[pair])
+                        else:
+                            # Use -0 to differentiate implicit 0 from
+                            # (potential) explicit 0 value in file
+                            value.append(-0.0)
+                    self._kerning[(lelem, relem)] = value
+
+        return self._kerning
+
+    def postscript_font_name(self):
+        # Try the designspace document first
+        if self.defaultInstanceIndex is not None:
+            di = self.dsDoc.instances[self.defaultInstanceIndex] 
+            if hasattr(di, 'postScriptFontName'):
+                return di.postScriptFontName
+        # Then the UFO via defcon
+        try:
+            return self.fonts[0].info.postscriptFontName
+        except:
+            pass
+        return None
+
+    def path(self):
+        return Path(self.dsDoc.path)
+
+    def merge_values(self, v_fallback, v_exception):
+        r = []
+        for f, e in zip(v_fallback, v_exception):
+            if e is not None and not (e == 0 and copysign(1, e) == -1):
+                r.append(e)
+            else:
+                r.append(f)
+        return r
+
+    def value_string(self, value, rtl=False):
+        # adding 0 makes a -0.0 into a 0.0
+        assert len(value) == len(self.fonts)
+        format_str =  '<{0:g} 0 {0:g} 0>' if rtl else '{0:g}'
+        def_value = value[0] + 0
+        if all(v is None or v == def_value for v in value):
+            return format_str.format(def_value)
+        else:
+            value_strs = []
+            for i, v in enumerate(value):
+                if v is None:
+                    continue
+                vstr = format_str.format(v + 0)
+                if i == 0:
+                    value_strs.append(vstr)
+                else:
+                    value_strs.append('@' + self.shortNames[i] + ':' + vstr)
+            return '(' + ' '.join(value_strs) + ')'
+
+    def below_minimum(self, value, minimum):
+        assert len(value) == len(self.fonts)
+        return all((v is None or abs(v) < minimum for v in value))
+
+    def value_is_zero(self, value):
+        assert len(value) == len(self.fonts)
+        return all((v is None or v == 0 for v in value))
 
 
 class KerningSanitizer(object):
@@ -135,53 +581,84 @@ class KerningSanitizer(object):
 
     '''
 
-    def __init__(self, f):
-        self.f = f
+    def __init__(self, a):
+        self.a = a
         self.kerning = {}
         self.groups = {}
         self.reference_groups = {}
 
+        self.source_glyphs = self.a.all_glyphs()
+        self.source_glyph_order = self.a.glyph_order()
+        self.source_groups = self.a.groups()
+        self.source_kerning = self.a.kerning()
+        self.left_glyph_to_group = {}
+        self.left_conflict_groups = {}
+        self.right_glyph_to_group = {}
+        self.right_conflict_groups = {}
+
         # empty groups
         self.empty_groups = [
-            g for (g, gl) in self.f.groups.items() if not gl]
+            g for (g, gl) in self.source_groups.items() if not gl
+        ]
         # groups containing glyphs not in the UFO
         self.invalid_groups = [
-            g for (g, gl) in self.f.groups.items() if not
-            set(gl) <= set(self.f.keys())]
-        # remaining groups
-        self.valid_groups = [
-            g for g in self.f.groups.keys() if
-            g not in [set(self.invalid_groups) | set(self.empty_groups)] and
-            is_kerning_group(g)
+            g for (g, gl) in self.source_groups.items() if not
+            set(gl) <= self.source_glyphs
         ]
-
-        self.valid_items = set(self.f.keys()) | set(self.valid_groups)
+        bad_group_set = set(self.invalid_groups) | set(self.empty_groups)
+        # remaining groups
+        self.valid_groups = {
+            g for g in self.source_groups.keys()
+            if g not in bad_group_set and is_kerning_group(g)
+        }
+        # Build glyph_to_group maps for each side, testing for and
+        # eliminating conflicts by marking groups as conflicting
+        left_group_set  = { l for l, r in self.source_kerning.keys()
+                            if l in self.valid_groups }
+        right_group_set = { r for l, r in self.source_kerning.keys()
+                            if r in self.valid_groups }
+        for gs, g2g, cg in ((left_group_set, self.left_glyph_to_group,
+                             self.left_conflict_groups),
+                            (right_group_set, self.right_glyph_to_group,
+                             self.right_conflict_groups)):
+            for g in gs:
+                for gl in self.source_groups[g]:
+                    if gl in g2g:
+                        cg[g] = gl
+                    else:
+                        g2g[gl] = g
+        self.valid_groups -= set(self.left_conflict_groups.keys())
+        self.valid_groups -= set(self.right_conflict_groups.keys())
+        self.valid_items = self.source_glyphs | self.valid_groups
         # pairs containing an invalid glyph or group
         self.invalid_pairs = [
-            pair for pair in self.f.kerning.keys() if not
-            set(pair) <= set(self.valid_items)]
-
+            pair for pair in self.source_kerning.keys() if not
+            set(pair) <= self.valid_items
+        ]
+        invalid_pair_set = set(self.invalid_pairs)
         self.kerning = {
-            pair: value for pair, value in self.f.kerning.items() if
-            pair not in self.invalid_pairs
+            pair: value for pair, value in self.source_kerning.items() if
+            pair not in invalid_pair_set
         }
         self.groups = {
-            gn: self.f.groups.get(gn) for gn in self.get_used_group_names()}
-
+            gn: self.source_groups.get(gn)
+            for gn in self.get_used_group_names(self.source_groups)
+        }
         self.reference_groups = {
-            gn: g_list for gn, g_list in self.f.groups.items() if not
-            is_kerning_group(gn)}
+            gn: g_set for gn, g_set in self.source_groups.items() if not
+            is_kerning_group(gn)
+        }
 
-    def get_used_group_names(self):
+    def get_used_group_names(self, groups):
         '''
         Return all groups which are actually used in kerning,
         by iterating through valid kerning pairs.
         '''
-        groups = list(self.f.groups.keys())
+        group_order = {gn: i for (i, gn) in enumerate(groups.keys())}
         used_groups = []
         for pair in self.kerning.keys():
             used_groups.extend([item for item in pair if is_group(item)])
-        return sorted(set(used_groups), key=groups.index)
+        return sorted(set(used_groups), key=lambda item: group_order[item])
 
     def report(self):
         '''
@@ -190,33 +667,42 @@ class KerningSanitizer(object):
         for group in self.empty_groups:
             print(f'group {group} is empty')
         for group in self.invalid_groups:
-            glyph_list = self.f.groups[group]
-            extraneous_glyphs = sorted(
-                set(glyph_list) - set(self.f.keys()), key=glyph_list.index)
+            glyph_set = set(self.source_groups[group])
+            extraneous_glyphs = sorted(glyph_set - self.source_glyphs,
+                key=lambda item: self.source_glyph_order.get(item, item))
             print(
                 f'group {group} contains extraneous glyph(s): '
                 f'[{", ".join(extraneous_glyphs)}]')
+        for cg, g2g, desc in ((self.left_conflict_groups,
+                               self.left_glyph_to_group,'left'),
+                              (self.right_conflict_groups,
+                               self.right_glyph_to_group, 'right')):
+            for group, gl in cg:
+                print(
+                    f'group {group} ignored because it contains glyph {gl} '
+                    f'double-mapped on {desc} side (other group is {g2g[gl]})')
 
         for pair in self.invalid_pairs:
             invalid_items = sorted(
                 set(pair) - self.valid_items, key=pair.index)
             for item in invalid_items:
                 if is_group(item):
-                    item_type = 'group'
+                    item_type = 'invalid group'
                 else:
-                    item_type = 'glyph'
+                    item_type = 'non-existent glyph'
                 print(
-                    f'pair ({pair[0]} {pair[1]}) references non-existent '
+                    f'pair ({pair[0]} {pair[1]}) references '
                     f'{item_type} {item}'
                 )
 
 
 class KernProcessor(object):
     def __init__(
-        self, groups=None, kerning=None, reference_groups=None,
+        self, adapter, groups=None, kerning=None, reference_groups=None,
+        left_glyph_to_group={}, right_glyph_to_group={},
         option_dissolve=False, ignore_suffix=None
     ):
-
+        self.a = adapter
         # kerning dicts containing pair-value combinations
         self.glyph_glyph = {}
         self.glyph_glyph_exceptions = {}
@@ -239,6 +725,12 @@ class KernProcessor(object):
         self.groups = groups
         self.kerning = kerning
         self.reference_groups = reference_groups
+        self.left_glyph_to_group = {
+            gl: self._remap_name(g) for gl, g in left_glyph_to_group.items()
+        }
+        self.right_glyph_to_group = {
+            gl: self._remap_name(g) for gl, g in right_glyph_to_group.items()
+        }
 
         self.ignore_suffix = ignore_suffix
 
@@ -251,8 +743,6 @@ class KernProcessor(object):
             self.group_order = sorted(self.groups.keys())
             self.kerning = self._remap_kerning(kerning)
 
-            self.grouped_left = self._get_grouped_glyphs(left=True)
-            self.grouped_right = self._get_grouped_glyphs(left=False)
             self.rtl_glyphs = self._get_rtl_glyphs(self.groups)
 
             self._find_exceptions()
@@ -327,25 +817,6 @@ class KernProcessor(object):
             groups.get(rtl_group) for rtl_group in rtl_groups))
         return rtl_glyphs
 
-    def _get_grouped_glyphs(self, left=False):
-        '''
-        Return lists of glyphs used in groups on left or right side.
-        This is used to calculate the subtable size for a given list
-        of groups (groupFilterList) used within that subtable.
-        '''
-        grouped = []
-
-        if left:
-            for left, right in self.kerning.keys():
-                if is_group(left):
-                    grouped.extend(self.groups.get(left))
-        else:
-            for left, right in self.kerning.keys():
-                if is_group(right):
-                    grouped.extend(self.groups.get(right))
-
-        return sorted(set(grouped))
-
     def _dissolve_singleton_groups(self, groups, kerning):
         '''
         Find any (non-RTL) group with a single-item glyph list.
@@ -401,6 +872,46 @@ class KernProcessor(object):
 
         return list(itertools.product(glyph_list_a, glyph_list_b))
 
+    def _get_class_maps(self, pair):
+        left, right = pair
+        is_rtl = self._is_rtl(pair)
+        left_is_group = is_group(left)
+        right_is_group = is_group(right)
+        if left_is_group and right_is_group:
+            if is_rtl:
+                return (self.rtl_group_group, None)
+            else:
+                return (self.group_group, None)
+        elif left_is_group and not right_is_group:
+            if is_rtl:
+                return (self.rtl_group_group, self.rtl_group_glyph_exceptions)
+            else:
+                return (self.group_group, self.group_glyph_exceptions)
+        elif not left_is_group and right_is_group:
+            if is_rtl:
+                return (self.rtl_glyph_group, self.rtl_glyph_group_exceptions)
+            else:
+                return (self.glyph_group, self.glyph_group_exceptions)
+        else:
+            if is_rtl:
+                return (self.rtl_glyph_glyph, self.rtl_glyph_glyph_exceptions)
+            else:
+                return (self.glyph_glyph, self.glyph_glyph_exceptions)
+
+    def _get_fallbacks(self, pair):
+        left, right = pair
+        left_group = None
+        if not is_group(left) and left in self.left_glyph_to_group:
+            left_group = self.left_glyph_to_group[left]
+        right_group = None
+        if not is_group(right) and right in self.right_glyph_to_group:
+            right_group = self.right_glyph_to_group[right]
+        if left_group is None and right_group is None:
+            return []
+        candidate_pairs = [(left_group, right), (left, right_group),
+                           (left_group, right_group)]
+        return [ c for c in candidate_pairs if c in self.kerning ]
+
     def _find_exceptions(self):
         '''
         Process kerning to find which pairs are exceptions,
@@ -416,144 +927,20 @@ class KernProcessor(object):
                     del self.kerning[pair]
                     continue
 
-        glyph_2_glyph = sorted(
-            [pair for pair in self.kerning.keys() if(
-                not is_group(pair[0]) and
-                not is_group(pair[1]))]
-        )
-        glyph_2_group = sorted(
-            [pair for pair in self.kerning.keys() if(
-                not is_group(pair[0]) and
-                is_group(pair[1]))]
-        )
-        group_2_item = sorted(
-            [pair for pair in self.kerning.keys() if(
-                is_group(pair[0]))]
-        )
-
-        # glyph to group pairs:
-        # ---------------------
-        for (glyph, group) in glyph_2_group:
-            pair = glyph, group
-            value = self.kerning[pair]
-            is_rtl_pair = self._is_rtl(pair)
-            if glyph in self.grouped_left:
-                # it is a glyph_to_group exception!
-                if is_rtl_pair:
-                    self.rtl_glyph_group_exceptions[pair] = value
-                else:
-                    self.glyph_group_exceptions[pair] = value
+        for pair, value in self.kerning.items():
+            std_map, exp_map = self._get_class_maps(pair)
+            fallbacks = self._get_fallbacks(pair)
+            if len(fallbacks) > 0:
+                assert exp_map is not None
+                for f in fallbacks:
+                    value = self.a.merge_values(self.kerning[f], value)
+                exp_map[pair] = value
                 self.pairs_processed.append(pair)
-
             else:
-                for grouped_glyph in self.groups[group]:
-                    gr_pair = (glyph, grouped_glyph)
-                    if gr_pair in glyph_2_glyph:
-                        gr_value = self.kerning[gr_pair]
-                        # that pair is a glyph_to_glyph exception!
-                        if is_rtl_pair:
-                            self.rtl_glyph_glyph_exceptions[gr_pair] = gr_value
-                        else:
-                            self.glyph_glyph_exceptions[gr_pair] = gr_value
-
-                # skip the pair if the value is zero
-                if value == 0:
+                if self.a.value_is_zero(value):
                     self.pairs_unprocessed.append(pair)
-                    continue
-
-                if is_rtl_pair:
-                    self.rtl_glyph_group[pair] = value
                 else:
-                    self.glyph_group[pair] = value
-                self.pairs_processed.append(pair)
-
-        # group to group/glyph pairs:
-        # ---------------------------
-        exploded_pair_list = []
-        exploded_pair_list_rtl = []
-
-        for (group_l, item_r) in group_2_item:
-            # the right item of the pair may be a group or a glyph
-            pair = (group_l, item_r)
-            value = self.kerning[pair]
-            is_rtl_pair = self._is_rtl(pair)
-            l_group_glyphs = self.groups[group_l]
-
-            if is_group(item_r):
-                r_group_glyphs = self.groups[item_r]
-            else:
-                # not a group, therefore a glyph
-                if item_r in self.grouped_right:
-                    # it is a group_to_glyph exception!
-                    if is_rtl_pair:
-                        self.rtl_group_glyph_exceptions[pair] = value
-                    else:
-                        self.group_glyph_exceptions[pair] = value
-                    self.pairs_processed.append(pair)
-                    continue  # It is an exception, so move on to the next pair
-
-                else:
-                    r_group_glyphs = [item_r]
-
-            # skip the pair if the value is zero
-            if value == 0:
-                self.pairs_unprocessed.append(pair)
-                continue
-
-            if is_rtl_pair:
-                self.rtl_group_group[pair] = value
-                exploded_pair_list_rtl.extend(
-                    self._explode(l_group_glyphs, r_group_glyphs))
-            else:
-                self.group_group[pair] = value
-                exploded_pair_list.extend(
-                    self._explode(l_group_glyphs, r_group_glyphs))
-                # list of all possible pair combinations for the
-                # @class @class kerning pairs of the font.
-            self.pairs_processed.append(pair)
-
-        # Find the intersection of the exploded pairs with the glyph_2_glyph
-        # pairs collected above. Those must be exceptions, as they occur twice
-        # (once in class-kerning, once as a single pair).
-        self.exception_pairs = set(exploded_pair_list) & set(glyph_2_glyph)
-        self.exception_pairs_rtl = set(exploded_pair_list_rtl) & set(glyph_2_glyph)
-
-        for pair in self.exception_pairs:
-            self.glyph_glyph_exceptions[pair] = self.kerning[pair]
-
-        for pair in self.exception_pairs_rtl:
-            self.rtl_glyph_glyph_exceptions[pair] = self.kerning[pair]
-
-        # finally, collect normal glyph to glyph pairs:
-        # ---------------------------------------------
-        # NB: RTL glyph-to-glyph pairs can only be identified if its
-        # glyphs are in the @RTL_KERNING group.
-
-        for glyph_1, glyph_2 in glyph_2_glyph:
-            pair = glyph_1, glyph_2
-            value = self.kerning[pair]
-            is_rtl_pair = self._is_rtl(pair)
-            if any(
-                [glyph_1 in self.grouped_left, glyph_2 in self.grouped_right]
-            ):
-                # it is an exception!
-                # exceptions expressed as glyph-to-glyph pairs -- these cannot
-                # be filtered and need to be added to the kern feature
-                # ---------------------------------------------
-                if is_rtl_pair:
-                    self.rtl_glyph_glyph_exceptions[pair] = value
-                else:
-                    self.glyph_glyph_exceptions[pair] = value
-                self.pairs_processed.append(pair)
-            else:
-                if (
-                    pair not in self.glyph_glyph_exceptions and
-                    pair not in self.rtl_glyph_glyph_exceptions
-                ):
-                    if self._is_rtl(pair):
-                        self.rtl_glyph_glyph[pair] = self.kerning[pair]
-                    else:
-                        self.glyph_glyph[pair] = self.kerning[pair]
+                    std_map[pair] = value
                     self.pairs_processed.append(pair)
 
 
@@ -658,12 +1045,15 @@ class MakeMeasuredSubtables(object):
 
 class run(object):
 
-    def __init__(self, font, args=None):
+    def __init__(self, adapter, args=None):
 
         if not args:
             args = Defaults()
 
-        self.f = font
+        if not (adapter and adapter.has_data()):
+            return
+
+        self.a = adapter
         self.minKern = args.min_value
         self.write_subtables = args.write_subtables
         self.subtable_size = args.subtable_size
@@ -672,31 +1062,26 @@ class run(object):
         self.ignore_suffix = args.ignore_suffix
         self.trimmedPairs = 0
 
-        if self.f:
-            if not self.f.kerning:
-                print('ERROR: The font has no kerning!')
-                return
-            if set(self.f.kerning.values()) == {0}:
-                print('ERROR: All kerning values are zero!')
-                return
+        ks = KerningSanitizer(self.a)
+        ks.report()
+        kp = KernProcessor(
+            self.a, ks.groups, ks.kerning, ks.reference_groups,
+            ks.left_glyph_to_group, ks.right_glyph_to_group,
+            self.dissolve_single, self.ignore_suffix)
 
-            ks = KerningSanitizer(self.f)
-            ks.report()
-            kp = KernProcessor(
-                ks.groups, ks.kerning, ks.reference_groups,
-                self.dissolve_single, self.ignore_suffix)
-
-            fea_data = self._make_fea_data(kp)
-            self.header = self.make_header(args)
-            output_path = Path(self.f.path).parent / args.output_name
-            self.write_fea_data(fea_data, output_path)
+        fea_data = self._make_fea_data(kp)
+        self.header = self.make_header(args)
+        output_path = self.a.path().parent / args.output_name
+        self.write_fea_data(fea_data, output_path)
+        if not args.no_locations and self.a.has_locations():
+            locations_path = self.a.path().parent / args.locations_name
+            self.write_locations(self.a, locations_path, args.user_values)
 
     def make_header(self, args):
         try:
-            ps_name = self.f.info.postscriptFontName
+            ps_name = self.a.postscript_font_name()
         except Exception:
             ps_name = None
-
         header = []
         if args.write_timestamp:
             header.append(f'# Created: {time.ctime()}')
@@ -714,17 +1099,14 @@ class run(object):
         trimmed = 0
         for (item_1, item_2), value in pair_value_dict.items():
 
-            if rtl:
-                value_str = '<{0} 0 {0} 0>'.format(value)
-            else:
-                value_str = str(value)
+            value_str = self.a.value_string(value, rtl)
 
             posLine = f'pos {item_1} {item_2} {value_str};'
 
             if enum:
                 data.append('enum ' + posLine)
             else:
-                if abs(value) < minimum:
+                if self.a.below_minimum(value, minimum):
                     if self.write_trimmed_pairs:
                         data.append('# ' + posLine)
                         trimmed += 1
@@ -904,34 +1286,65 @@ class run(object):
 
         print(f'Output file written to {output_path}')
 
+    def write_locations(self, adapter, locations_path, userUnits = False):
+
+        print(f'Saving {locations_path.name} file...')
+
+        data = ['# Named locations', '']
+
+        unit = 'u' if userUnits else 'd'
+        for name, axisLocs in adapter.get_locations(userUnits).items():
+            locationStr = ', '.join(('%s=%g%s' % (tag, val, unit) for
+                                     tag, val in axisLocs.items()))
+            data.append(f'locationDef {locationStr} @{name};')
+
+        with open(locations_path, 'w') as blob:
+            blob.write('\n'.join(data))
+            blob.write('\n')
+
+        print(f'Output file written to {locations_path}')
+
 
 def check_input_file(parser, file_name):
-    fn = Path(file_name)
-    if fn.suffix.lower() != '.ufo':
-        parser.error(f'{fn.name} is not a UFO file')
-    if not fn.exists():
-        parser.error(f'{fn.name} does not exist')
+    file_path = Path(file_name)
+    if file_path.suffix.lower() == '.ufo':
+        if not file_path.exists():
+            parser.error(f'{file_name} does not exist')
+        elif not file_path.is_dir():
+            parser.error(f'{file_name} is not a directory')
+    elif file_path.suffix.lower() == '.designspace':
+        if not file_path.exists():
+            parser.error(f'{file_name} does not exist')
+        elif not file_path.is_file():
+            parser.error(f'{file_name} is not a file')
+    else:
+        parser.error(f'Unrecognized input file type')
     return file_name
-
 
 def get_args(args=None):
 
     defaults = Defaults()
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     parser.add_argument(
         'input_file',
         type=lambda f: check_input_file(parser, f),
-        help='input UFO file')
+        help='input UFO or designspace file')
 
     parser.add_argument(
         '-o', '--output_name',
         action='store',
         default=defaults.output_name,
         help='change the output file name')
+
+    parser.add_argument(
+        '-l', '--locations_name',
+        action='store',
+        default=defaults.locations_name,
+        help='change the locations file name (variable font only)')
 
     parser.add_argument(
         '-m', '--min_value',
@@ -968,6 +1381,19 @@ def get_args(args=None):
         help='write time stamp in header of output file')
 
     parser.add_argument(
+        '--no_locations',
+        action='store_true',
+        default=defaults.no_locations,
+        help='Do not write locations file (variable font only)')
+
+    parser.add_argument(
+        '-u', '--user_values',
+        action='store_true',
+        default=defaults.user_values,
+        help='For variable fonts, output user axis locations '
+             'rather than design axis locations')
+
+    parser.add_argument(
         '--dissolve_single',
         action='store_true',
         default=defaults.dissolve_single,
@@ -990,8 +1416,14 @@ def get_args(args=None):
 
 def main(test_args=None):
     args = get_args(test_args)
-    f = defcon.Font(args.input_file)
-    run(f, args)
+    input_path = Path(args.input_file)
+    if input_path.is_file():
+        dsDoc = DesignSpaceDocument.fromfile(input_path)
+        a = DesignspaceKernAdapter(dsDoc)
+    else:
+        a = UFOKernAdapter(defcon.Font(args.input_file))
+    if a.has_data():
+        run(a, args)
 
 
 if __name__ == '__main__':

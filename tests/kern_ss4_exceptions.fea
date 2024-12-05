@@ -20,6 +20,7 @@
 pos V backslash 10;
 pos backslash V -100;
 pos backslash backslash -82;
+pos iotadieresistonos lambda 60;
 pos lambda lambda 5;
 
 # glyph, glyph exceptions:
@@ -27,7 +28,6 @@ pos Lcaron V -57;
 pos V adieresis -60;
 pos V atilde -50;
 pos V idieresis 30;
-pos iotadieresistonos lambda 60;
 pos tcaron backslash 40;
 
 # glyph, group:
