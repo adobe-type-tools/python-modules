@@ -266,4 +266,4 @@ def test_invalid_input_file(capsys):
     with pytest.raises(SystemExit):
         main([str(ufo_path)])
     out, err = capsys.readouterr()
-    assert 'some_file.xxx is not a UFO file' in err
+    assert 'Unrecognized input file type' in err
