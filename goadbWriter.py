@@ -238,7 +238,7 @@ def get_glyph_order(f, include_template_glyphs=False):
     return order
 
 
-def get_uni_name(cp):
+def make_uni_name(cp):
     '''
     convert codepoint to uniXXXX (or uXXXXX) glyph name
     '''
@@ -249,12 +249,12 @@ def get_uni_name(cp):
     return uni_name
 
 
-def get_uni_override(cp_list):
+def make_uni_override(cp_list):
     '''
     comma-separated Unicode override string
     (or a single string if len(cp_list) == 1)
     '''
-    unicode_override = ','.join([get_uni_name(cp) for cp in cp_list])
+    unicode_override = ','.join([make_uni_name(cp) for cp in cp_list])
     return unicode_override
 
 
@@ -359,7 +359,11 @@ class GlyphBaptism(object):
 
     def assign_final_and_cp_override(self):
         is_agd_name = self.gn_friendly in AGD_DICT.keys()
-        rx_uni_name = r'(?:u|uni)?([0-9A-F]{4,5}).*'  # ?: is non-capturing
+        # The uni name is something like `uni0020`. In theory, the zero-padding
+        # could be omitted (`uni20` -- although I have not seen that yet).
+        # The last Unicode Plane (16) ends at 10FFFF, so allowing code points
+        # up to FFFFFF should be enough.
+        rx_uni_name = r'^(?:u|uni)?([0-9A-F]{1,6})$'
         uni_name_match = re.match(rx_uni_name, self.gn_friendly)
 
         # glyph name is in AGD
@@ -374,7 +378,7 @@ class GlyphBaptism(object):
                 # glyph name is in AGD, but multiple code points attached;
                 # override is needed
                 self.gn_final = self.gn_friendly
-                self.cp_override = get_uni_override(self.glyph.unicodes)
+                self.cp_override = make_uni_override(self.glyph.unicodes)
             else:
                 # just one codepoint
                 expected_codepoint = agd_cp
@@ -384,34 +388,41 @@ class GlyphBaptism(object):
                     self.gn_final = agd_final
                 else:
                     # codepoint is different from what we expect
-                    self.gn_final = get_uni_name(self.glyph.unicode)
+                    self.gn_final = make_uni_name(self.glyph.unicode)
 
         # glyph name implies Unicode value (uniXXXX or uXXXXX)
         elif uni_name_match:
             cp_hex = uni_name_match.group(1)
+            cp_int = int(cp_hex, 16)
+
             if self.glyph.unicodes == []:
                 # no codepoint assigned to glyph, codepoint will be assigned
                 # through the glyph name only
-                self.gn_final = self.gn_friendly
+                # The glyph name could be uniFFFFF, which is not a legal final
+                # name, so we are sending it through make_uni_name.
+                self.gn_final = make_uni_name(cp_int)
             elif len(self.glyph.unicodes) > 1:
                 # glyph name implies one code point, but multiple code points
                 # are attached -- override needed.
                 # Overriding a uniXXXX name used to be a makeotf problem, but
                 # this has been solved here:
                 # https://github.com/adobe-type-tools/afdko/pull/1615
+
+                # The final name does not matter, because it is
+                # overridden anyway.
                 self.gn_final = self.gn_friendly
-                self.cp_override = get_uni_override(self.glyph.unicodes)
+                self.cp_override = make_uni_override(self.glyph.unicodes)
             else:
                 # just one codepoint
-                expected_codepoint = int(cp_hex, 16)
                 actual_codepoint = self.glyph.unicode
-                if expected_codepoint == actual_codepoint:
-                    # codepoint is the expected one
-                    self.gn_final = self.gn_friendly
+                if cp_int == actual_codepoint:
+                    # codepoint is the expected one. Name could be uniFFFFF,
+                    # which makeotf only understands as uFFFFF.
+                    self.gn_final = make_uni_name(cp_int)
                 else:
                     # codepoint is different from what the name implies
                     # (weird flex but OK)
-                    self.gn_final = get_uni_name(self.glyph.unicode)
+                    self.gn_final = make_uni_name(self.glyph.unicode)
 
         # custom glyph name
         else:
@@ -421,10 +432,10 @@ class GlyphBaptism(object):
             elif len(self.glyph.unicodes) > 1:
                 # multiple code points are attached -- override needed
                 self.gn_final = self.gn_friendly
-                self.cp_override = get_uni_override(self.glyph.unicodes)
+                self.cp_override = make_uni_override(self.glyph.unicodes)
             else:
                 # just one codepoint, the final name will tell makeotf about it
-                self.gn_final = get_uni_name(self.glyph.unicode)
+                self.gn_final = make_uni_name(self.glyph.unicode)
 
 
 def fill_gn_dict(gb, glyph_name_dict):
@@ -506,7 +517,7 @@ def make_glyph_name_dict(f, glyph_order):
 
         if g.unicodes:
             # the alt glyph itself may have a codepoint
-            gb.cp_override = get_uni_override(g.unicodes)
+            gb.cp_override = make_uni_override(g.unicodes)
 
         glyph_name_dict = fill_gn_dict(gb, glyph_name_dict)
 
@@ -527,7 +538,7 @@ def make_glyph_name_dict(f, glyph_order):
 
         if g.unicodes:
             # some ligatures have codepoints
-            gb.cp_override = get_uni_override(g.unicodes)
+            gb.cp_override = make_uni_override(g.unicodes)
 
         glyph_name_dict = fill_gn_dict(gb, glyph_name_dict)
 
@@ -554,7 +565,7 @@ def main(test_args=None):
 
     if args.output:
         with open(args.output, 'w') as blob:
-            blob.write(goadb)
+            blob.write(goadb + '\n')
     else:
         print(goadb)
 
