@@ -78,7 +78,10 @@ def _make_agd_dict():
     are deliberately omitted.
     '''
     agd_data = _load_agd_data()
-    rx_uni_name = r'(?:u|uni)?([0-9A-F]{4,5}).*'  # ?: is non-capturing
+    rx_uni_name = r'^(?:u|uni)?([0-9A-F]{4,16})$'
+    # (?:u|uni): the ?: is flagging a non-capturing group
+    # the AGD may contains final names which combine multiple code points,
+    # such as uni093F0930094D0902
     agd_name_dict = {}
 
     private_use = (
@@ -93,10 +96,15 @@ def _make_agd_dict():
             # makeotf will know which code point to assign
             # based on the name alone
             codepoint = int(agdglyph.uni, 16)
-            # The AGD contains a number of private_use code points.
-            # Those are outdated, we do not need to consider them.
             if codepoint not in private_use:
                 agd_name_dict[gname] = gname_final, codepoint
+            else:
+                pass
+            #     130 (irrelevant) PUA glyphs, such as
+            #     ae.sc F7E6
+            #     aacute.sc F7E1
+            # The AGD contains a number of private use code points.
+            # Those are outdated, we do not need to consider them.
 
         elif agdglyph.uni and agdglyph.fin:
             gname_final = agdglyph.fin
@@ -108,6 +116,48 @@ def _make_agd_dict():
                 codepoint = int(uni_match.group(1), 16)
                 if codepoint not in private_use:
                     agd_name_dict[gname] = gname_final, codepoint
+                else:
+                    pass
+                    # 25 PUA glyphs such as
+                    # LL F6BF
+                    # arrowhorizex F8E7
+                    # arrowvertex F8E6
+                    # braceex F8F4
+            else:
+                # mostly, glyph names with suffixed/ligated final names.
+                # except
+                # triangleblackdown 25BC
+                # pointerblackleft 25C4
+                # pointerblackright 25BA
+                # triangleblackup 25B2
+                codepoint = int(agdglyph.uni, 16)
+                gname_final = agdglyph.fin
+                if codepoint not in private_use:
+                    agd_name_dict[gname] = gname_final, codepoint
+                else:
+                    pass
+                    # 16 PUA glyphs such as
+                    # emdash.alt F6DE
+                    # rupiah F6DD
+                    # dieresisacute.cap F6CC
+
+        elif not agdglyph.uni and agdglyph.fin:
+            gname_final = agdglyph.fin
+            # some glyphs may have a preferred final name, such as
+            # Gtilde (which combines two code points): uni00470303
+            # Rringbelowmacron (three code points): uni005203250304
+            uni_match = re.match(rx_uni_name, agdglyph.fin)
+            agd_name_dict[gname] = gname_final, None
+
+        else:
+            pass
+            # 1635 glyph names.
+            # as far as I can tell, these are either
+            # - PUA code points
+            # - ligatures
+            # - dotted alternates
+            # - glyph names without any aliasing (and therefore no function)
+            #   (like TimeFlies, WingedHead1, or ObeseAngel)
 
     return agd_name_dict
 
@@ -501,6 +551,7 @@ def main(test_args=None):
     glyph_order = get_glyph_order(f, args.template)
     glyph_name_dict = make_glyph_name_dict(f, glyph_order)
     goadb = build_goadb(glyph_order, glyph_name_dict)
+
     if args.output:
         with open(args.output, 'w') as blob:
             blob.write(goadb)
