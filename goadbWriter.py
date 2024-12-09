@@ -78,7 +78,7 @@ def _make_agd_dict():
     are deliberately omitted.
     '''
     agd_data = _load_agd_data()
-    rx_uni_name = r'^(?:u|uni)?([0-9A-F]{4,16})$'
+    rx_uni_name = r'^(?:u|uni)([0-9A-F]{4,16})$'
     # (?:u|uni): the ?: is flagging a non-capturing group
     # the AGD may contains final names which combine multiple code points,
     # such as uni093F0930094D0902
@@ -363,7 +363,7 @@ class GlyphBaptism(object):
         # could be omitted (`uni20` -- although I have not seen that yet).
         # The last Unicode Plane (16) ends at 10FFFF, so allowing code points
         # up to FFFFFF should be enough.
-        rx_uni_name = r'^(?:u|uni)?([0-9A-F]{1,6})$'
+        rx_uni_name = r'^(?:u|uni)([0-9A-F]{1,6})$'
         uni_name_match = re.match(rx_uni_name, self.gn_friendly)
 
         # glyph name is in AGD
