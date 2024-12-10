@@ -41,7 +41,11 @@ def get_args(args=None):
     parser.add_argument(
         '-o', '--output',
         action='store',
-        help='output file. If not defined, the GOABD is written to stdout.',
+        help=(
+            'output file or directory. '
+            'If not defined, the GOABD is written to stdout.'),
+        type=Path,
+        metavar='PATH',
         default=None,
     )
 
@@ -562,9 +566,13 @@ def main(test_args=None):
     glyph_order = get_glyph_order(f, args.template)
     glyph_name_dict = make_glyph_name_dict(f, glyph_order)
     goadb = build_goadb(glyph_order, glyph_name_dict)
+    output_path = args.output
 
-    if args.output:
-        with open(args.output, 'w') as blob:
+    if output_path and output_path.is_file():
+        with open(output_path, 'w') as blob:
+            blob.write(goadb + '\n')
+    elif output_path and output_path.is_dir():
+        with open(output_path / 'GlyphOrderAndAliasDB', 'w') as blob:
             blob.write(goadb + '\n')
     else:
         print(goadb)
