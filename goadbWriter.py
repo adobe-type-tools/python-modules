@@ -39,7 +39,7 @@ def _get_args(args=None):
     )
 
     parser.add_argument(
-        '-o', '--output',
+        '-o', '--output_path',
         action='store',
         help=(
             'output file or directory. '
@@ -563,7 +563,7 @@ def _make_goadb_content(glyph_order, glyph_name_dict):
 def make_goadb(input_ufo, include_template_glyphs=False):
     '''
     Make a GOADB from an input UFO.
-    Optionally, template glyphs can be included.
+    Optionally, include (un-filled) template glyphs.
     '''
     f = Font(input_ufo)
     glyph_order = get_glyph_order(f, include_template_glyphs)
@@ -576,12 +576,13 @@ def write_goadb(goadb_content, output_path=None):
     '''
     Write the GOADB to an output file or folder.
     '''
-    if output_path and output_path.is_file():
-        with open(output_path, 'w') as blob:
-            blob.write(goadb_content + '\n')
-    elif output_path and output_path.is_dir():
-        with open(output_path / 'GlyphOrderAndAliasDB', 'w') as blob:
-            blob.write(goadb_content + '\n')
+    if output_path:
+        if output_path.is_dir():
+            with open(output_path / 'GlyphOrderAndAliasDB', 'w') as blob:
+                blob.write(goadb_content + '\n')
+        else:
+            with open(output_path, 'w') as blob:
+                blob.write(goadb_content + '\n')
     else:
         print(goadb_content)
 
