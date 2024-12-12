@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 sys.path.append("..")
-from goadbWriter import *
+from goadbWriter import _get_args, main
 
 
 TEST_DIR = Path(__file__).parent
@@ -29,10 +29,10 @@ def read_file(path):
 def test_get_args():
     # args through argparse
     ufo_path = str(TEST_DIR / 'goadb_full.ufo')
-    argparse_args = vars(get_args([ufo_path, '-o', 'goadb']))
+    argparse_args = vars(_get_args([ufo_path, '-o', 'goadb']))
     expected_args = {
-        'input_file': ufo_path,
-        'output': 'goadb',
+        'input_ufo': ufo_path,
+        'output_path': Path('goadb'),
         'template': False,
     }
     assert argparse_args == expected_args
@@ -74,6 +74,18 @@ def test_default():
     goadb_temp = str(TEMP_DIR / 'goadb')
     args = [ufo_path, '-o', goadb_temp]
     main(args)
+    assert read_file(goadb_temp) == read_file(goadb_example)
+
+
+def test_write_to_dir():
+    '''
+    writing GOADB to directory (name is auto-generated)
+    '''
+    ufo_path = str(TEST_DIR / 'goadb_full.ufo')
+    goadb_example = TEST_DIR / 'goadb_full'
+    args = [ufo_path, '-o', str(TEMP_DIR)]
+    main(args)
+    goadb_temp = str(TEMP_DIR / 'GlyphOrderAndAliasDB')
     assert read_file(goadb_temp) == read_file(goadb_example)
 
 
