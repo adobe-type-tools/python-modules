@@ -1,4 +1,8 @@
-*.pyc
-htmlcov/*
 .coverage
 coverage.xml
+htmlcov/*
+
+build/*
+.eggs/*
+*.egg-info/*
+*.pyc
