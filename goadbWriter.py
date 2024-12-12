@@ -371,7 +371,8 @@ class GlyphBaptism(object):
         # this is the normal expectation for most glyphs
         if self.gn_final is None:
             self.assign_final_and_cp_override()
-            self.gn_final = sanitize_final_gname(self.gn_final)
+
+        self.gn_final = sanitize_final_gname(self.gn_final)
 
         # in other cases (alternates/ligatures), we generate the final name
         # outside, and use this object for data storage only.

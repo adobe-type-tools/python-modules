@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 sys.path.append("..")
-from goadbWriter import _get_args, main
+from goadbWriter import _get_args, main, GlyphBaptism
 
 
 TEST_DIR = Path(__file__).parent
@@ -36,6 +36,15 @@ def test_get_args():
         'template': False,
     }
     assert argparse_args == expected_args
+
+
+def test_gname_sanitizing():
+    '''
+    make sure input glyph names are properly sanitized
+    '''
+    gname_dirty = 'A.#E81416FF'
+    gb = GlyphBaptism(gname_dirty)
+    assert '#' not in gb.gn_final
 
 
 def test_phantom_input_ufo(capsys):
