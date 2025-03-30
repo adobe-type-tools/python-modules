@@ -907,10 +907,10 @@ class KernProcessor(object):
         if not is_group(right) and right in self.right_glyph_to_group:
             right_group = self.right_glyph_to_group[right]
         if left_group is None and right_group is None:
-            return []
+            return ([], False)
         candidate_pairs = [(left_group, right), (left, right_group),
                            (left_group, right_group)]
-        return [ c for c in candidate_pairs if c in self.kerning ]
+        return ([ c for c in candidate_pairs if c in self.kerning ], True)
 
     def _find_exceptions(self):
         '''
@@ -929,7 +929,7 @@ class KernProcessor(object):
 
         for pair, value in self.kerning.items():
             std_map, exp_map = self._get_class_maps(pair)
-            fallbacks = self._get_fallbacks(pair)
+            fallbacks, is_except = self._get_fallbacks(pair)
             if len(fallbacks) > 0:
                 assert exp_map is not None
                 for f in fallbacks:
@@ -940,7 +940,10 @@ class KernProcessor(object):
                 if self.a.value_is_zero(value):
                     self.pairs_unprocessed.append(pair)
                 else:
-                    std_map[pair] = value
+                    if is_except:
+                        exp_map[pair] = value
+                    else:
+                        std_map[pair] = value
                     self.pairs_processed.append(pair)
 
 
