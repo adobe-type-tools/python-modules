@@ -2,7 +2,7 @@
 # MinKern: +/- 3 inclusive
 
 
-# glyph, glyph:
+# glyph, glyph exceptions:
 pos A A 10;
 pos A V -119;
 pos V A -120;
