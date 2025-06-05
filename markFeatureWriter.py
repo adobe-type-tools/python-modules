@@ -79,7 +79,7 @@ from fontTools.designspaceLib import (
 
 # ligature anchors end with 1ST, 2ND, 3RD, etc.
 ORDINALS = ['1ST', '2ND', '3RD'] + [f'{i}TH' for i in range(4, 10)]
-SHORTINSTNAMEKEY = 'com.adobe.shortInstanceName'
+SHORTINSTNAMEKEY = 'com.adobe.type.shortInstanceName'
 NONEPOS = (-inf, -inf)
 
 class Defaults(object):
