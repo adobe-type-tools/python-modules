@@ -63,7 +63,7 @@ from fontTools.designspaceLib import (
 # constants
 RTL_GROUP = 'RTL_KERNING'
 RTL_TAGS = ['_ARA', '_HEB', '_RTL']
-SHORTINSTNAMEKEY = 'com.adobe.shortInstanceName'
+SHORTINSTNAMEKEY = 'com.adobe.type.shortInstanceName'
 GROUPSPLITSUFFIX = '_split'
 
 
