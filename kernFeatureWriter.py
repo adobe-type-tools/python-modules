@@ -160,7 +160,7 @@ class KernAdapter(object):
         '''
         return False
 
-    def get_locations(self, userUnits = False):
+    def get_locations(self, userUnits=False):
         '''
         Returns a dictionary of location name to axis coordinates
         '''
@@ -225,7 +225,6 @@ class KernAdapter(object):
         '''
         pass
 
-
     @abstractmethod
     def value_string(self, value, rtl=False):
         '''
@@ -287,7 +286,7 @@ class UFOKernAdapter(KernAdapter):
     def postscript_font_name(self):
         try:
             return self.f.info.postscriptFontName
-        except:
+        except Exception:
             pass
         return None
 
@@ -309,6 +308,7 @@ class UFOKernAdapter(KernAdapter):
 
     def value_is_zero(self, value):
         return value == 0
+
 
 class DesignspaceKernAdapter(KernAdapter):
     '''
@@ -359,7 +359,7 @@ class DesignspaceKernAdapter(KernAdapter):
     def has_locations(self):
         return True
 
-    def get_locations(self, userUnits = False):
+    def get_locations(self, userUnits=False):
         tagDict = {}
         for axisName in self.dsDoc.getAxisOrder():
             tagDict[axisName] = self.dsDoc.getAxis(axisName).tag
@@ -387,7 +387,6 @@ class DesignspaceKernAdapter(KernAdapter):
             anames.append(avstr)
         return '_'.join(anames)
 
-
     def calc_glyph_data(self):
         default_glyph_list = self.fonts[0].keys()
         default_glyph_set = set(default_glyph_list)
@@ -408,11 +407,12 @@ class DesignspaceKernAdapter(KernAdapter):
 
         self.glyph_set = default_glyph_set | all_extra_glyphs
 
-        self._glyph_order = {gn: i for (i, gn) in enumerate(default_glyph_list)}
+        self._glyph_order = {
+            gn: i for (i, gn) in enumerate(default_glyph_list)}
         if all_extra_glyphs:
-            extras_order = {gn: i for (i, gn) in
-                            enumerate(all_extra_glyphs,
-                                      start=default_glyph_set.size())}
+            extras_order = {
+                gn: i for (i, gn) in enumerate(
+                    all_extra_glyphs, start=default_glyph_set.size())}
             self._glyph_order.update(extras_order)
 
     def all_glyphs(self):
@@ -434,7 +434,7 @@ class DesignspaceKernAdapter(KernAdapter):
             for g, gl in f.groups.items():
                 ordering = group_orderings[g]
                 for j, gn in enumerate(gl):
-                    ordering[gn] |= set(gl[j+1:])
+                    ordering[gn] |= set(gl[j + 1:])
 
         # Use the partial orderings to calculate a total ordering,
         # or failing that use the order in which the glyphs were
@@ -520,13 +520,13 @@ class DesignspaceKernAdapter(KernAdapter):
     def postscript_font_name(self):
         # Try the designspace document first
         if self.defaultInstanceIndex is not None:
-            di = self.dsDoc.instances[self.defaultInstanceIndex] 
+            di = self.dsDoc.instances[self.defaultInstanceIndex]
             if hasattr(di, 'postScriptFontName'):
                 return di.postScriptFontName
         # Then the UFO via defcon
         try:
             return self.fonts[0].info.postscriptFontName
-        except:
+        except Exception:
             pass
         return None
 
@@ -545,7 +545,7 @@ class DesignspaceKernAdapter(KernAdapter):
     def value_string(self, value, rtl=False):
         # adding 0 makes a -0.0 into a 0.0
         assert len(value) == len(self.fonts)
-        format_str =  '<{0:g} 0 {0:g} 0>' if rtl else '{0:g}'
+        format_str = '<{0:g} 0 {0:g} 0>' if rtl else '{0:g}'
         def_value = value[0] + 0
         if all(v is None or v == def_value for v in value):
             return format_str.format(def_value)
@@ -613,10 +613,10 @@ class KerningSanitizer(object):
         }
         # Build glyph_to_group maps for each side, testing for and
         # eliminating conflicts by marking groups as conflicting
-        left_group_set  = { l for l, r in self.source_kerning.keys()
-                            if l in self.valid_groups }
-        right_group_set = { r for l, r in self.source_kerning.keys()
-                            if r in self.valid_groups }
+        left_group_set  = {
+            l for l, r in self.source_kerning.keys() if l in self.valid_groups}
+        right_group_set = {
+            r for l, r in self.source_kerning.keys() if r in self.valid_groups}
         for gs, g2g, cg in ((left_group_set, self.left_glyph_to_group,
                              self.left_conflict_groups),
                             (right_group_set, self.right_glyph_to_group,
@@ -673,10 +673,10 @@ class KerningSanitizer(object):
             print(
                 f'group {group} contains extraneous glyph(s): '
                 f'[{", ".join(extraneous_glyphs)}]')
-        for cg, g2g, desc in ((self.left_conflict_groups,
-                               self.left_glyph_to_group,'left'),
-                              (self.right_conflict_groups,
-                               self.right_glyph_to_group, 'right')):
+        for cg, g2g, desc in (
+            (self.left_conflict_groups, self.left_glyph_to_group, 'left'),
+            (self.right_conflict_groups, self.right_glyph_to_group, 'right')
+        ):
             for group, gl in cg:
                 print(
                     f'group {group} ignored because it contains glyph {gl} '
@@ -910,7 +910,7 @@ class KernProcessor(object):
             return ([], False)
         candidate_pairs = [(left_group, right), (left, right_group),
                            (left_group, right_group)]
-        return ([ c for c in candidate_pairs if c in self.kerning ], True)
+        return ([c for c in candidate_pairs if c in self.kerning], True)
 
     def _find_exceptions(self):
         '''
@@ -1289,7 +1289,7 @@ class run(object):
 
         print(f'Output file written to {output_path}')
 
-    def write_locations(self, adapter, locations_path, userUnits = False):
+    def write_locations(self, adapter, locations_path, userUnits=False):
 
         print(f'Saving {locations_path.name} file...')
 
@@ -1315,6 +1315,7 @@ def check_input_file(parser, file_name):
             parser.error(f'{file_name} does not exist')
         elif not file_path.is_dir():
             parser.error(f'{file_name} is not a directory')
+
     elif file_path.suffix.lower() == '.designspace':
         if not file_path.exists():
             parser.error(f'{file_name} does not exist')
@@ -1323,6 +1324,7 @@ def check_input_file(parser, file_name):
     else:
         parser.error(f'Unrecognized input file type')
     return file_name
+
 
 def get_args(args=None):
 

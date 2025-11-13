@@ -33,11 +33,12 @@ The kernFeatureWriter exports the kerning and groups data within a UFO to a
         - glyph-glyph exceptions  
         - glyph-group exceptions  
         - group-glyph exceptions  
-        - glyph-group
-        - glyph-group
-        - group-glyph and group-group
+        - glyph-group  
+        - glyph-group  
+        - group-glyph and group-group  
 
 -   filter low-value pairs (<3 or custom value), which are often results of interpolation (exceptions are not filtered)
+
 -   process right-to-left pairs (given that kerning groups containing
     those glyphs are suffixed with `_ARA`, `_HEB`, or `_RTL`, or RTL glyphs are in a `RTL_KERNING` group)
 
