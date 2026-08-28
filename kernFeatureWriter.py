@@ -677,7 +677,7 @@ class KerningSanitizer(object):
             (self.left_conflict_groups, self.left_glyph_to_group, 'left'),
             (self.right_conflict_groups, self.right_glyph_to_group, 'right')
         ):
-            for group, gl in cg:
+            for group, gl in cg.items():
                 print(
                     f'group {group} ignored because it contains glyph {gl} '
                     f'double-mapped on {desc} side (other group is {g2g[gl]})')
