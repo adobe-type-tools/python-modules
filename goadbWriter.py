@@ -81,7 +81,7 @@ def _make_agd_dict():
     AGD glyph name mapped to final name (often equivalent to the AGD name),
     and codepoint.
 
-    Mappings to private us codepoints (and mappings to esoteric final names)
+    Mappings to private use codepoints (and mappings to esoteric final names)
     are deliberately omitted.
     """
     agd_data = _load_agd_data()
@@ -170,9 +170,27 @@ def _make_agd_dict():
     return agd_name_dict
 
 
+def _make_agd_alias_dict():
+    """
+    AGD alias names. All kinds of obscure names once known to the AGD.
+
+    """
+    rx_uni_name = r"^(?:u|uni)([0-9A-F]{4,16})$"
+    agd_data = _load_agd_data()
+    agd_alias_dict = {}
+
+    for gname, agdglyph in agd_data.glyphs.items():
+        for alias in agdglyph.aliases():
+            if alias != gname and not re.match(rx_uni_name, alias):
+                agd_alias_dict[alias] = gname
+
+    return agd_alias_dict
+
+
 # inspired by
 # https://github.com/fonttools/fonttools/blob/main/Lib/fontTools/agl.py#L5107
 AGD_DICT = _make_agd_dict()
+AGD_ALIAS_DICT = _make_agd_alias_dict()
 
 
 def get_glyph_order(f, include_template_glyphs=False):
@@ -485,9 +503,9 @@ def _make_glyph_name_dict(f, glyph_order):
     glyph_name_dict = {".notdef": GlyphBaptism(".notdef", gn_final=".notdef")}
 
     # break the glyphs down into three categories:
-    # 1. any glyphs that are neither ligatures nor alternates
-    # 2. alternate glyphs (which are not also ligatures) (. but not _ in name)
-    # 3. ligatures (_ in name)
+    # 1. any glyphs that are base glyphs (neither ligatures nor alternates)
+    # 2. alternate glyphs (which are not also ligatures) ("." in name, but not "_")
+    # 3. ligatures ("_" in name)
 
     # The thinking behind (2) is that ligatures like f_f_l.alt are possible.
     # It’s a bit of a confusing glyph name -- does this mean that l is an
@@ -526,7 +544,7 @@ def _make_glyph_name_dict(f, glyph_order):
             # are assigned.
             cp_override = _make_uni_override(g.unicodes)
             if gb.gn_final != cp_override:
-                gb.cp_override = _make_uni_override(g.unicodes)
+                gb.cp_override = cp_override
 
         glyph_name_dict = _fill_gn_dict(gb, glyph_name_dict)
 
