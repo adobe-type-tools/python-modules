@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-'''
+"""
 GOADB writer -- write a GlyphOrderAndAliasDB file using a UFO as an input.
 
 More reading on the GOADB format:
@@ -8,7 +8,7 @@ https://github.com/adobe-type-tools/afdko/issues/1662
 https://github.com/adobe-type-tools/afdko/issues/1273
 
 
-'''
+"""
 
 import argparse
 import re
@@ -19,10 +19,10 @@ from defcon import Font, Glyph
 
 def _check_input_file(parser, file_name):
     fn = Path(file_name)
-    if fn.suffix.lower() != '.ufo':
-        parser.error(f'{fn.name} is not a UFO file')
+    if fn.suffix.lower() != ".ufo":
+        parser.error(f"{fn.name} is not a UFO file")
     if not fn.exists():
-        parser.error(f'{fn.name} does not exist')
+        parser.error(f"{fn.name} does not exist")
     return file_name
 
 
@@ -32,38 +32,41 @@ def _get_args(args=None):
     )
 
     parser.add_argument(
-        '-t', '--template',
-        action='store_true',
+        "-t",
+        "--template",
+        action="store_true",
         default=False,
-        help='include template glyphs in GOADB',
+        help="include template glyphs in GOADB",
     )
 
     parser.add_argument(
-        '-o', '--output_path',
-        action='store',
+        "-o",
+        "--output_path",
+        action="store",
         help=(
-            'output file or directory. '
-            'If not defined, the GOABD is written to stdout.'),
+            "output file or directory. "
+            "If not defined, the GOABD is written to stdout."
+        ),
         type=Path,
-        metavar='PATH',
+        metavar="PATH",
         default=None,
     )
 
     parser.add_argument(
-        'input_ufo',
+        "input_ufo",
         type=lambda f: _check_input_file(parser, f),
-        action='store',
-        help='UFO file',
+        action="store",
+        help="UFO file",
     )
 
     return parser.parse_args(args)
 
 
 def _load_agd_data():
-    '''
+    """
     read and load the AGD.txt file
-    '''
-    agd_txt = Path(fdkutils.get_resources_dir()) / 'AGD.txt'
+    """
+    agd_txt = Path(fdkutils.get_resources_dir()) / "AGD.txt"
 
     with open(agd_txt, "r") as agd_blob:
         agd_data = agd_blob.read()
@@ -74,24 +77,25 @@ def _load_agd_data():
 
 
 def _make_agd_dict():
-    '''
+    """
     AGD glyph name mapped to final name (often equivalent to the AGD name),
     and codepoint.
 
     Mappings to private us codepoints (and mappings to esoteric final names)
     are deliberately omitted.
-    '''
+    """
     agd_data = _load_agd_data()
-    rx_uni_name = r'^(?:u|uni)([0-9A-F]{4,16})$'
+    rx_uni_name = r"^(?:u|uni)([0-9A-F]{4,16})$"
     # (?:u|uni): the ?: is flagging a non-capturing group
     # the AGD may contains final names which combine multiple code points,
     # such as uni093F0930094D0902
     agd_name_dict = {}
 
     private_use = (
-        set(range(0xe000, 0xf8ff + 1)) |
-        set(range(0xf0000, 0xffffd + 1)) |
-        set(range(0x100000, 0x10fffd + 1)))
+        set(range(0xE000, 0xF8FF + 1))
+        | set(range(0xF0000, 0xFFFFD + 1))
+        | set(range(0x100000, 0x10FFFD + 1))
+    )
 
     for gname, agdglyph in agd_data.glyphs.items():
         if agdglyph.uni and not agdglyph.fin:
@@ -172,7 +176,7 @@ AGD_DICT = _make_agd_dict()
 
 
 def get_glyph_order(f, include_template_glyphs=False):
-    '''
+    """
     Figure out the glyph order of a UFO file.
         * make sure .notdef is first,
         * respect skipExportGlyphs,
@@ -187,91 +191,86 @@ def get_glyph_order(f, include_template_glyphs=False):
     NB: defcon and RF have different ways of determining template glyphs.
         in defcon, `f.glyphOrder` includes template glyphs
         in RF, `f.glyphOrder` excludes them
-    '''
+    """
 
     glyph_order = f.glyphOrder
-    skip = f.lib.get('public.skipExportGlyphs', [])
+    skip = f.lib.get("public.skipExportGlyphs", [])
     if glyph_order:
         if include_template_glyphs:
             order_wo_notdef = [
-                gn for gn in glyph_order if
-                gn != '.notdef' and
-                gn not in skip]
+                gn for gn in glyph_order if gn != ".notdef" and gn not in skip
+            ]
         else:
             # only filled-in glyphs, not template glyphs
             order_wo_notdef = [
-                gn for gn in glyph_order if
-                gn in f.keys() and
-                gn != '.notdef' and
-                gn not in skip
+                gn
+                for gn in glyph_order
+                if gn in f.keys() and gn != ".notdef" and gn not in skip
             ]
 
-        order = ['.notdef'] + order_wo_notdef
+        order = [".notdef"] + order_wo_notdef
 
     else:
         # first, all encoded glyphs are sorted by code point
         # then, the rest is sorted alphabetically.
 
         # all glyphs
-        glyphs_encoded = sorted(
-            [g for g in f if g.unicode], key=lambda g: g.unicode)
+        glyphs_encoded = sorted([g for g in f if g.unicode], key=lambda g: g.unicode)
         gnames_encoded = [g.name for g in glyphs_encoded]
 
-        glyphs_unencoded = [
-            g for g in f if g.unicode is None and g.name != '.notdef']
+        glyphs_unencoded = [g for g in f if g.unicode is None and g.name != ".notdef"]
 
         # more specific sub-groups:
         # glyphs which alternates of the encoded glyphs
         glyphs_alternates = [
-            g for g in glyphs_unencoded if
-            g.name.split('.')[0] in gnames_encoded]
+            g for g in glyphs_unencoded if g.name.split(".")[0] in gnames_encoded
+        ]
         # sort names by their suffix first,
         # then by the order of related names of encoded glyphs.
         gnames_alternates = sorted(
             [g.name for g in glyphs_alternates],
-            key=lambda gn:
-                (gn.split('.')[1], gnames_encoded.index(gn.split('.')[0])))
+            key=lambda gn: (gn.split(".")[1], gnames_encoded.index(gn.split(".")[0])),
+        )
 
         # glyphs not related to encoded glyphs are sorted alphabetically
-        glyphs_rest = [
-            g for g in glyphs_unencoded if g not in glyphs_alternates]
+        glyphs_rest = [g for g in glyphs_unencoded if g not in glyphs_alternates]
         gnames_rest = sorted([g.name for g in glyphs_rest])
 
-        order = ['.notdef'] + gnames_encoded + gnames_alternates + gnames_rest
+        order = [".notdef"] + gnames_encoded + gnames_alternates + gnames_rest
 
     return order
 
 
 def make_uni_gname(cp):
-    '''
+    """
     convert codepoint to uniXXXX (or uXXXXX) glyph name
-    '''
+    """
     if cp <= 0xFFFF:
-        uni_name = f'uni{cp:0>4X}'
+        uni_name = f"uni{cp:0>4X}"
     else:
-        uni_name = f'u{cp:0>5X}'
+        uni_name = f"u{cp:0>5X}"
     return uni_name
 
 
 def _make_uni_override(cp_list):
-    '''
+    """
     comma-separated Unicode override string
     (or a single string if len(cp_list) == 1)
-    '''
-    unicode_override = ','.join([make_uni_gname(cp) for cp in cp_list])
+    """
+    unicode_override = ",".join([make_uni_gname(cp) for cp in cp_list])
     return unicode_override
 
 
 def _make_unique_final_name(gname):
-    '''
+    """
     Since final glyph names need to be sanitized, a duplication of
     names is possible. This adds a 4-digit index to the glyph name.
 
     If the glyph name already has a 4-digit index, the index is incremented.
-    '''
+    """
 
     # glyph name already has an index
-    index_match = re.match(r'(.+?)(\d{4})', gname)
+    index_match = re.match(r"(.+?)(\d{4})", gname)
     if index_match:
         gname_stem = index_match.group(1)
         index = int(index_match.group(2)) + 1
@@ -279,11 +278,11 @@ def _make_unique_final_name(gname):
     else:
         gname_stem = gname
         index = 0
-    return f'{gname_stem}{index:0>4}'
+    return f"{gname_stem}{index:0>4}"
 
 
 def sanitize_final_gname(gname):
-    '''
+    """
     The following characters are allowed in friendly- but not final names:
         U+002A * asterisk
         U+002B + plus sign
@@ -299,42 +298,42 @@ def sanitize_final_gname(gname):
 
     see also
     https://adobe-type-tools.github.io/afdko/OpenTypeFeatureFileSpecification.html#2fi-glyph-name
-    '''
-    sorts = '*+-:^|~._'
-    alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    digits = '0123456789'
+    """
+    sorts = "*+-:^|~._"
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    digits = "0123456789"
 
     # remove any unexpected chars
-    chars_allowed = (alphabet + alphabet.lower() + digits + sorts)
+    chars_allowed = alphabet + alphabet.lower() + digits + sorts
     chars_illegal = sorted(set(gname) - set(chars_allowed))
     if chars_illegal:
         for char in chars_illegal:
-            gname = gname.replace(char, '')
+            gname = gname.replace(char, "")
 
     # remove any chars not allowed in final names
-    for char in '*+-:^|~':
-        gname = gname.replace(char, '')
+    for char in "*+-:^|~":
+        gname = gname.replace(char, "")
 
     # make sure final name does not start with period (except .notdef)
-    if gname.startswith('.') and gname != '.notdef':
+    if gname.startswith(".") and gname != ".notdef":
         gname = gname[1:]
 
     # make sure name does not start with digit
-    figure_match = re.match(r'\d+?(\D*)', gname)
+    figure_match = re.match(r"\d+?(\D*)", gname)
     if figure_match:
         gname = figure_match.group(1)
 
-    if gname == '':  # nothing left, original name all digits (or illegal)
-        gname = 'dummy'
+    if gname == "":  # nothing left, original name all digits (or illegal)
+        gname = "dummy"
 
     return gname
 
 
 def _dummy_glyph(f, gname):
-    '''
+    """
     make sure a glyph object is present -- no matter if it exists in the UFO
     or not.
-    '''
+    """
     try:
         # glyph exists in the UFO
         glyph = f[gname]
@@ -346,7 +345,7 @@ def _dummy_glyph(f, gname):
 
 
 class GlyphBaptism(object):
-    '''
+    """
     Simple deduction of final glyph name.
     (Deliberately ignoring ligatures and alternates here.)
 
@@ -356,7 +355,7 @@ class GlyphBaptism(object):
     - glyph name implies a code point (uniXXXX or uXXXXX)
     - glyph is not encoded
 
-    '''
+    """
 
     def __init__(self, gn_friendly, g=None, gn_final=None, cp_override=None):
         if g is None:
@@ -383,7 +382,7 @@ class GlyphBaptism(object):
         # could be omitted (`uni20` -- although I have not seen that yet).
         # The last Unicode Plane (16) ends at 10FFFF, so allowing code points
         # up to FFFFFF should be enough.
-        rx_uni_name = r'^(?:u|uni)([0-9A-F]{1,6})$'
+        rx_uni_name = r"^(?:u|uni)([0-9A-F]{1,6})$"
         uni_name_match = re.match(rx_uni_name, self.gn_friendly)
 
         # glyph name is in AGD
@@ -459,10 +458,10 @@ class GlyphBaptism(object):
 
 
 def _fill_gn_dict(gb, glyph_name_dict):
-    '''
+    """
     This slightly awkward method of adding values to a dictionary ensures that
     the final glyph name is unique.
-    '''
+    """
     final_name = gb.gn_final
     while final_name in [gb.gn_final for gb in glyph_name_dict.values()]:
         final_name = _make_unique_final_name(final_name)
@@ -472,7 +471,7 @@ def _fill_gn_dict(gb, glyph_name_dict):
 
 
 def _make_glyph_name_dict(f, glyph_order):
-    '''
+    """
     make a dictionary:
         {friendly name: gb object}
 
@@ -481,11 +480,9 @@ def _make_glyph_name_dict(f, glyph_order):
         .gn_friendly (name)
         .cp_override (unicode override(s) as a string)
         .glyph (glyph object)
-    '''
+    """
 
-    glyph_name_dict = {
-        '.notdef': GlyphBaptism('.notdef', gn_final='.notdef')
-    }
+    glyph_name_dict = {".notdef": GlyphBaptism(".notdef", gn_final=".notdef")}
 
     # break the glyphs down into three categories:
     # 1. any glyphs that are neither ligatures nor alternates
@@ -497,11 +494,11 @@ def _make_glyph_name_dict(f, glyph_order):
     # alternate, or is it an alternate ligature in itself?
     # I interpret it as a combination of two fs and one l.alt.
 
-    base_glyphs = [gn for gn in glyph_order if not any(['.' in gn, '_' in gn])]
+    base_glyphs = [gn for gn in glyph_order if not any(["." in gn, "_" in gn])]
     alt_glyphs = [
-        gn for gn in glyph_order if '.' in gn and '_' not in gn and
-        gn != '.notdef']
-    liga_glyphs = [gn for gn in glyph_order if '_' in gn]
+        gn for gn in glyph_order if "." in gn and "_" not in gn and gn != ".notdef"
+    ]
+    liga_glyphs = [gn for gn in glyph_order if "_" in gn]
 
     for gn in base_glyphs:
         g = _dummy_glyph(f, gn)
@@ -511,11 +508,11 @@ def _make_glyph_name_dict(f, glyph_order):
     for gn in alt_glyphs:
         # any glyph with a suffix
         g = _dummy_glyph(f, gn)
-        stem, suffixes = g.name.split('.', 1)
+        stem, suffixes = g.name.split(".", 1)
         if stem in glyph_name_dict and not g.unicode:
             # glyphs like A.sc
             final_name_stem = glyph_name_dict.get(stem).gn_final
-            final_name = f'{final_name_stem}.{suffixes}'
+            final_name = f"{final_name_stem}.{suffixes}"
             gb = GlyphBaptism(g.name, g, gn_final=final_name)
 
         else:
@@ -535,7 +532,7 @@ def _make_glyph_name_dict(f, glyph_order):
 
     for gn in liga_glyphs:
         g = _dummy_glyph(f, gn)
-        liga_chunks = g.name.split('_')
+        liga_chunks = g.name.split("_")
         liga_chunks_final = []
         for chunk in liga_chunks:
             if chunk in glyph_name_dict:
@@ -545,7 +542,7 @@ def _make_glyph_name_dict(f, glyph_order):
                 # chunk with unknown glyph name
                 final_name_chunk = GlyphBaptism(chunk).gn_final
             liga_chunks_final.append(final_name_chunk)
-        final_name = '_'.join(liga_chunks_final)
+        final_name = "_".join(liga_chunks_final)
         gb = GlyphBaptism(g.name, g, gn_final=final_name)
 
         if g.unicodes:
@@ -564,15 +561,15 @@ def _make_goadb_content(glyph_order, glyph_name_dict):
         goadb_line = [gb.gn_final, gb.gn_friendly]
         if gb.cp_override:
             goadb_line.append(gb.cp_override)
-        goadb.append('\t'.join(goadb_line))
-    return '\n'.join(goadb)
+        goadb.append("\t".join(goadb_line))
+    return "\n".join(goadb)
 
 
 def make_goadb(input_ufo, include_template_glyphs=False):
-    '''
+    """
     Make a GOADB from an input UFO.
     Optionally, include (un-filled) template glyphs.
-    '''
+    """
     f = Font(input_ufo)
     glyph_order = get_glyph_order(f, include_template_glyphs)
     glyph_name_dict = _make_glyph_name_dict(f, glyph_order)
@@ -581,16 +578,16 @@ def make_goadb(input_ufo, include_template_glyphs=False):
 
 
 def write_goadb(goadb_content, output_path=None):
-    '''
+    """
     Write the GOADB to an output file or folder.
-    '''
+    """
     if output_path:
         if output_path.is_dir():
-            with open(output_path / 'GlyphOrderAndAliasDB', 'w') as blob:
-                blob.write(goadb_content + '\n')
+            with open(output_path / "GlyphOrderAndAliasDB", "w") as blob:
+                blob.write(goadb_content + "\n")
         else:
-            with open(output_path, 'w') as blob:
-                blob.write(goadb_content + '\n')
+            with open(output_path, "w") as blob:
+                blob.write(goadb_content + "\n")
     else:
         print(goadb_content)
 
@@ -601,5 +598,5 @@ def main(test_args=None):
     write_goadb(goadb_content, args.output_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
