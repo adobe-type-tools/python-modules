@@ -509,9 +509,11 @@ def _make_glyph_name_dict(f, glyph_order):
         glyph_name_dict = _fill_gn_dict(gb, glyph_name_dict)
 
     for gn in alt_glyphs:
+        # any glyph with a suffix
         g = _dummy_glyph(f, gn)
         stem, suffixes = g.name.split('.', 1)
-        if stem in glyph_name_dict:
+        if stem in glyph_name_dict and not g.unicode:
+            # glyphs like A.sc
             final_name_stem = glyph_name_dict.get(stem).gn_final
             final_name = f'{final_name_stem}.{suffixes}'
             gb = GlyphBaptism(g.name, g, gn_final=final_name)
@@ -521,8 +523,13 @@ def _make_glyph_name_dict(f, glyph_order):
             final_name = gb.gn_final
 
         if g.unicodes:
-            # the alt glyph itself may have a codepoint
-            gb.cp_override = _make_uni_override(g.unicodes)
+            # the alt glyph itself may have a codepoint, and we might need
+            # an override. However, that override is only needed if the
+            # final name does not imply a codepoint, or if multiple codepoints
+            # are assigned.
+            cp_override = _make_uni_override(g.unicodes)
+            if gb.gn_final != cp_override:
+                gb.cp_override = _make_uni_override(g.unicodes)
 
         glyph_name_dict = _fill_gn_dict(gb, glyph_name_dict)
 
