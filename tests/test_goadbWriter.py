@@ -86,6 +86,18 @@ def test_default():
     assert read_file(goadb_temp) == read_file(goadb_example)
 
 
+def test_suffixes():
+    '''
+    testing UFO with suffixed glyph names
+    '''
+    ufo_path = str(TEST_DIR / 'goadb_suffixes.ufo')
+    goadb_example = TEST_DIR / 'goadb_suffixes'
+    goadb_temp = str(TEMP_DIR / 'goadb')
+    args = [ufo_path, '-o', goadb_temp]
+    main(args)
+    assert read_file(goadb_temp) == read_file(goadb_example)
+
+
 def test_write_to_dir():
     '''
     writing GOADB to directory (name is auto-generated)

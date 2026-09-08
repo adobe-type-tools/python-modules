@@ -396,6 +396,8 @@ class GlyphBaptism(object):
 
     def assign_final_and_cp_override(self):
         is_agd_name = self.gn_friendly in AGD_DICT.keys()
+        is_old_agd_name = self.gn_friendly in AGD_ALIAS_DICT.keys()
+
         # The uni name is something like `uni0020`. In theory, the zero-padding
         # could be omitted (`uni20` -- although I have not seen that yet).
         # The last Unicode Plane (16) ends at 10FFFF, so allowing code points
@@ -413,6 +415,31 @@ class GlyphBaptism(object):
                 self.gn_final = agd_final
             elif len(self.glyph.unicodes) > 1:
                 # glyph name is in AGD, but multiple code points attached;
+                # override is needed
+                self.gn_final = self.gn_friendly
+                self.cp_override = _make_uni_override(self.glyph.unicodes)
+            else:
+                # just one codepoint
+                expected_codepoint = agd_cp
+                actual_codepoint = self.glyph.unicode
+                if expected_codepoint == actual_codepoint:
+                    # codepoint is the expected one.
+                    self.gn_final = agd_final
+                else:
+                    # codepoint is different from what we expect
+                    self.gn_final = make_uni_gname(self.glyph.unicode)
+
+        # glyph name is an AGD alias
+        elif is_old_agd_name:
+            modern_agd_name = AGD_ALIAS_DICT.get(self.gn_friendly)
+            agd_final, agd_cp = AGD_DICT.get(modern_agd_name)
+            if self.glyph.unicodes == []:
+                # no codepoint assigned to glyph, codepoint will be assigned
+                # through the glyph name only (or, in some cases, the AGD
+                # dict has a different final name)
+                self.gn_final = agd_final
+            elif len(self.glyph.unicodes) > 1:
+                # glyph name has equivalent in AGD, but multiple code points attached;
                 # override is needed
                 self.gn_final = self.gn_friendly
                 self.cp_override = _make_uni_override(self.glyph.unicodes)
@@ -512,43 +539,62 @@ def _make_glyph_name_dict(f, glyph_order):
     # alternate, or is it an alternate ligature in itself?
     # I interpret it as a combination of two fs and one l.alt.
 
-    base_glyphs = [gn for gn in glyph_order if not any(["." in gn, "_" in gn])]
-    alt_glyphs = [
-        gn for gn in glyph_order if "." in gn and "_" not in gn and gn != ".notdef"
+    base_names = [gn for gn in glyph_order if not any(["." in gn, "_" in gn])]
+    old_agd_names = [gn for gn in glyph_order if "." in gn and AGD_ALIAS_DICT.get(gn)]
+    alt_names = [
+        gn
+        for gn in glyph_order
+        if "." in gn and "_" not in gn and gn != ".notdef" and gn not in old_agd_names
     ]
-    liga_glyphs = [gn for gn in glyph_order if "_" in gn]
+    liga_names = [gn for gn in glyph_order if "_" in gn]
+    rx_uni_name = r"^(?:u|uni)([0-9A-F]{1,6})$"
 
-    for gn in base_glyphs:
+    for gn in base_names:
         g = _dummy_glyph(f, gn)
         gb = GlyphBaptism(g.name, g)
         glyph_name_dict = _fill_gn_dict(gb, glyph_name_dict)
 
-    for gn in alt_glyphs:
-        # any glyph with a suffix
+    for gn in old_agd_names:
+        g = _dummy_glyph(f, gn)
+        gb = GlyphBaptism(g.name, g)
+        glyph_name_dict = _fill_gn_dict(gb, glyph_name_dict)
+
+    for gn in alt_names:
+        # any glyph with a suffix (not an old AGD name)
         g = _dummy_glyph(f, gn)
         stem, suffixes = g.name.split(".", 1)
-        if stem in glyph_name_dict and not g.unicode:
-            # glyphs like A.sc
-            final_name_stem = glyph_name_dict.get(stem).gn_final
-            final_name = f"{final_name_stem}.{suffixes}"
-            gb = GlyphBaptism(g.name, g, gn_final=final_name)
+
+        if stem in glyph_name_dict:
+            # stem contains a previously-seen friendly glyph name
+            if g.unicodes:
+                # make a unicode override
+                stem_final = glyph_name_dict.get(stem).gn_final
+                if re.match(rx_uni_name, stem_final):
+                    # the final name used for the previously-seen stem
+                    # is a uniXXXX name. Don’t use it, use the own uni-name
+                    # instead
+                    gn_final = make_uni_gname(g.unicode)
+                    cp_override = None
+                else:
+                    # the related final name is a nice name like "zero".
+                    # use it going forward.
+                    gn_final = f"{stem_final}.{suffixes}"
+                    cp_override = _make_uni_override(g.unicodes)
+                gb = GlyphBaptism(g.name, g, gn_final=gn_final, cp_override=cp_override)
+
+            else:
+                # no unicode, use previously-seen stem, plus any suffixes.
+                stem_final = glyph_name_dict.get(stem).gn_final
+                final_name = f"{stem_final}.{suffixes}"
+                gb = GlyphBaptism(g.name, g, gn_final=final_name)
 
         else:
+            # stem is not known
             gb = GlyphBaptism(g.name, g)
-            final_name = gb.gn_final
-
-        if g.unicodes:
-            # the alt glyph itself may have a codepoint, and we might need
-            # an override. However, that override is only needed if the
-            # final name does not imply a codepoint, or if multiple codepoints
-            # are assigned.
-            cp_override = _make_uni_override(g.unicodes)
-            if gb.gn_final != cp_override:
-                gb.cp_override = cp_override
 
         glyph_name_dict = _fill_gn_dict(gb, glyph_name_dict)
 
-    for gn in liga_glyphs:
+    for gn in liga_names:
         g = _dummy_glyph(f, gn)
         liga_chunks = g.name.split("_")
         liga_chunks_final = []
