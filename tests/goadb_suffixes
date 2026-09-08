@@ -1,0 +1,88 @@
+.notdef	.notdef
+parenleft	parenleft
+parenright	parenright
+zero	zero
+one	one
+two	two
+three	three
+four	four
+five	five
+six	six
+seven	seven
+eight	eight
+nine	nine
+A	A
+E	E
+I	I
+O	O
+U	U
+a	a
+e	e
+i	i
+n	n
+o	o
+u	u
+uni00B5	mu
+uni018F	Schwa.latin
+uni0259	schwa.latin
+n.superior	n.superior	uni207F
+zero.superior	zero.superior	uni2070
+four.superior	four.superior	uni2074
+five.superior	five.superior	uni2075
+six.superior	six.superior	uni2076
+seven.superior	seven.superior	uni2077
+eight.superior	eight.superior	uni2078
+nine.superior	nine.superior	uni2079
+parenleft.superior	parenleft.superior	uni207D
+parenright.superior	parenright.superior	uni207E
+zero.inferior	zero.inferior	uni2080
+one.inferior	one.inferior	uni2081
+two.inferior	two.inferior	uni2082
+three.inferior	three.inferior	uni2083
+four.inferior	four.inferior	uni2084
+five.inferior	five.inferior	uni2085
+six.inferior	six.inferior	uni2086
+seven.inferior	seven.inferior	uni2087
+eight.inferior	eight.inferior	uni2088
+nine.inferior	nine.inferior	uni2089
+parenleft.inferior	parenleft.inferior	uni208D
+parenright.inferior	parenright.inferior	uni208E
+uni2610	checkbox
+uni2611	checkbox.checked
+uni2206	Delta.math
+uni2126	Omega
+uni0394	Delta
+uni03A9	Omega.greek
+theta	theta
+uni03BC	mu.greek
+sigma	sigma
+sigma.end	sigma.end	uni03C2
+uni0404	Ie.ukran
+uni0406	I.ukran
+uni040E	U.short
+uni0410	A.cyr
+uni0413	Ghe
+uni0415	Ie
+uni0418	I.cyr
+uni0419	I.short
+uni041E	O.cyr
+uni0423	U.cyr
+uni042D	E.cyr
+uni0490	Ghe.up
+uni04AE	Ucyr.straight
+uni04B0	Ucyr.straightstroke
+uni0430	a.cyr
+uni0433	ghe
+uni0435	ie
+uni0438	i.cyr
+uni0439	i.short
+uni043E	o.cyr
+uni0443	u.cyr
+uni044D	e.cyr
+uni0454	ie.ukran
+uni0456	i.ukran
+uni045E	u.short
+uni0491	ghe.up
+uni04AF	ucyr.straight
+uni04B1	ucyr.straightstroke
+theta.math	theta.math	uni03D1
