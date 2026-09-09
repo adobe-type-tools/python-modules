@@ -508,7 +508,8 @@ def _fill_gn_dict(gb, glyph_name_dict):
     the final glyph name is unique.
     """
     final_name = gb.gn_final
-    while final_name in [gb.gn_final for gb in glyph_name_dict.values()]:
+    final_names = [gb.gn_final for gb in glyph_name_dict.values()]
+    while final_name in final_names:
         final_name = _make_unique_final_name(final_name)
     gb.gn_final = final_name
     glyph_name_dict[gb.gn_friendly] = gb
@@ -598,6 +599,9 @@ def _make_glyph_name_dict(f, glyph_order):
         g = _dummy_glyph(f, gn)
         liga_chunks = g.name.split("_")
         liga_chunks_final = []
+        last_chunk, *suffix = liga_chunks[-1].split('.', 1)
+        if suffix:
+            liga_chunks[-1] = last_chunk
         for chunk in liga_chunks:
             if chunk in glyph_name_dict:
                 # chunk with known glyph name
@@ -606,13 +610,20 @@ def _make_glyph_name_dict(f, glyph_order):
                 # chunk with unknown glyph name
                 final_name_chunk = GlyphBaptism(chunk).gn_final
             liga_chunks_final.append(final_name_chunk)
-        final_name = "_".join(liga_chunks_final)
-        gb = GlyphBaptism(g.name, g, gn_final=final_name)
+
+        if suffix:
+            # suffix is always a list, but there is only one item in it
+            final_name = "_".join(liga_chunks_final) + f'.{suffix[0]}'
+        else:
+            final_name = "_".join(liga_chunks_final)
 
         if g.unicodes:
             # some ligatures have codepoints
-            gb.cp_override = _make_uni_override(g.unicodes)
+            cp_override = _make_uni_override(g.unicodes)
+        else:
+            cp_override = None
 
+        gb = GlyphBaptism(g.name, g, gn_final=final_name, cp_override=cp_override)
         glyph_name_dict = _fill_gn_dict(gb, glyph_name_dict)
 
     return glyph_name_dict
