@@ -601,7 +601,10 @@ def _make_glyph_name_dict(f, glyph_order):
         liga_chunks_final = []
         last_chunk, *suffix = liga_chunks[-1].split('.', 1)
         if suffix:
+            # remove suffix from ligature chunks
             liga_chunks[-1] = last_chunk
+
+        # find final name for each chunk in the ligature
         for chunk in liga_chunks:
             if chunk in glyph_name_dict:
                 # chunk with known glyph name
