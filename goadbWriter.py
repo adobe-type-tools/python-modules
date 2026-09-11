@@ -287,7 +287,7 @@ def _make_uni_override(cp_list):
     return unicode_override
 
 
-def _make_unique_final_name(gname):
+def _make_unique_final_name(gname, index=0):
     """
     Since final glyph names need to be sanitized, a duplication of
     names is possible. This adds a 4-digit index to the glyph name.
@@ -296,15 +296,14 @@ def _make_unique_final_name(gname):
     """
 
     # glyph name already has an index
-    index_match = re.match(r"(.+?)(\d{4})", gname)
+    index_match = re.match(r"(.+?)\.(\d{4})", gname)
     if index_match:
         gname_stem = index_match.group(1)
-        index = int(index_match.group(2)) + 1
     # no index yet
     else:
         gname_stem = gname
-        index = 0
-    return f"{gname_stem}{index:0>4}"
+    final_name = f"{gname_stem}.{index:0>4}"
+    return final_name
 
 
 def sanitize_final_gname(gname):
@@ -531,8 +530,10 @@ def _fill_gn_dict(gn, glyph_name_dict):
     """
     final_name = gn.final
     final_names = [gn.final for gn in glyph_name_dict.values()]
+    gn_index = 0
     while final_name in final_names:
-        final_name = _make_unique_final_name(final_name)
+        final_name = _make_unique_final_name(final_name, gn_index)
+        gn_index += 1
     gn.final = final_name
     glyph_name_dict[gn.friendly] = gn
     return glyph_name_dict
