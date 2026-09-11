@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 sys.path.append("..")
-from goadbWriter import _get_args, main, GlyphBaptism
+from goadbWriter import _get_args, main, GlyphBaptist
 
 
 TEST_DIR = Path(__file__).parent
@@ -43,7 +43,7 @@ def test_gname_sanitizing():
     make sure input glyph names are properly sanitized
     '''
     gname_dirty = 'A.#E81416FF'
-    gb = GlyphBaptism(gname_dirty)
+    gb = GlyphBaptist(gname_dirty)
     assert '#' not in gb.gn_final
 
 
@@ -92,6 +92,18 @@ def test_suffixes():
     '''
     ufo_path = str(TEST_DIR / 'goadb_suffixes.ufo')
     goadb_example = TEST_DIR / 'goadb_suffixes'
+    goadb_temp = str(TEMP_DIR / 'goadb')
+    args = [ufo_path, '-o', goadb_temp]
+    main(args)
+    assert read_file(goadb_temp) == read_file(goadb_example)
+
+
+def test_ligatures():
+    '''
+    testing UFO with suffixed glyph names
+    '''
+    ufo_path = str(TEST_DIR / 'goadb_ligatures.ufo')
+    goadb_example = TEST_DIR / 'goadb_ligatures'
     goadb_temp = str(TEMP_DIR / 'goadb')
     args = [ufo_path, '-o', goadb_temp]
     main(args)
