@@ -17,7 +17,6 @@ from pathlib import Path
 from defcon import Font, Glyph
 from dataclasses import dataclass
 
-
 RX_UNI_NAME = r"^(?:u|uni)([0-9A-F]{1,6})$"
 
 
@@ -184,7 +183,13 @@ def _make_agd_alias_dict():
 
     for gname, agdglyph in agd_data.glyphs.items():
         for alias in agdglyph.aliases():
-            if alias != gname and not re.match(RX_UNI_NAME, alias):
+            if all(
+                [
+                    alias != gname,
+                    re.match(RX_UNI_NAME, alias) is None,
+                    gname in AGD_DICT,
+                ]
+            ):
                 agd_alias_dict[alias] = gname
 
     return agd_alias_dict
@@ -370,6 +375,7 @@ class GlyphName(object):
     """
     hopefully the use of reserved keywords is OK here
     """
+
     friendly: str = ""
     final: str = ""
     override: str = ""
@@ -405,9 +411,7 @@ class GlyphBaptist(object):
         self.gn_final = sanitize_final_gname(self.gn_final)
 
         self.gn = GlyphName(
-            friendly=self.gn_friendly,
-            final=self.gn_final,
-            override=self.cp_override
+            friendly=self.gn_friendly, final=self.gn_final, override=self.cp_override
         )
         # in other cases (alternates/ligatures), we generate the final name
         # outside, and use this object for data storage only.
@@ -450,6 +454,7 @@ class GlyphBaptist(object):
         elif is_old_agd_name:
             modern_agd_name = AGD_ALIAS_DICT.get(self.gn_friendly)
             agd_final, agd_cp = AGD_DICT.get(modern_agd_name)
+
             if self.glyph.unicodes == []:
                 # no codepoint assigned to glyph, codepoint will be assigned
                 # through the glyph name only (or, in some cases, the AGD
@@ -559,10 +564,16 @@ def _make_glyph_name_dict(f, glyph_order):
     # I interpret it as a combination of two fs and one l.alt.
 
     base_names = [gn for gn in glyph_order if not any(["." in gn, "_" in gn])]
-    old_agd_names = [gn for gn in glyph_order if all([
-        "." in gn, "_" not in gn, AGD_ALIAS_DICT.get(gn)])]
-    alt_names = [gn for gn in glyph_order if all([
-        "." in gn, "_" not in gn, gn != ".notdef", gn not in old_agd_names])]
+    old_agd_names = [
+        gn
+        for gn in glyph_order
+        if all(["." in gn, "_" not in gn, AGD_ALIAS_DICT.get(gn)])
+    ]
+    alt_names = [
+        gn
+        for gn in glyph_order
+        if all(["." in gn, "_" not in gn, gn != ".notdef", gn not in old_agd_names])
+    ]
     liga_names = [gn for gn in glyph_order if "_" in gn]
     RX_UNI_NAME = r"^(?:u|uni)([0-9A-F]{1,6})$"
 
@@ -615,7 +626,7 @@ def _make_glyph_name_dict(f, glyph_order):
         g = _dummy_glyph(f, gn)
         liga_chunks = g.name.split("_")
         liga_chunks_final = []
-        last_chunk, *suffix = liga_chunks[-1].split('.', 1)
+        last_chunk, *suffix = liga_chunks[-1].split(".", 1)
         if suffix:
             # remove suffix from ligature chunks
             liga_chunks[-1] = last_chunk
@@ -632,7 +643,7 @@ def _make_glyph_name_dict(f, glyph_order):
 
         if suffix:
             # suffix is always a list, but there is only one item in it
-            final_name = "_".join(liga_chunks_final) + f'.{suffix[0]}'
+            final_name = "_".join(liga_chunks_final) + f".{suffix[0]}"
         else:
             final_name = "_".join(liga_chunks_final)
 
