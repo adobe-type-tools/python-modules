@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="shade" format="2">
+	<unicode hex="2358"/>
+	<unicode hex="9618"/>
+	<unicode hex="9619"/>
+	<unicode hex="9617"/>
+	<advance width="100"/>
+	<note>
+multiple codepoints
+</note>
+</glyph>
