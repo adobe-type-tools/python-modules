@@ -100,10 +100,22 @@ def test_suffixes():
 
 def test_ligatures():
     '''
-    testing UFO with suffixed glyph names
+    testing UFO with ligature glyph names
     '''
     ufo_path = str(TEST_DIR / 'goadb_ligatures.ufo')
     goadb_example = TEST_DIR / 'goadb_ligatures'
+    goadb_temp = str(TEMP_DIR / 'goadb')
+    args = [ufo_path, '-o', goadb_temp]
+    main(args)
+    assert read_file(goadb_temp) == read_file(goadb_example)
+
+
+def test_agd_alias():
+    '''
+    testing UFO with outdated AGD glyph names
+    '''
+    ufo_path = str(TEST_DIR / 'goadb_agd_alias.ufo')
+    goadb_example = TEST_DIR / 'goadb_agd_alias'
     goadb_temp = str(TEMP_DIR / 'goadb')
     args = [ufo_path, '-o', goadb_temp]
     main(args)
