@@ -15,6 +15,10 @@ import re
 from afdko import agd, fdkutils
 from pathlib import Path
 from defcon import Font, Glyph
+from dataclasses import dataclass
+
+
+RX_UNI_NAME = r"^(?:u|uni)([0-9A-F]{1,6})$"
 
 
 def _check_input_file(parser, file_name):
@@ -85,7 +89,7 @@ def _make_agd_dict():
     are deliberately omitted.
     """
     agd_data = _load_agd_data()
-    rx_uni_name = r"^(?:u|uni)([0-9A-F]{4,16})$"
+    RX_UNI_NAME = r"^(?:u|uni)([0-9A-F]{4,16})$"
     # (?:u|uni): the ?: is flagging a non-capturing group
     # the AGD may contains final names which combine multiple code points,
     # such as uni093F0930094D0902
@@ -119,7 +123,7 @@ def _make_agd_dict():
             # makeotf knows that a specific name is associated with a certain
             # code point, but comparefamily complains about a “working name”
             # being assigned. This includes florin, for example.
-            uni_match = re.match(rx_uni_name, agdglyph.fin)
+            uni_match = re.match(RX_UNI_NAME, agdglyph.fin)
             if uni_match:
                 codepoint = int(uni_match.group(1), 16)
                 if codepoint not in private_use:
@@ -154,7 +158,7 @@ def _make_agd_dict():
             # some glyphs may have a preferred final name, such as
             # Gtilde (which combines two code points): uni00470303
             # Rringbelowmacron (three code points): uni005203250304
-            uni_match = re.match(rx_uni_name, agdglyph.fin)
+            uni_match = re.match(RX_UNI_NAME, agdglyph.fin)
             agd_name_dict[gname] = gname_final, None
 
         else:
@@ -175,13 +179,12 @@ def _make_agd_alias_dict():
     AGD alias names. All kinds of obscure names once known to the AGD.
 
     """
-    rx_uni_name = r"^(?:u|uni)([0-9A-F]{4,16})$"
     agd_data = _load_agd_data()
     agd_alias_dict = {}
 
     for gname, agdglyph in agd_data.glyphs.items():
         for alias in agdglyph.aliases():
-            if alias != gname and not re.match(rx_uni_name, alias):
+            if alias != gname and not re.match(RX_UNI_NAME, alias):
                 agd_alias_dict[alias] = gname
 
     return agd_alias_dict
@@ -362,7 +365,17 @@ def _dummy_glyph(f, gname):
     return glyph
 
 
-class GlyphBaptism(object):
+@dataclass
+class GlyphName(object):
+    """
+    hopefully the use of reserved keywords is OK here
+    """
+    friendly: str = ""
+    final: str = ""
+    override: str = ""
+
+
+class GlyphBaptist(object):
     """
     Simple deduction of final glyph name.
     (Deliberately ignoring ligatures and alternates here.)
@@ -391,6 +404,11 @@ class GlyphBaptism(object):
 
         self.gn_final = sanitize_final_gname(self.gn_final)
 
+        self.gn = GlyphName(
+            friendly=self.gn_friendly,
+            final=self.gn_final,
+            override=self.cp_override
+        )
         # in other cases (alternates/ligatures), we generate the final name
         # outside, and use this object for data storage only.
 
@@ -402,8 +420,7 @@ class GlyphBaptism(object):
         # could be omitted (`uni20` -- although I have not seen that yet).
         # The last Unicode Plane (16) ends at 10FFFF, so allowing code points
         # up to FFFFFF should be enough.
-        rx_uni_name = r"^(?:u|uni)([0-9A-F]{1,6})$"
-        uni_name_match = re.match(rx_uni_name, self.gn_friendly)
+        uni_name_match = re.match(RX_UNI_NAME, self.gn_friendly)
 
         # glyph name is in AGD
         if is_agd_name:
@@ -502,17 +519,17 @@ class GlyphBaptism(object):
                 self.gn_final = make_uni_gname(self.glyph.unicode)
 
 
-def _fill_gn_dict(gb, glyph_name_dict):
+def _fill_gn_dict(gn, glyph_name_dict):
     """
     This slightly awkward method of adding values to a dictionary ensures that
     the final glyph name is unique.
     """
-    final_name = gb.gn_final
-    final_names = [gb.gn_final for gb in glyph_name_dict.values()]
+    final_name = gn.final
+    final_names = [gn.final for gn in glyph_name_dict.values()]
     while final_name in final_names:
         final_name = _make_unique_final_name(final_name)
-    gb.gn_final = final_name
-    glyph_name_dict[gb.gn_friendly] = gb
+    gn.final = final_name
+    glyph_name_dict[gn.friendly] = gn
     return glyph_name_dict
 
 
@@ -521,14 +538,15 @@ def _make_glyph_name_dict(f, glyph_order):
     make a dictionary:
         {friendly name: gb object}
 
-    the gb (GlyphBaptism) object contains:
+    the gb (GlyphBaptist) object contains:
         .gn_final (name)
         .gn_friendly (name)
         .cp_override (unicode override(s) as a string)
         .glyph (glyph object)
     """
 
-    glyph_name_dict = {".notdef": GlyphBaptism(".notdef", gn_final=".notdef")}
+    gb_notdef = GlyphBaptist(".notdef", gn_final=".notdef")
+    glyph_name_dict = {".notdef": gb_notdef.gn}
 
     # break the glyphs down into three categories:
     # 1. any glyphs that are base glyphs (neither ligatures nor alternates)
@@ -541,24 +559,22 @@ def _make_glyph_name_dict(f, glyph_order):
     # I interpret it as a combination of two fs and one l.alt.
 
     base_names = [gn for gn in glyph_order if not any(["." in gn, "_" in gn])]
-    old_agd_names = [gn for gn in glyph_order if "." in gn and AGD_ALIAS_DICT.get(gn)]
-    alt_names = [
-        gn
-        for gn in glyph_order
-        if "." in gn and "_" not in gn and gn != ".notdef" and gn not in old_agd_names
-    ]
+    old_agd_names = [gn for gn in glyph_order if all([
+        "." in gn, "_" not in gn, AGD_ALIAS_DICT.get(gn)])]
+    alt_names = [gn for gn in glyph_order if all([
+        "." in gn, "_" not in gn, gn != ".notdef", gn not in old_agd_names])]
     liga_names = [gn for gn in glyph_order if "_" in gn]
-    rx_uni_name = r"^(?:u|uni)([0-9A-F]{1,6})$"
+    RX_UNI_NAME = r"^(?:u|uni)([0-9A-F]{1,6})$"
 
     for gn in base_names:
         g = _dummy_glyph(f, gn)
-        gb = GlyphBaptism(g.name, g)
-        glyph_name_dict = _fill_gn_dict(gb, glyph_name_dict)
+        gb = GlyphBaptist(g.name, g)
+        glyph_name_dict = _fill_gn_dict(gb.gn, glyph_name_dict)
 
     for gn in old_agd_names:
         g = _dummy_glyph(f, gn)
-        gb = GlyphBaptism(g.name, g)
-        glyph_name_dict = _fill_gn_dict(gb, glyph_name_dict)
+        gb = GlyphBaptist(g.name, g)
+        glyph_name_dict = _fill_gn_dict(gb.gn, glyph_name_dict)
 
     for gn in alt_names:
         # any glyph with a suffix (not an old AGD name)
@@ -569,8 +585,8 @@ def _make_glyph_name_dict(f, glyph_order):
             # stem contains a previously-seen friendly glyph name
             if g.unicodes:
                 # make a unicode override
-                stem_final = glyph_name_dict.get(stem).gn_final
-                if re.match(rx_uni_name, stem_final):
+                stem_final = glyph_name_dict.get(stem).final
+                if re.match(RX_UNI_NAME, stem_final):
                     # the final name used for the previously-seen stem
                     # is a uniXXXX name. Don’t use it, use the own uni-name
                     # instead
@@ -581,19 +597,19 @@ def _make_glyph_name_dict(f, glyph_order):
                     # use it going forward.
                     gn_final = f"{stem_final}.{suffixes}"
                     cp_override = _make_uni_override(g.unicodes)
-                gb = GlyphBaptism(g.name, g, gn_final=gn_final, cp_override=cp_override)
+                gb = GlyphBaptist(g.name, g, gn_final=gn_final, cp_override=cp_override)
 
             else:
                 # no unicode, use previously-seen stem, plus any suffixes.
-                stem_final = glyph_name_dict.get(stem).gn_final
+                stem_final = glyph_name_dict.get(stem).final
                 final_name = f"{stem_final}.{suffixes}"
-                gb = GlyphBaptism(g.name, g, gn_final=final_name)
+                gb = GlyphBaptist(g.name, g, gn_final=final_name)
 
         else:
             # stem is not known
-            gb = GlyphBaptism(g.name, g)
+            gb = GlyphBaptist(g.name, g)
 
-        glyph_name_dict = _fill_gn_dict(gb, glyph_name_dict)
+        glyph_name_dict = _fill_gn_dict(gb.gn, glyph_name_dict)
 
     for gn in liga_names:
         g = _dummy_glyph(f, gn)
@@ -608,10 +624,10 @@ def _make_glyph_name_dict(f, glyph_order):
         for chunk in liga_chunks:
             if chunk in glyph_name_dict:
                 # chunk with known glyph name
-                final_name_chunk = glyph_name_dict.get(chunk).gn_final
+                final_name_chunk = glyph_name_dict.get(chunk).final
             else:
                 # chunk with unknown glyph name
-                final_name_chunk = GlyphBaptism(chunk).gn_final
+                final_name_chunk = GlyphBaptist(chunk).gn.final
             liga_chunks_final.append(final_name_chunk)
 
         if suffix:
@@ -626,8 +642,8 @@ def _make_glyph_name_dict(f, glyph_order):
         else:
             cp_override = None
 
-        gb = GlyphBaptism(g.name, g, gn_final=final_name, cp_override=cp_override)
-        glyph_name_dict = _fill_gn_dict(gb, glyph_name_dict)
+        gb = GlyphBaptist(g.name, g, gn_final=final_name, cp_override=cp_override)
+        glyph_name_dict = _fill_gn_dict(gb.gn, glyph_name_dict)
 
     return glyph_name_dict
 
@@ -635,10 +651,12 @@ def _make_glyph_name_dict(f, glyph_order):
 def _make_goadb_content(glyph_order, glyph_name_dict):
     goadb = []
     for gname in glyph_order:
-        gb = glyph_name_dict.get(gname)
-        goadb_line = [gb.gn_final, gb.gn_friendly]
-        if gb.cp_override:
-            goadb_line.append(gb.cp_override)
+        # gb = glyph_name_dict.get(gname)
+        # goadb_line = [gb.gn_final, gb.gn_friendly]
+        gn = glyph_name_dict.get(gname)
+        goadb_line = [gn.final, gn.friendly]
+        if gn.override:
+            goadb_line.append(gn.override)
         goadb.append("\t".join(goadb_line))
     return "\n".join(goadb)
 
