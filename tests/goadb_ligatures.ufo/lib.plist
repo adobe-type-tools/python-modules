@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>public.glyphOrder</key>
+		<array>
+			<string>f</string>
+			<string>f_i</string>
+			<string>f_l</string>
+			<string>f.alt</string>
+			<string>f_f</string>
+			<string>f_f.alt</string>
+			<string>f.alt_f</string>
+			<string>f.alt_f.alt</string>
+			<string>be_be</string>
+			<string>be_ef</string>
+			<string>be_be.alt</string>
+			<string>be_ef.alt</string>
+			<string>ef_be</string>
+			<string>ef_ef</string>
+			<string>ef_be.alt</string>
+			<string>ef_ef.alt</string>
+			<string>be.alt_be</string>
+			<string>be.alt_ef</string>
+			<string>be.alt_be.alt</string>
+			<string>be.alt_ef.alt</string>
+			<string>ef.alt_be</string>
+			<string>ef.alt_ef</string>
+			<string>ef.alt_be.alt</string>
+			<string>ef.alt_ef.alt</string>
+			<string>be</string>
+			<string>ef</string>
+			<string>be.alt</string>
+			<string>ef.alt</string>
+			<string>f_lcommaaccent.alt</string>
+			<string>f_ldot.alt</string>
+		</array>
+	</dict>
+</plist>

@@ -1,0 +1,31 @@
+.notdef	.notdef
+f	f
+f_i	f_i	uniFB01
+f_l	f_l	uniFB02
+f.alt	f.alt
+f_f	f_f
+f_f.alt	f_f.alt
+f.alt_f	f.alt_f
+f.alt_f.alt	f.alt_f.alt
+uni0431_uni0431	be_be
+uni0431_uni0444	be_ef
+uni0431_uni0431.alt	be_be.alt
+uni0431_uni0444.alt	be_ef.alt
+uni0444_uni0431	ef_be
+uni0444_uni0444	ef_ef
+uni0444_uni0431.alt	ef_be.alt
+uni0444_uni0444.alt	ef_ef.alt
+uni0431.alt_uni0431	be.alt_be
+uni0431.alt_uni0444	be.alt_ef
+uni0431.alt_uni0431.alt	be.alt_be.alt
+uni0431.alt_uni0444.alt	be.alt_ef.alt
+uni0444.alt_uni0431	ef.alt_be
+uni0444.alt_uni0444	ef.alt_ef
+uni0444.alt_uni0431.alt	ef.alt_be.alt
+uni0444.alt_uni0444.alt	ef.alt_ef.alt
+uni0431	be
+uni0444	ef
+uni0431.alt	be.alt
+uni0444.alt	ef.alt
+f_uni013C.alt	f_lcommaaccent.alt
+f_ldot.alt	f_ldot.alt
