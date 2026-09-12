@@ -3,6 +3,7 @@ import pytest
 import sys
 
 from afdko.fdkutils import get_temp_dir_path
+from fontTools.designspaceLib import DesignSpaceDocument
 from pathlib import Path
 
 
@@ -258,6 +259,14 @@ def test_phantom_input_ufo(capsys):
     out, err = capsys.readouterr()
     assert 'phantom.ufo does not exist' in err
 
+    ds_path = TEST_DIR / 'phantom.designspace'
+    args = Defaults()
+    args.input_file = ds_path
+    with pytest.raises(SystemExit):
+        main([str(ds_path)])
+    out, err = capsys.readouterr()
+    assert 'phantom.designspace does not exist' in err
+
 
 def test_invalid_input_file(capsys):
     '''
@@ -270,6 +279,31 @@ def test_invalid_input_file(capsys):
         main([str(ufo_path)])
     out, err = capsys.readouterr()
     assert 'Unrecognized input file type' in err
+
+    '''
+    UFO that’s not a directory
+    '''
+    bad_ufo_path = TEMP_DIR / 'bad.ufo'
+    with open(bad_ufo_path, 'w') as f:
+        f.write('bad')
+    args = Defaults()
+    args.input_file = bad_ufo_path
+    with pytest.raises(SystemExit):
+        main([str(bad_ufo_path)])
+    out, err = capsys.readouterr()
+    assert 'is not a directory' in err
+
+    '''
+    desigsnpace that’s not a file
+    '''
+    bad_ds_path = TEMP_DIR / 'bad.designspace'
+    bad_ds_path.mkdir(exist_ok=False)
+    args = Defaults()
+    args.input_file = bad_ds_path
+    with pytest.raises(SystemExit):
+        main([str(bad_ds_path)])
+    out, err = capsys.readouterr()
+    assert 'is not a file' in err
 
 
 def test_default_rtl():
@@ -461,7 +495,6 @@ def test_nightmare(capsys):
     assert read_file(fea_example) == read_file(fea_temp)
 
     out, err = capsys.readouterr()
-    print(out)
     expected_output = (
         'group public.kern1.empty is empty\n'
         'group public.kern2.empty is empty\n'
@@ -492,3 +525,22 @@ def test_ignore_suffix():
     args.output_name = fea_temp
     run_local(f, args)
     assert read_file(fea_example) == read_file(fea_temp)
+
+
+def test_designspace():
+    '''
+    basic test with designspace file
+    '''
+    ds_path = TEST_DIR / 'kern_ds.designspace'
+    fea_example = TEST_DIR / 'kern_ds.fea'
+    loc_example = TEST_DIR / 'kern_ds_locations.fea'
+    fea_temp = TEMP_DIR / fea_example.name
+    loc_temp = TEMP_DIR / loc_example.name
+    args = Defaults()
+    ds_doc = DesignSpaceDocument.fromfile(ds_path)
+    args.input_file = ds_path
+    args.output_name = fea_temp
+    args.locations_name = loc_temp
+    run_local(ds_doc, args)
+    assert read_file(fea_example) == read_file(fea_temp)
+    assert read_file(loc_example) == read_file(loc_temp)

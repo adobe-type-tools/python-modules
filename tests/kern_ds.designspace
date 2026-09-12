@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<designspace format="5.0">
+  <axes>
+    <axis tag="CSTM" name="cstm" minimum="0" maximum="1" default="0">
+      <labels ordering="1"/>
+    </axis>
+  </axes>
+  <sources>
+    <source filename="kern_ds_a.ufo">
+      <location>
+        <dimension name="cstm" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="kern_ds_b.ufo">
+      <location>
+        <dimension name="cstm" xvalue="1"/>
+      </location>
+    </source>
+  </sources>
+</designspace>
