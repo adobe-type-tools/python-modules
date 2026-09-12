@@ -69,8 +69,11 @@ def test_make_header():
 
 def test_dict2pos():
     ufo_path = TEST_DIR / 'kern_example.ufo'
+    fea_temp = TEMP_DIR / 'kern_example.fea'
     f = defcon.Font(ufo_path)
-    kfw = run_local(f, None)
+    args = Defaults()
+    args.output_name = fea_temp
+    kfw = run_local(f, args)
     kfw.write_trimmed_pairs = False
 
     pv_dict = {
