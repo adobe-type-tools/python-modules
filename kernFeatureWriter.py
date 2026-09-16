@@ -50,6 +50,7 @@ import itertools
 import time
 from abc import abstractmethod
 from collections import defaultdict
+from dataclasses import dataclass
 from graphlib import TopologicalSorter, CycleError
 from pathlib import Path
 from math import copysign
@@ -95,55 +96,54 @@ def is_rtl_group(grp_name):
     return any([tag in grp_name for tag in RTL_TAGS])
 
 
+@dataclass
 class Defaults(object):
     '''
     default values
     These can later be overridden by argparse.
     '''
 
-    def __init__(self):
+    # The default output filename
+    output_name: str = 'kern.fea'
 
-        # The default output filename
-        self.output_name = 'kern.fea'
+    # The default name for the locations file
+    locations_name: str = 'locations.fea'
 
-        # The default name for the locations file
-        self.locations_name = 'locations.fea'
+    # Default mimimum kerning value. This value is _inclusive_, which
+    # means that pairs that equal this absolute value will not be
+    # ignored/trimmed. Pairs in range of +/- value will be trimmed.
+    # Exceptions within the value range will not be trimmed.
+    min_value: int = 3
 
-        # Default mimimum kerning value. This value is _inclusive_, which
-        # means that pairs that equal this absolute value will not be
-        # ignored/trimmed. Pairs in range of +/- value will be trimmed.
-        # Exceptions within the value range will not be trimmed.
-        self.min_value = 3
+    # The maximum possible subtable size is 2 ** 16 = 65536.
+    # Every other GPOS feature counts against that size, so the
+    # subtable size chosen needs to be quite a bit smaller.
+    subtable_size: int = 2 ** 13
 
-        # The maximum possible subtable size is 2 ** 16 = 65536.
-        # Every other GPOS feature counts against that size, so the
-        # subtable size chosen needs to be quite a bit smaller.
-        self.subtable_size = 2 ** 13
+    # Write trimmed pairs to the output file (as comments).
+    write_trimmed_pairs: bool = False
 
-        # Write trimmed pairs to the output file (as comments).
-        self.write_trimmed_pairs = False
+    # If variable, output user location values
+    # (default is design values)
+    user_values: bool = False
 
-        # If variable, output user location values
-        # (default is design values)
-        self.user_values = False
+    # Write subtables?
+    write_subtables: bool = False
 
-        # Write subtables?
-        self.write_subtables = False
+    # Write time stamp in .fea file header?
+    write_timestamp: bool = False
 
-        # Write time stamp in .fea file header?
-        self.write_timestamp = False
+    # Do not write the locations file?
+    no_locations: bool = False
 
-        # Do not write the locations file?
-        self.no_locations = False
+    # Write single-element groups as glyphs?
+    # (This has no influence on the output kerning data, but helps with
+    # balancing subtables, and potentially makes the number of kerning
+    # pairs involving groups a bit smaller).
+    dissolve_single: bool = False
 
-        # Write single-element groups as glyphs?
-        # (This has no influence on the output kerning data, but helps with
-        # balancing subtables, and potentially makes the number of kerning
-        # pairs involving groups a bit smaller).
-        self.dissolve_single = False
-
-        # ignore pairs which contain glyphs using the following suffix
-        self.ignore_suffix = None
+    # ignore pairs which contain glyphs using the following suffix
+    ignore_suffix = None
 
 
 class KernAdapter(object):
