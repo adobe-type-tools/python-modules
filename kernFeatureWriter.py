@@ -143,7 +143,7 @@ class Defaults(object):
     dissolve_single: bool = False
 
     # ignore pairs which contain glyphs using the following suffix
-    ignore_suffix = None
+    ignore_suffix: str = ''
 
 
 class KernAdapter(object):
@@ -1309,20 +1309,25 @@ class run(object):
 
 
 def check_input_file(parser, file_name):
-    file_path = Path(file_name)
-    if file_path.suffix.lower() == '.ufo':
-        if not file_path.exists():
-            parser.error(f'{file_name} does not exist')
-        elif not file_path.is_dir():
-            parser.error(f'{file_name} is not a directory')
+    if file_name:
+        file_path = Path(file_name)
+        if file_path.suffix.lower() == '.ufo':
+            if not file_path.exists():
+                parser.error(f'{file_name} does not exist')
+            elif not file_path.is_dir():
+                parser.error(f'{file_name} is not a directory')
 
-    elif file_path.suffix.lower() == '.designspace':
-        if not file_path.exists():
-            parser.error(f'{file_name} does not exist')
-        elif not file_path.is_file():
-            parser.error(f'{file_name} is not a file')
-    else:
-        parser.error(f'Unrecognized input file type')
+        elif file_path.suffix.lower() == '.designspace':
+            if not file_path.exists():
+                parser.error(f'{file_name} does not exist')
+            elif not file_path.is_file():
+                parser.error(f'{file_name} is not a file')
+        else:
+            if file_path.exists():
+                parser.error(f'Input file type not recognized')
+            else:
+                parser.error(f'Input file does not exist')
+
     return file_name
 
 
@@ -1421,14 +1426,15 @@ def get_args(args=None):
 
 def main(test_args=None):
     args = get_args(test_args)
-    input_path = Path(args.input_file)
-    if input_path.is_file():
-        dsDoc = DesignSpaceDocument.fromfile(input_path)
-        a = DesignspaceKernAdapter(dsDoc)
-    else:
-        a = UFOKernAdapter(defcon.Font(args.input_file))
-    if a.has_data():
-        run(a, args)
+    if args.input_file:
+        input_path = Path(args.input_file)
+        if input_path.is_file():
+            dsDoc = DesignSpaceDocument.fromfile(input_path)
+            a = DesignspaceKernAdapter(dsDoc)
+        else:
+            a = UFOKernAdapter(defcon.Font(args.input_file))
+        if a.has_data():
+            run(a, args)
 
 
 if __name__ == '__main__':

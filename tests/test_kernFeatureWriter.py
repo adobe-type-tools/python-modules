@@ -47,11 +47,10 @@ def read_file(path):
 
 def test_get_args():
     # args through argparse
-    input_ufo = str(TEST_DIR / 'kern_example.ufo')
-    argparse_args = vars(get_args([input_ufo]))
+    argparse_args = vars(get_args([None]))
     # hard-coded dummy arguments
     dummy_args = Defaults().__dict__
-    dummy_args['input_file'] = input_ufo
+    dummy_args['input_file'] = None
     assert argparse_args == dummy_args
 
 
@@ -247,7 +246,7 @@ def test_main():
     assert read_file(fea_example) == read_file(fea_temp)
 
 
-def test_phantom_input_ufo(capsys):
+def test_phantom_input(capsys):
     '''
     non-existent input UFO
     '''
@@ -259,6 +258,9 @@ def test_phantom_input_ufo(capsys):
     out, err = capsys.readouterr()
     assert 'phantom.ufo does not exist' in err
 
+    '''
+    non-existent designspace
+    '''
     ds_path = TEST_DIR / 'phantom.designspace'
     args = Defaults()
     args.input_file = ds_path
@@ -270,7 +272,7 @@ def test_phantom_input_ufo(capsys):
 
 def test_invalid_input_file(capsys):
     '''
-    invalid input file
+    phantom input file
     '''
     ufo_path = TEST_DIR / 'some_file.xxx'
     args = Defaults()
@@ -278,7 +280,18 @@ def test_invalid_input_file(capsys):
     with pytest.raises(SystemExit):
         main([str(ufo_path)])
     out, err = capsys.readouterr()
-    assert 'Unrecognized input file type' in err
+    assert 'file does not exist' in err
+
+    '''
+    invalid input file
+    '''
+    ufo_path = TEST_DIR / 'kern_nightmare.fea'
+    args = Defaults()
+    args.input_file = ufo_path
+    with pytest.raises(SystemExit):
+        main([str(ufo_path)])
+    out, err = capsys.readouterr()
+    assert 'file type not recognized' in err
 
     '''
     UFO that’s not a directory
