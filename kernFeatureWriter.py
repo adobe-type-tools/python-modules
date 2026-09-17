@@ -351,8 +351,8 @@ class DesignspaceKernAdapter(KernAdapter):
             if SHORTINSTNAMEKEY in f.lib:
                 self.shortNames.append(f.lib[SHORTINSTNAMEKEY])
             else:
-                self.shortNames.append(self.make_short_name(dsDoc,
-                                                            f.sourceIndex))
+                self.shortNames.append(
+                    self.make_short_name(dsDoc, f.sourceIndex))
 
         self.dsDoc = dsDoc
 
@@ -431,24 +431,24 @@ class DesignspaceKernAdapter(KernAdapter):
         # Calculate partial orderings for groups across all fonts
         group_orderings = defaultdict(lambda: defaultdict(set))
         for f in self.fonts:
-            for g, gl in f.groups.items():
-                ordering = group_orderings[g]
-                for j, gn in enumerate(gl):
-                    ordering[gn] |= set(gl[j + 1:])
+            for grp, glyphs in f.groups.items():
+                ordering = group_orderings[grp]
+                for i, gn in enumerate(glyphs):
+                    ordering[gn] |= set(glyphs[i + 1:])
 
         # Use the partial orderings to calculate a total ordering,
         # or failing that use the order in which the glyphs were
         # encountered
         self._groups = {}
-        for g, ordering in group_orderings.items():
+        for grp, ordering in group_orderings.items():
             try:
                 ts = TopologicalSorter(ordering)
                 l = list(ts.static_order())
             except CycleError as err:
-                print(f'glyphs in group {g} have different orderings across '
+                print(f'glyphs in group {grp} have different orderings across '
                       'different sources, ordering cannot be preserved')
                 l = ordering.keys()
-            self._groups[g] = l
+            self._groups[grp] = l
 
         return self._groups
 
@@ -472,9 +472,9 @@ class DesignspaceKernAdapter(KernAdapter):
         # Find and split groups with mixed sparseness
         groups = self.groups()
         group_remap = {}
-        for g in used_kerning_groups:
+        for grp in used_kerning_groups:
             sparse_patterns = defaultdict(list)
-            for gl in groups[g]:
+            for gl in groups[grp]:
                 pattern = (i for i, glyphs in enumerate(self.glyph_sets)
                            if gl in glyphs)
                 assert pattern
@@ -484,11 +484,11 @@ class DesignspaceKernAdapter(KernAdapter):
                 continue
             remap_list = []
             for i, group_list in enumerate(sparse_patterns.values()):
-                new_group_name = g + GROUPSPLITSUFFIX + str(i)
+                new_group_name = grp + GROUPSPLITSUFFIX + str(i)
                 groups[new_group_name] = group_list
                 remap_list.append(new_group_name)
-            del groups[g]
-            group_remap[g] = remap_list
+            del groups[grp]
+            group_remap[grp] = remap_list
 
         # Build up variable kerning values using remapped groups
         self._kerning = {}
@@ -591,6 +591,7 @@ class KerningSanitizer(object):
         self.source_glyph_order = self.a.glyph_order()
         self.source_groups = self.a.groups()
         self.source_kerning = self.a.kerning()
+
         self.left_glyph_to_group = {}
         self.left_conflict_groups = {}
         self.right_glyph_to_group = {}
@@ -598,55 +599,60 @@ class KerningSanitizer(object):
 
         # empty groups
         self.empty_groups = [
-            g for (g, gl) in self.source_groups.items() if not gl
+            grp for (grp, gl) in self.source_groups.items() if not gl
         ]
         # groups containing glyphs not in the UFO
         self.invalid_groups = [
-            g for (g, gl) in self.source_groups.items() if not
+            grp for (grp, gl) in self.source_groups.items() if not
             set(gl) <= self.source_glyphs
         ]
-        bad_group_set = set(self.invalid_groups) | set(self.empty_groups)
+        bad_groups = set(self.invalid_groups) | set(self.empty_groups)
         # remaining groups
         self.valid_groups = {
-            g for g in self.source_groups.keys()
-            if g not in bad_group_set and is_kerning_group(g)
+            grp for grp in self.source_groups.keys()
+            if grp not in bad_groups and is_kerning_group(grp)
         }
+
         # Build glyph_to_group maps for each side, testing for and
         # eliminating conflicts by marking groups as conflicting
-        left_group_set  = {
-            l for l, r in self.source_kerning.keys() if l in self.valid_groups}
+        left_group_set = {
+            l for l, _ in self.source_kerning.keys() if l in self.valid_groups}
         right_group_set = {
-            r for l, r in self.source_kerning.keys() if r in self.valid_groups}
-        for gs, g2g, cg in ((left_group_set, self.left_glyph_to_group,
-                             self.left_conflict_groups),
-                            (right_group_set, self.right_glyph_to_group,
-                             self.right_conflict_groups)):
-            for g in gs:
-                for gl in self.source_groups[g]:
-                    if gl in g2g:
-                        cg[g] = gl
+            r for _, r in self.source_kerning.keys() if r in self.valid_groups}
+
+        for grp_set, gl2gr, conflict_grp in (
+            (left_group_set, self.left_glyph_to_group, self.left_conflict_groups),
+            (right_group_set, self.right_glyph_to_group, self.right_conflict_groups)
+        ):
+            for grp in grp_set:
+                for gl in self.source_groups[grp]:
+                    if gl in gl2gr:
+                        conflict_grp[grp] = gl
                     else:
-                        g2g[gl] = g
+                        gl2gr[gl] = grp
+
         self.valid_groups -= set(self.left_conflict_groups.keys())
         self.valid_groups -= set(self.right_conflict_groups.keys())
         self.valid_items = self.source_glyphs | self.valid_groups
+
         # pairs containing an invalid glyph or group
         self.invalid_pairs = [
             pair for pair in self.source_kerning.keys() if not
             set(pair) <= self.valid_items
         ]
         invalid_pair_set = set(self.invalid_pairs)
+
         self.kerning = {
             pair: value for pair, value in self.source_kerning.items() if
             pair not in invalid_pair_set
         }
         self.groups = {
-            gn: self.source_groups.get(gn)
-            for gn in self.get_used_group_names(self.source_groups)
+            grp: self.source_groups.get(grp)
+            for grp in self.get_used_group_names(self.source_groups)
         }
         self.reference_groups = {
-            gn: g_set for gn, g_set in self.source_groups.items() if not
-            is_kerning_group(gn)
+            grp: g_set for grp, g_set in self.source_groups.items() if not
+            is_kerning_group(grp)
         }
 
     def get_used_group_names(self, groups):
@@ -654,7 +660,7 @@ class KerningSanitizer(object):
         Return all groups which are actually used in kerning,
         by iterating through valid kerning pairs.
         '''
-        group_order = {gn: i for (i, gn) in enumerate(groups.keys())}
+        group_order = {grp: i for (i, grp) in enumerate(groups.keys())}
         used_groups = []
         for pair in self.kerning.keys():
             used_groups.extend([item for item in pair if is_group(item)])
@@ -668,19 +674,20 @@ class KerningSanitizer(object):
             print(f'group {group} is empty')
         for group in self.invalid_groups:
             glyph_set = set(self.source_groups[group])
-            extraneous_glyphs = sorted(glyph_set - self.source_glyphs,
+            extraneous_glyphs = sorted(
+                glyph_set - self.source_glyphs,
                 key=lambda item: self.source_glyph_order.get(item, item))
             print(
                 f'group {group} contains extraneous glyph(s): '
                 f'[{", ".join(extraneous_glyphs)}]')
-        for cg, g2g, desc in (
+        for conflict_grp, gl2gr, desc in (
             (self.left_conflict_groups, self.left_glyph_to_group, 'left'),
             (self.right_conflict_groups, self.right_glyph_to_group, 'right')
         ):
-            for group, gl in cg.items():
+            for group, gl in conflict_grp.items():
                 print(
                     f'group {group} ignored because it contains glyph {gl} '
-                    f'double-mapped on {desc} side (other group is {g2g[gl]})')
+                    f'double-mapped on {desc} side (other group is {gl2gr[gl]})')
 
         for pair in self.invalid_pairs:
             invalid_items = sorted(
@@ -726,10 +733,10 @@ class KernProcessor(object):
         self.kerning = kerning
         self.reference_groups = reference_groups
         self.left_glyph_to_group = {
-            gl: self._remap_name(g) for gl, g in left_glyph_to_group.items()
+            gl: self._remap_name(grp) for gl, grp in left_glyph_to_group.items()
         }
         self.right_glyph_to_group = {
-            gl: self._remap_name(g) for gl, g in right_glyph_to_group.items()
+            gl: self._remap_name(grp) for gl, grp in right_glyph_to_group.items()
         }
 
         self.ignore_suffix = ignore_suffix
@@ -778,7 +785,7 @@ class KernProcessor(object):
         '''
         Remap groups dictionary to not contain public.kern prefixes.
         '''
-        return {self._remap_name(gn): gl for gn, gl in groups.items()}
+        return {self._remap_name(grp): gl for grp, gl in groups.items()}
 
     def _remap_kerning(self, kerning):
         '''
@@ -812,7 +819,7 @@ class KernProcessor(object):
         return False
 
     def _get_rtl_glyphs(self, groups):
-        rtl_groups = [gn for gn in groups if is_rtl_group(gn)]
+        rtl_groups = [grp for grp in groups if is_rtl_group(grp)]
         rtl_glyphs = list(itertools.chain.from_iterable(
             groups.get(rtl_group) for rtl_group in rtl_groups))
         return rtl_glyphs
@@ -1432,7 +1439,8 @@ def main(test_args=None):
             dsDoc = DesignSpaceDocument.fromfile(input_path)
             a = DesignspaceKernAdapter(dsDoc)
         else:
-            a = UFOKernAdapter(defcon.Font(args.input_file))
+            f = defcon.Font(args.input_file)
+            a = UFOKernAdapter(f)
         if a.has_data():
             run(a, args)
 
