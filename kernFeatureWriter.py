@@ -48,7 +48,7 @@ This tool exports the kerning and groups data within a UFO to a
 import argparse
 import itertools
 import time
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from collections import defaultdict
 from dataclasses import dataclass
 from graphlib import TopologicalSorter, CycleError
@@ -146,7 +146,7 @@ class Defaults(object):
     ignore_suffix: str = ''
 
 
-class KernAdapter(object):
+class KernAdapter(ABC):
     '''
     Interface layer between underlying font source and the KerningSanitizer
     '''
