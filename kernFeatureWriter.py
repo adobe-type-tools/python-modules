@@ -404,8 +404,9 @@ class DesignspaceKernAdapter(KernAdapter):
             extra_glyphs = current_glyph_set - default_glyph_set
             if extra_glyphs:
                 source_name = self.dsDoc.sources[f.sourceIndex].styleName
-                logger.warning(f'source {source_name} has these extra glyphs'
-                                f'not in default: [{", ".join(extra_glyphs)}]')
+                logger.warning(
+                    f'source {source_name} has these extra glyphs'
+                    f'not in default: [{", ".join(extra_glyphs)}]')
                 all_extra_glyphs |= extra_glyphs
 
         self.glyph_set = default_glyph_set | all_extra_glyphs
@@ -447,7 +448,7 @@ class DesignspaceKernAdapter(KernAdapter):
             try:
                 ts = TopologicalSorter(ordering)
                 l = list(ts.static_order())
-            except CycleError as err:
+            except CycleError:
                 logger.warning(
                     f'glyphs in group {grp} have different orderings across '
                     'different sources, ordering cannot be preserved')
@@ -869,7 +870,7 @@ class KernProcessor(object):
             num_entries = num_pairs_processed + num_pairs_unprocessed
             num_unprocessed = num_pairs_total - num_entries
             logger.error(
-                'Something went wrong ...\n'
+                'Something went wrong...\n'
                 f'Kerning pairs provided: {num_pairs_total}\n'
                 f'Kern entries generated: {num_entries}\n'
                 f'Pairs not processed: {num_unprocessed}\n'
@@ -1286,7 +1287,7 @@ class run(object):
 
     def write_fea_data(self, data, output_path):
 
-        logger.info(f'Saving {output_path.name} file...')
+        logger.info(f'Writing {output_path}')
 
         if self.trimmedPairs > 0:
             logger.info(f'Trimmed pairs: {self.trimmedPairs}')
@@ -1298,25 +1299,21 @@ class run(object):
                 blob.write('\n'.join(data))
                 blob.write('\n')
 
-        logger.info(f'Output file written to {output_path}')
-
     def write_locations(self, adapter, locations_path, userUnits=False):
 
-        logger.info(f'Saving {locations_path.name} file...')
+        logger.info(f'Writing {locations_path}')
 
         data = ['# Named locations', '']
 
         unit = 'u' if userUnits else 'd'
         for name, axisLocs in adapter.get_locations(userUnits).items():
-            locationStr = ', '.join(('%s=%g%s' % (tag, val, unit) for
-                                     tag, val in axisLocs.items()))
+            locationStr = ', '.join(
+                ('%s=%g%s' % (tag, val, unit) for tag, val in axisLocs.items()))
             data.append(f'locationDef {locationStr} @{name};')
 
         with open(locations_path, 'w') as blob:
             blob.write('\n'.join(data))
             blob.write('\n')
-
-        logger.info(f'Output file written to {locations_path}')
 
 
 def check_input_file(parser, file_name):
