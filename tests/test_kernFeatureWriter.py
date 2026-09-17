@@ -1,4 +1,5 @@
 import defcon
+import logging
 import pytest
 import sys
 
@@ -158,7 +159,7 @@ def test_remap_kerning():
     assert list(kp._remap_kerning(f.kerning).keys()) == remapped_pairs
 
 
-def test_sanityCheck(capsys):
+def test_sanityCheck(caplog):
     '''
     somehow trigger that sanity check (not sure how useful)
     '''
@@ -168,30 +169,27 @@ def test_sanityCheck(capsys):
     kp.pairs_processed = ['some pair']
     kp.kerning = f.kerning
     kp._sanityCheck()
-    out, err = capsys.readouterr()
-    assert 'Something went wrong' in out
+    assert 'Something went wrong' in caplog.text
 
 
 # integration tests
 # -----------------
 
-def test_no_kerning(capsys):
+def test_no_kerning(caplog):
     ufo_path = TEST_DIR / 'kern_example.ufo'
     f = defcon.Font(ufo_path)
     f.kerning.clear()
     args = Defaults()
     run_local(f, args)
-    out, err = capsys.readouterr()
-    assert f'has no kerning' in out
+    assert 'has no kerning' in caplog.text
 
 
-def test_all_zero(capsys):
+def test_all_zero(caplog):
     ufo_path = TEST_DIR / 'kern_all_zero_value.ufo'
     f = defcon.Font(ufo_path)
     args = Defaults()
     run_local(f, args)
-    out, err = capsys.readouterr()
-    assert f'All kerning values are zero' in out
+    assert 'All kerning values are zero' in caplog.text
 
 
 def test_default():
@@ -475,7 +473,8 @@ def test_mock_rtl():
     assert read_file(fea_example) == read_file(fea_temp)
 
 
-def test_example_trim(capsys):
+def test_example_trim(caplog):
+    caplog.set_level(logging.INFO)
     ufo_path = TEST_DIR / 'kern_example.ufo'
     fea_example = TEST_DIR / 'kern_example_trim.fea'
     fea_temp = TEMP_DIR / fea_example.name
@@ -487,13 +486,12 @@ def test_example_trim(capsys):
     args.write_trimmed_pairs = True
     run_local(f, args)
 
-    out, err = capsys.readouterr()
-    assert 'Trimmed pairs: 33' in out
+    assert 'Trimmed pairs: 33' in caplog.text
 
     assert read_file(fea_example) == read_file(fea_temp)
 
 
-def test_nightmare(capsys):
+def test_nightmare(caplog):
     '''
     A nightmare project which contains many problems in groups and kerning
     '''
@@ -507,18 +505,18 @@ def test_nightmare(capsys):
     run_local(f, args)
     assert read_file(fea_example) == read_file(fea_temp)
 
-    out, err = capsys.readouterr()
-    expected_output = (
-        'group public.kern1.empty is empty\n'
-        'group public.kern2.empty is empty\n'
-        'group public.kern1.invalid contains extraneous glyph(s): [a]\n'
-        'group public.kern1.lowercase contains extraneous glyph(s): [x, y, z]\n'
-        'pair (A public.kern2.invalid) references invalid group public.kern2.invalid\n'
-        'pair (public.kern1.LAT_A a) references non-existent glyph a\n'
-        'pair (public.kern1.empty a) references invalid group public.kern1.empty\n'
-        'pair (public.kern1.empty a) references non-existent glyph a\n'
-    )
-    assert expected_output in out
+    expected_messages = [
+        'group public.kern1.empty is empty',
+        'group public.kern2.empty is empty',
+        'group public.kern1.invalid contains extraneous glyph(s): [a]',
+        'group public.kern1.lowercase contains extraneous glyph(s): [x, y, z]',
+        'pair (A public.kern2.invalid) references invalid group public.kern2.invalid',
+        'pair (public.kern1.LAT_A a) references non-existent glyph a',
+        'pair (public.kern1.empty a) references invalid group public.kern1.empty',
+        'pair (public.kern1.empty a) references non-existent glyph a',
+    ]
+    for message in expected_messages:
+        assert message in caplog.text
 
 
 def test_ignore_suffix():

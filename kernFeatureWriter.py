@@ -47,6 +47,7 @@ This tool exports the kerning and groups data within a UFO to a
 
 import argparse
 import itertools
+import logging
 import time
 from abc import abstractmethod, ABC
 from collections import defaultdict
@@ -60,6 +61,8 @@ from fontTools.designspaceLib import (
     DesignSpaceDocument,
     DesignSpaceDocumentError,
 )
+
+logger = logging.getLogger(__name__)
 
 # constants
 RTL_GROUP = 'RTL_KERNING'
@@ -262,11 +265,11 @@ class UFOKernAdapter(KernAdapter):
 
         if f:
             if not f.kerning:
-                print('ERROR: The font has no kerning!')
+                logger.error('The font has no kerning!')
                 self._has_data = False
                 return
             if set(f.kerning.values()) == {0}:
-                print('ERROR: All kerning values are zero!')
+                logger.error('All kerning values are zero!')
                 self._has_data = False
                 return
         self.f = f
@@ -321,7 +324,7 @@ class DesignspaceKernAdapter(KernAdapter):
         try:
             self.fonts = dsDoc.loadSourceFonts(defcon.Font)
         except DesignSpaceDocumentError as err:
-            print(err)
+            logger.error(err)
             self._has_data = False
 
         for i, f in enumerate(self.fonts):
@@ -333,7 +336,7 @@ class DesignspaceKernAdapter(KernAdapter):
             defaultFont = self.fonts.pop(self.defaultIndex)
             self.fonts.insert(0, defaultFont)
         else:
-            print('ERROR: did not find source at default location')
+            logger.error('did not find source at default location')
             self._has_data = False
 
         default_location = dsDoc.sources[self.defaultIndex].location
@@ -344,7 +347,7 @@ class DesignspaceKernAdapter(KernAdapter):
                 break
 
         if self.defaultInstanceIndex is None:
-            print('could not find named instance for default location')
+            logger.warning('could not find named instance for default location')
 
         self.shortNames = [None]
         for f in self.fonts[1:]:
@@ -401,8 +404,8 @@ class DesignspaceKernAdapter(KernAdapter):
             extra_glyphs = current_glyph_set - default_glyph_set
             if extra_glyphs:
                 source_name = self.dsDoc.sources[f.sourceIndex].styleName
-                print(f'source {source_name} has these extra glyphs'
-                      f'not in default: [{", ".join(extra_glyphs)}]')
+                logger.warning(f'source {source_name} has these extra glyphs'
+                                f'not in default: [{", ".join(extra_glyphs)}]')
                 all_extra_glyphs |= extra_glyphs
 
         self.glyph_set = default_glyph_set | all_extra_glyphs
@@ -445,8 +448,9 @@ class DesignspaceKernAdapter(KernAdapter):
                 ts = TopologicalSorter(ordering)
                 l = list(ts.static_order())
             except CycleError as err:
-                print(f'glyphs in group {grp} have different orderings across '
-                      'different sources, ordering cannot be preserved')
+                logger.warning(
+                    f'glyphs in group {grp} have different orderings across '
+                    'different sources, ordering cannot be preserved')
                 l = ordering.keys()
             self._groups[grp] = l
 
@@ -671,13 +675,13 @@ class KerningSanitizer(object):
         Report findings of invalid pairs and groups.
         '''
         for group in self.empty_groups:
-            print(f'group {group} is empty')
+            logger.warning(f'group {group} is empty')
         for group in self.invalid_groups:
             glyph_set = set(self.source_groups[group])
             extraneous_glyphs = sorted(
                 glyph_set - self.source_glyphs,
                 key=lambda item: self.source_glyph_order.get(item, item))
-            print(
+            logger.warning(
                 f'group {group} contains extraneous glyph(s): '
                 f'[{", ".join(extraneous_glyphs)}]')
         for conflict_grp, gl2gr, desc in (
@@ -685,7 +689,7 @@ class KerningSanitizer(object):
             (self.right_conflict_groups, self.right_glyph_to_group, 'right')
         ):
             for group, gl in conflict_grp.items():
-                print(
+                logger.warning(
                     f'group {group} ignored because it contains glyph {gl} '
                     f'double-mapped on {desc} side (other group is {gl2gr[gl]})')
 
@@ -697,7 +701,7 @@ class KerningSanitizer(object):
                     item_type = 'invalid group'
                 else:
                     item_type = 'non-existent glyph'
-                print(
+                logger.warning(
                     f'pair ({pair[0]} {pair[1]}) references '
                     f'{item_type} {item}'
                 )
@@ -864,7 +868,7 @@ class KernProcessor(object):
         if num_pairs_total != num_pairs_processed + num_pairs_unprocessed:
             num_entries = num_pairs_processed + num_pairs_unprocessed
             num_unprocessed = num_pairs_total - num_entries
-            print(
+            logger.error(
                 'Something went wrong ...\n'
                 f'Kerning pairs provided: {num_pairs_total}\n'
                 f'Kern entries generated: {num_entries}\n'
@@ -966,8 +970,8 @@ class MakeMeasuredSubtables(object):
         coverageTableSize = 2 + (2 * self.numberOfKernedGlyphs)
         # maxSubtableSize = 2 ** 14
 
-        print('coverage table size:', coverageTableSize)
-        print('  max subtable size:', maxSubtableSize)
+        logger.debug(f'coverage table size: {coverageTableSize}')
+        logger.debug(f'  max subtable size: {maxSubtableSize}')
         # If Extension is not used, coverage and class subtables are
         # pushed to very end of GPOS block.
         #
@@ -1152,7 +1156,7 @@ class run(object):
 
                 st_output.append(
                     self._dict2pos(table, self.minKern, rtl=rtl))
-        print(f'{self.num_subtables} subtables created')
+        logger.info(f'{self.num_subtables} subtables created')
         return st_output
 
     def _make_fea_data(self, kp):
@@ -1282,10 +1286,10 @@ class run(object):
 
     def write_fea_data(self, data, output_path):
 
-        print(f'Saving {output_path.name} file...')
+        logger.info(f'Saving {output_path.name} file...')
 
         if self.trimmedPairs > 0:
-            print(f'Trimmed pairs: {self.trimmedPairs}')
+            logger.info(f'Trimmed pairs: {self.trimmedPairs}')
 
         with open(output_path, 'w') as blob:
             blob.write('\n'.join(self.header))
@@ -1294,11 +1298,11 @@ class run(object):
                 blob.write('\n'.join(data))
                 blob.write('\n')
 
-        print(f'Output file written to {output_path}')
+        logger.info(f'Output file written to {output_path}')
 
     def write_locations(self, adapter, locations_path, userUnits=False):
 
-        print(f'Saving {locations_path.name} file...')
+        logger.info(f'Saving {locations_path.name} file...')
 
         data = ['# Named locations', '']
 
@@ -1312,7 +1316,7 @@ class run(object):
             blob.write('\n'.join(data))
             blob.write('\n')
 
-        print(f'Output file written to {locations_path}')
+        logger.info(f'Output file written to {locations_path}')
 
 
 def check_input_file(parser, file_name):
@@ -1446,4 +1450,5 @@ def main(test_args=None):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
     main()
