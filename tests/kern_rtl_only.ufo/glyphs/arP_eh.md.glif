@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arPeh.md" format="2">
+	<advance width="313"/>
+	<outline>
+		<component base="arAlefMaksura.m"/>
+		<component base="ar3B" xOffset="140" yOffset="-289"/>
+	</outline>
+	<anchor name="aboveAR" x="160" y="535"/>
+	<anchor name="belowAR" x="147" y="-586"/>
+</glyph>

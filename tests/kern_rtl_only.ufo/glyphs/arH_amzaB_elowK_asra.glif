@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arHamzaBelowKasra" format="2">
+	<outline>
+		<component base="arHamzaBelow"/>
+		<component base="arKasra" xScale="0.9" yScale="0.9" yOffset="-255"/>
+	</outline>
+	<anchor name="_belowAR" x="0" y="0"/>
+	<anchor name="belowAR" x="20" y="-389"/>
+</glyph>

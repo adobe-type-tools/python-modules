@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arHehGoalYeh" format="2">
+	<advance width="983"/>
+	<outline>
+		<component base="arHehGoalAlefMaksura"/>
+		<component base="ar2B" xOffset="355" yOffset="-320"/>
+	</outline>
+	<anchor name="aboveAR1ST" x="773" y="520"/>
+	<anchor name="aboveAR2ND" x="262" y="435"/>
+	<anchor name="belowAR1ST" x="852" y="-375"/>
+	<anchor name="belowAR2ND" x="362" y="-504"/>
+</glyph>

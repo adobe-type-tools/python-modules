@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arTehNoonGhunna.f" format="2">
+	<advance width="883"/>
+	<outline>
+		<component base="arAlefMaksuraNoonGhunna.f"/>
+		<component base="ar2A" xOffset="710" yOffset="-363"/>
+	</outline>
+	<anchor name="aboveAR1ST" x="690" y="572"/>
+	<anchor name="aboveAR2ND" x="267" y="487"/>
+	<anchor name="belowAR1ST" x="709" y="-180"/>
+	<anchor name="belowAR2ND" x="329" y="-335"/>
+</glyph>

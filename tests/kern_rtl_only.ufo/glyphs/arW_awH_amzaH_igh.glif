@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arWawHamzaHigh" format="2">
+	<unicode hex="0676"/>
+	<advance width="493"/>
+	<outline>
+		<component base="arWaw"/>
+		<component base="arHamzaHigh" xOffset="315" yOffset="-283"/>
+	</outline>
+	<anchor name="aboveAR" x="352" y="729"/>
+	<anchor name="belowAR" x="230" y="-277"/>
+</glyph>

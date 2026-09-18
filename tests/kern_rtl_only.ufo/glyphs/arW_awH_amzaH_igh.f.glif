@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arWawHamzaHigh.f" format="2">
+	<advance width="556"/>
+	<outline>
+		<contour>
+			<point x="57" y="-268" type="line"/>
+			<point x="270" y="-241"/>
+			<point x="384" y="-107"/>
+			<point x="384" y="101" type="curve" smooth="yes"/>
+			<point x="384" y="240"/>
+			<point x="311" y="338"/>
+			<point x="223" y="338" type="curve" smooth="yes"/>
+			<point x="141" y="338"/>
+			<point x="62" y="247"/>
+			<point x="62" y="138" type="curve" smooth="yes"/>
+			<point x="62" y="43"/>
+			<point x="123" y="0"/>
+			<point x="213" y="0" type="curve" smooth="yes"/>
+			<point x="556" y="0" type="line" smooth="yes"/>
+			<point x="581" y="0"/>
+			<point x="599" y="17"/>
+			<point x="599" y="42" type="curve" smooth="yes"/>
+			<point x="599" y="67"/>
+			<point x="581" y="84"/>
+			<point x="556" y="84" type="curve" smooth="yes"/>
+			<point x="492" y="84"/>
+			<point x="283" y="81"/>
+			<point x="224" y="81" type="curve" smooth="yes"/>
+			<point x="159" y="81"/>
+			<point x="116" y="100"/>
+			<point x="116" y="155" type="curve" smooth="yes"/>
+			<point x="116" y="213"/>
+			<point x="164" y="262"/>
+			<point x="214" y="262" type="curve" smooth="yes"/>
+			<point x="274" y="262"/>
+			<point x="330" y="195"/>
+			<point x="330" y="86" type="curve" smooth="yes"/>
+			<point x="330" y="-63"/>
+			<point x="253" y="-167"/>
+			<point x="35" y="-193" type="curve"/>
+		</contour>
+		<component base="arHamzaHigh" xOffset="315" yOffset="-336"/>
+	</outline>
+	<anchor name="aboveAR" x="352" y="677"/>
+	<anchor name="belowAR" x="230" y="-329"/>
+</glyph>

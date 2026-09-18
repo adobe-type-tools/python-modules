@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arHehGoal.ie" format="2">
+	<advance width="288"/>
+	<outline>
+		<component base="arAlefMaksura.i"/>
+		<component base="arGoal" xOffset="135" yOffset="-289"/>
+	</outline>
+	<anchor name="aboveAR" x="131" y="615"/>
+	<anchor name="belowAR" x="178" y="-677"/>
+</glyph>

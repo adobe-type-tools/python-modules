@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arAlefMaksuraNoonGhunna.fj" format="2">
+	<advance width="1789"/>
+	<outline>
+		<contour>
+			<point x="703" y="-251" type="curve" smooth="yes"/>
+			<point x="1047" y="-251"/>
+			<point x="1254" y="-205"/>
+			<point x="1343" y="-164" type="curve" smooth="yes"/>
+			<point x="1443" y="-118"/>
+			<point x="1491" y="-80"/>
+			<point x="1491" y="32" type="curve" smooth="yes"/>
+			<point x="1491" y="65"/>
+			<point x="1484" y="116"/>
+			<point x="1472" y="169" type="curve"/>
+			<point x="1466" y="158" type="line"/>
+			<point x="1529" y="163"/>
+			<point x="1595" y="178"/>
+			<point x="1646" y="198" type="curve"/>
+			<point x="1629" y="206" type="line"/>
+			<point x="1647" y="30"/>
+			<point x="1713" y="0"/>
+			<point x="1789" y="0" type="curve" smooth="yes"/>
+			<point x="1814" y="0"/>
+			<point x="1832" y="17"/>
+			<point x="1832" y="42" type="curve" smooth="yes"/>
+			<point x="1832" y="66"/>
+			<point x="1814" y="84"/>
+			<point x="1789" y="84" type="curve" smooth="yes"/>
+			<point x="1740" y="84"/>
+			<point x="1694" y="102"/>
+			<point x="1690" y="270" type="curve"/>
+			<point x="1633" y="265" type="line"/>
+			<point x="1568" y="239"/>
+			<point x="1485" y="223"/>
+			<point x="1390" y="214" type="curve"/>
+			<point x="1414" y="136"/>
+			<point x="1427" y="72"/>
+			<point x="1427" y="22" type="curve" smooth="yes"/>
+			<point x="1427" y="-68"/>
+			<point x="1272" y="-167"/>
+			<point x="715" y="-167" type="curve" smooth="yes"/>
+			<point x="449" y="-167"/>
+			<point x="180" y="-120"/>
+			<point x="46" y="-87" type="curve"/>
+			<point x="54" y="-170" type="line"/>
+			<point x="185" y="-205"/>
+			<point x="410" y="-251"/>
+		</contour>
+	</outline>
+	<anchor name="aboveAR1ST" x="1645" y="497"/>
+	<anchor name="aboveAR2ND" x="798" y="409"/>
+	<anchor name="belowAR1ST" x="1606" y="-229"/>
+	<anchor name="belowAR2ND" x="982" y="-375"/>
+</glyph>

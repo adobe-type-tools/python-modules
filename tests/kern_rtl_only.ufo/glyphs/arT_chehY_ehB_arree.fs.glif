@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arTchehYehBarree.fs" format="2">
+	<advance width="762"/>
+	<outline>
+		<component base="arHahYehBarree.fs"/>
+		<component base="ar3B" xOffset="504" yOffset="-289"/>
+	</outline>
+	<anchor name="aboveAR1ST" x="420" y="572"/>
+	<anchor name="aboveAR2ND" x="-23" y="284"/>
+	<anchor name="belowAR1ST" x="512" y="-586"/>
+	<anchor name="belowAR2ND" x="222" y="-472"/>
+</glyph>

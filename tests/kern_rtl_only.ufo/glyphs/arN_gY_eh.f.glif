@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arNgYeh.f" format="2">
+	<advance width="819"/>
+	<outline>
+		<component base="arNgAlefMaksura.f"/>
+		<component base="ar2B" xOffset="355" yOffset="-320"/>
+	</outline>
+	<anchor name="aboveAR1ST" x="477" y="973"/>
+	<anchor name="aboveAR2ND" x="122" y="435"/>
+	<anchor name="belowAR1ST" x="689" y="-315"/>
+	<anchor name="belowAR2ND" x="362" y="-504"/>
+</glyph>

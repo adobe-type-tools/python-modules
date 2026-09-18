@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arAlefWasla.f" format="2">
+	<advance width="240"/>
+	<outline>
+		<component base="arAlef.f"/>
+		<component base="arWasla" xOffset="111" yOffset="13"/>
+	</outline>
+	<anchor name="aboveAR" x="101" y="947"/>
+	<anchor name="belowAR" x="155" y="-180"/>
+</glyph>

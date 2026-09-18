@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arAlefAbove" format="2">
+	<unicode hex="0670"/>
+	<outline>
+		<contour>
+			<point x="-26" y="754" type="line"/>
+			<point x="29" y="757" type="line"/>
+			<point x="29" y="982" type="line"/>
+			<point x="-32" y="978" type="line"/>
+		</contour>
+	</outline>
+	<anchor name="_aboveAR" x="0" y="733"/>
+	<anchor name="aboveAR" x="-4" y="1004"/>
+</glyph>

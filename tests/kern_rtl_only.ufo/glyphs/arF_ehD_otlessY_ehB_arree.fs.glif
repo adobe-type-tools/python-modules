@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arFehDotlessYehBarree.fs" format="2">
+	<advance width="652"/>
+	<outline>
+		<contour>
+			<point x="283" y="-243" type="curve" smooth="yes"/>
+			<point x="713" y="-243" type="line"/>
+			<point x="718" y="-160" type="line"/>
+			<point x="269" y="-160" type="line" smooth="yes"/>
+			<point x="152" y="-160"/>
+			<point x="96" y="-159"/>
+			<point x="96" y="-110" type="curve" smooth="yes"/>
+			<point x="96" y="-32"/>
+			<point x="287" y="-18"/>
+			<point x="424" y="49" type="curve"/>
+			<point x="483" y="19"/>
+			<point x="558" y="0"/>
+			<point x="652" y="0" type="curve" smooth="yes"/>
+			<point x="680" y="0"/>
+			<point x="695" y="16"/>
+			<point x="695" y="42" type="curve" smooth="yes"/>
+			<point x="695" y="69"/>
+			<point x="680" y="84"/>
+			<point x="652" y="84" type="curve" smooth="yes"/>
+			<point x="589" y="84"/>
+			<point x="537" y="92"/>
+			<point x="496" y="106" type="curve"/>
+			<point x="555" y="153"/>
+			<point x="584" y="203"/>
+			<point x="584" y="260" type="curve" smooth="yes"/>
+			<point x="584" y="360"/>
+			<point x="511" y="450"/>
+			<point x="436" y="450" type="curve" smooth="yes"/>
+			<point x="356" y="450"/>
+			<point x="276" y="361"/>
+			<point x="276" y="257" type="curve" smooth="yes"/>
+			<point x="276" y="198"/>
+			<point x="305" y="142"/>
+			<point x="364" y="94" type="curve"/>
+			<point x="253" y="44"/>
+			<point x="30" y="20"/>
+			<point x="30" y="-118" type="curve" smooth="yes"/>
+			<point x="30" y="-217"/>
+			<point x="100" y="-243"/>
+		</contour>
+		<contour>
+			<point x="432" y="123" type="curve"/>
+			<point x="360" y="159"/>
+			<point x="330" y="214"/>
+			<point x="330" y="254" type="curve" smooth="yes"/>
+			<point x="330" y="311"/>
+			<point x="381" y="372"/>
+			<point x="433" y="372" type="curve" smooth="yes"/>
+			<point x="479" y="372"/>
+			<point x="530" y="315"/>
+			<point x="530" y="244" type="curve" smooth="yes"/>
+			<point x="530" y="207"/>
+			<point x="507" y="163"/>
+		</contour>
+	</outline>
+	<anchor name="aboveAR1ST" x="414" y="561"/>
+	<anchor name="aboveAR2ND" x="55" y="284"/>
+	<anchor name="belowAR1ST" x="435" y="-360"/>
+	<anchor name="belowAR2ND" x="209" y="-360"/>
+</glyph>

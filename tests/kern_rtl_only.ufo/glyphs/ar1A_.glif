@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="ar1A" format="2">
+	<outline>
+		<contour>
+			<point x="5" y="740" type="line"/>
+			<point x="64" y="809" type="line"/>
+			<point x="-5" y="872" type="line"/>
+			<point x="-64" y="802" type="line"/>
+		</contour>
+	</outline>
+	<anchor name="_aboveAR" x="0" y="733"/>
+	<anchor name="aboveAR" x="-20" y="935"/>
+</glyph>

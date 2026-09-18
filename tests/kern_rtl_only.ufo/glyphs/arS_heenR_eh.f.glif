@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arSheenReh.f" format="2">
+	<advance width="981"/>
+	<outline>
+		<component base="arSeenReh.f"/>
+		<component base="ar3A" xOffset="628" yOffset="-371"/>
+	</outline>
+	<anchor name="aboveAR1ST" x="608" y="652"/>
+	<anchor name="aboveAR2ND" x="127" y="404"/>
+	<anchor name="belowAR1ST" x="648" y="-180"/>
+	<anchor name="belowAR2ND" x="85" y="-317"/>
+</glyph>

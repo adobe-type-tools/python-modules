@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arKafYehBarree" format="2">
+	<advance width="519"/>
+	<outline>
+		<contour>
+			<point x="283" y="-243" type="curve" smooth="yes"/>
+			<point x="780" y="-243" type="line"/>
+			<point x="785" y="-160" type="line"/>
+			<point x="269" y="-160" type="line" smooth="yes"/>
+			<point x="152" y="-160"/>
+			<point x="96" y="-159"/>
+			<point x="96" y="-110" type="curve" smooth="yes"/>
+			<point x="96" y="-72"/>
+			<point x="151" y="-46"/>
+			<point x="234" y="-17" type="curve" smooth="yes"/>
+			<point x="349" y="22"/>
+			<point x="421" y="64"/>
+			<point x="421" y="175" type="curve" smooth="yes"/>
+			<point x="421" y="260"/>
+			<point x="340" y="358"/>
+			<point x="187" y="515" type="curve"/>
+			<point x="286" y="563"/>
+			<point x="436" y="616"/>
+			<point x="536" y="655" type="curve"/>
+			<point x="542" y="731" type="line"/>
+			<point x="406" y="680"/>
+			<point x="252" y="623"/>
+			<point x="138" y="568" type="curve"/>
+			<point x="126" y="481" type="line"/>
+			<point x="272" y="333"/>
+			<point x="366" y="227"/>
+			<point x="366" y="161" type="curve" smooth="yes"/>
+			<point x="366" y="103"/>
+			<point x="313" y="77"/>
+			<point x="201" y="43" type="curve" smooth="yes"/>
+			<point x="91" y="10"/>
+			<point x="30" y="-44"/>
+			<point x="30" y="-118" type="curve" smooth="yes"/>
+			<point x="30" y="-217"/>
+			<point x="100" y="-243"/>
+		</contour>
+	</outline>
+	<anchor name="aboveAR1ST" x="300" y="776"/>
+	<anchor name="aboveAR2ND" x="-74" y="284"/>
+	<anchor name="belowAR1ST" x="409" y="-360"/>
+	<anchor name="belowAR2ND" x="209" y="-360"/>
+</glyph>

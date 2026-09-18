@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arHamzaBelow" format="2">
+	<unicode hex="0655"/>
+	<outline>
+		<component base="arHamzaAbove" yOffset="-1000"/>
+	</outline>
+	<anchor name="_belowAR" x="0" y="0"/>
+	<anchor name="belowAR" x="0" y="-255"/>
+</glyph>

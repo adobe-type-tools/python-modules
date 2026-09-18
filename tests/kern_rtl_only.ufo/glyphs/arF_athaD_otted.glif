@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arFathaDotted" format="2">
+	<unicode hex="065E"/>
+	<outline>
+		<contour>
+			<point x="-87" y="771" type="line"/>
+			<point x="113" y="953" type="line"/>
+			<point x="88" y="981" type="line"/>
+			<point x="-111" y="799" type="line"/>
+		</contour>
+		<component base="ar1A" xScale="0.816" yScale="0.816" xOffset="84" yOffset="134"/>
+		<component base="ar1A" xScale="0.816" yScale="0.816" xOffset="-84" yOffset="301"/>
+	</outline>
+	<anchor name="_aboveAR" x="0" y="733"/>
+	<anchor name="aboveAR" x="-4" y="1000"/>
+</glyph>

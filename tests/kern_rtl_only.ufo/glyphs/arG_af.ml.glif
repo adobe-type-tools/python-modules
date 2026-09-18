@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arGaf.ml" format="2">
+	<advance width="507"/>
+	<outline>
+		<component base="arKaf.ml"/>
+		<component base="arStroke" xOffset="218" yOffset="669"/>
+	</outline>
+	<anchor name="aboveAR" x="248" y="839"/>
+	<anchor name="belowAR" x="295" y="-180"/>
+</glyph>

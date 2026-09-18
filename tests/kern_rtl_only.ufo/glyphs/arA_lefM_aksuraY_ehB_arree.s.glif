@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arAlefMaksuraYehBarree.s" format="2">
+	<advance width="424"/>
+	<outline>
+		<contour>
+			<point x="283" y="-243" type="curve" smooth="yes"/>
+			<point x="485" y="-243" type="line"/>
+			<point x="489" y="-160" type="line"/>
+			<point x="269" y="-160" type="line" smooth="yes"/>
+			<point x="152" y="-160"/>
+			<point x="96" y="-159"/>
+			<point x="96" y="-110" type="curve" smooth="yes"/>
+			<point x="96" y="-65"/>
+			<point x="164" y="-41"/>
+			<point x="223" y="-20" type="curve" smooth="yes"/>
+			<point x="340" y="19"/>
+			<point x="373" y="64"/>
+			<point x="373" y="176" type="curve" smooth="yes"/>
+			<point x="373" y="261"/>
+			<point x="361" y="332"/>
+			<point x="347" y="398" type="curve"/>
+			<point x="275" y="383" type="line"/>
+			<point x="294" y="315"/>
+			<point x="310" y="242"/>
+			<point x="310" y="162" type="curve" smooth="yes"/>
+			<point x="310" y="96"/>
+			<point x="293" y="75"/>
+			<point x="189" y="41" type="curve" smooth="yes"/>
+			<point x="110" y="14"/>
+			<point x="30" y="-35"/>
+			<point x="30" y="-118" type="curve" smooth="yes"/>
+			<point x="30" y="-217"/>
+			<point x="100" y="-243"/>
+		</contour>
+	</outline>
+	<anchor name="aboveAR1ST" x="252" y="615"/>
+	<anchor name="aboveAR2ND" x="93" y="447"/>
+	<anchor name="belowAR1ST" x="319" y="-360"/>
+	<anchor name="belowAR2ND" x="144" y="-360"/>
+</glyph>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arKasra" format="2">
+	<unicode hex="0650"/>
+	<outline>
+		<component base="arFatha" xOffset="33" yOffset="-867"/>
+	</outline>
+	<anchor name="_belowAR" x="0" y="0"/>
+	<anchor name="belowAR" x="20" y="-135"/>
+</glyph>

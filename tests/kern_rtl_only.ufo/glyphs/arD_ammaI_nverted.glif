@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arDammaInverted" format="2">
+	<unicode hex="0657"/>
+	<outline>
+		<component base="arDamma" xScale="-1" yScale="-1" xOffset="5" yOffset="1730"/>
+	</outline>
+	<anchor name="_aboveAR" x="0" y="733"/>
+	<anchor name="aboveAR" x="-4" y="1015"/>
+</glyph>

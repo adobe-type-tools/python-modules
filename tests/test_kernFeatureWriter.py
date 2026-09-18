@@ -329,6 +329,22 @@ def test_default_rtl():
     assert read_file(fea_temp) == read_file(fea_example)
 
 
+def test_rtl_only():
+    '''
+    UFO contains only RTL glyphs
+    '''
+    args = Defaults()
+    ufo_path = TEST_DIR / 'kern_rtl_only.ufo'
+    fea_example = TEST_DIR / 'kern_rtl_only.fea'
+    fea_temp = TEMP_DIR / fea_example.name
+    args.input_file = ufo_path
+    args.write_subtables = True
+    args.output_name = fea_temp
+    f = defcon.Font(ufo_path)
+    run_local(f, args)
+    assert read_file(fea_temp) == read_file(fea_example)
+
+
 def test_subtable():
     '''
     test writing a file with subtable breaks

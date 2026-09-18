@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arSadReh" format="2">
+	<advance width="1048"/>
+	<outline>
+		<contour>
+			<point x="-75" y="-265" type="line"/>
+			<point x="119" y="-226"/>
+			<point x="217" y="-77"/>
+			<point x="217" y="77" type="curve" smooth="yes"/>
+			<point x="217" y="102"/>
+			<point x="215" y="132"/>
+			<point x="207" y="169" type="curve"/>
+			<point x="201" y="150" type="line"/>
+			<point x="263" y="156"/>
+			<point x="329" y="171"/>
+			<point x="381" y="191" type="curve"/>
+			<point x="363" y="196" type="line"/>
+			<point x="386" y="27"/>
+			<point x="458" y="0"/>
+			<point x="703" y="0" type="curve" smooth="yes"/>
+			<point x="845" y="0"/>
+			<point x="912" y="24"/>
+			<point x="951" y="62" type="curve" smooth="yes"/>
+			<point x="990" y="99"/>
+			<point x="1003" y="138"/>
+			<point x="1003" y="186" type="curve" smooth="yes"/>
+			<point x="1003" y="261"/>
+			<point x="926" y="355"/>
+			<point x="827" y="355" type="curve" smooth="yes"/>
+			<point x="725" y="355"/>
+			<point x="605" y="290"/>
+			<point x="487" y="95" type="curve"/>
+			<point x="497" y="98" type="line"/>
+			<point x="446" y="120"/>
+			<point x="426" y="162"/>
+			<point x="424" y="263" type="curve"/>
+			<point x="367" y="258" type="line"/>
+			<point x="303" y="233"/>
+			<point x="221" y="215"/>
+			<point x="125" y="208" type="curve"/>
+			<point x="142" y="158"/>
+			<point x="150" y="110"/>
+			<point x="150" y="60" type="curve" smooth="yes"/>
+			<point x="150" y="-39"/>
+			<point x="81" y="-153"/>
+			<point x="-97" y="-191" type="curve"/>
+		</contour>
+		<contour>
+			<point x="713" y="80" type="curve" smooth="yes"/>
+			<point x="641" y="80"/>
+			<point x="596" y="80"/>
+			<point x="545" y="88" type="curve"/>
+			<point x="649" y="237"/>
+			<point x="749" y="277"/>
+			<point x="817" y="277" type="curve" smooth="yes"/>
+			<point x="894" y="277"/>
+			<point x="947" y="222"/>
+			<point x="947" y="176" type="curve" smooth="yes"/>
+			<point x="947" y="119"/>
+			<point x="882" y="80"/>
+		</contour>
+	</outline>
+	<anchor name="aboveAR1ST" x="652" y="586"/>
+	<anchor name="aboveAR2ND" x="127" y="404"/>
+	<anchor name="belowAR1ST" x="770" y="-180"/>
+	<anchor name="belowAR2ND" x="85" y="-317"/>
+</glyph>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arSheen.m" format="2">
+	<advance width="720"/>
+	<outline>
+		<component base="arSeen.m"/>
+		<component base="ar3A" xOffset="369" yOffset="-371"/>
+	</outline>
+	<anchor name="aboveAR" x="349" y="652"/>
+	<anchor name="belowAR" x="389" y="-180"/>
+</glyph>

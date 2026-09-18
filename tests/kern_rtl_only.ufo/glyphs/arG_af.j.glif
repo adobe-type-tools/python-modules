@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arGaf.j" format="2">
+	<advance width="1565"/>
+	<outline>
+		<component base="arKeheh.j"/>
+		<component base="arStroke" xOffset="1303" yOffset="669"/>
+	</outline>
+	<anchor name="aboveAR" x="720" y="733"/>
+	<anchor name="belowAR" x="1033" y="-180"/>
+</glyph>

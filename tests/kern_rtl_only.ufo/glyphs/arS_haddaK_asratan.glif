@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arShaddaKasratan" format="2">
+	<outline>
+		<component base="arFathatan"/>
+		<component base="arShadda" xScale="0.9632" yScale="0.9632" xOffset="-24" yOffset="295"/>
+	</outline>
+	<anchor name="_aboveAR" x="0" y="733"/>
+	<anchor name="aboveAR" x="-20" y="1222"/>
+</glyph>

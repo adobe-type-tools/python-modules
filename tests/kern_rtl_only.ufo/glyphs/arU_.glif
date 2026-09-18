@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arU" format="2">
+	<unicode hex="06C7"/>
+	<advance width="439"/>
+	<outline>
+		<component base="arWaw"/>
+		<component base="arDamma" xOffset="208" yOffset="-283"/>
+	</outline>
+	<anchor name="aboveAR" x="205" y="732"/>
+	<anchor name="belowAR" x="230" y="-277"/>
+</glyph>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arPeh.f" format="2">
+	<advance width="934"/>
+	<outline>
+		<component base="arBehDotless.f"/>
+		<component base="ar3B" xOffset="427" yOffset="-93"/>
+	</outline>
+	<anchor name="aboveAR" x="460" y="527"/>
+	<anchor name="belowAR" x="435" y="-389"/>
+</glyph>

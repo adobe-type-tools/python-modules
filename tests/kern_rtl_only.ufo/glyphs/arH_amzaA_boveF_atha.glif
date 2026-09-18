@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arHamzaAboveFatha" format="2">
+	<outline>
+		<component base="arHamzaAbove"/>
+		<component base="arFatha" xScale="0.9632" yScale="0.9632" xOffset="-7" yOffset="269"/>
+	</outline>
+	<anchor name="_aboveAR" x="0" y="733"/>
+	<anchor name="aboveAR" x="-27" y="1120"/>
+</glyph>

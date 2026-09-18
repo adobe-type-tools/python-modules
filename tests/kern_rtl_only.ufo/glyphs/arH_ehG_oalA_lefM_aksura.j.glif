@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arHehGoalAlefMaksura.j" format="2">
+	<advance width="1760"/>
+	<outline>
+		<contour>
+			<point x="703" y="-288" type="curve" smooth="yes"/>
+			<point x="996" y="-288"/>
+			<point x="1148" y="-262"/>
+			<point x="1261" y="-217" type="curve" smooth="yes"/>
+			<point x="1363" y="-177"/>
+			<point x="1409" y="-111"/>
+			<point x="1409" y="-37" type="curve" smooth="yes"/>
+			<point x="1409" y="20"/>
+			<point x="1382" y="50"/>
+			<point x="1318" y="66" type="curve" smooth="yes"/>
+			<point x="1196" y="95" type="line" smooth="yes"/>
+			<point x="1138" y="109"/>
+			<point x="1118" y="116"/>
+			<point x="1118" y="154" type="curve" smooth="yes"/>
+			<point x="1118" y="201"/>
+			<point x="1202" y="252"/>
+			<point x="1296" y="252" type="curve" smooth="yes"/>
+			<point x="1391" y="252"/>
+			<point x="1427" y="235"/>
+			<point x="1450" y="132" type="curve" smooth="yes"/>
+			<point x="1472" y="38"/>
+			<point x="1514" y="0"/>
+			<point x="1578" y="0" type="curve" smooth="yes"/>
+			<point x="1628" y="0"/>
+			<point x="1661" y="28"/>
+			<point x="1683" y="65" type="curve" smooth="yes"/>
+			<point x="1700" y="94"/>
+			<point x="1707" y="129"/>
+			<point x="1707" y="163" type="curve" smooth="yes"/>
+			<point x="1707" y="211"/>
+			<point x="1703" y="266"/>
+			<point x="1691" y="323" type="curve"/>
+			<point x="1621" y="312" type="line"/>
+			<point x="1633" y="269"/>
+			<point x="1644" y="209"/>
+			<point x="1644" y="161" type="curve" smooth="yes"/>
+			<point x="1644" y="119"/>
+			<point x="1622" y="84"/>
+			<point x="1579" y="84" type="curve" smooth="yes"/>
+			<point x="1543" y="84"/>
+			<point x="1519" y="97"/>
+			<point x="1501" y="175" type="curve" smooth="yes"/>
+			<point x="1476" y="286"/>
+			<point x="1435" y="329"/>
+			<point x="1302" y="329" type="curve" smooth="yes"/>
+			<point x="1177" y="329"/>
+			<point x="1061" y="231"/>
+			<point x="1061" y="142" type="curve" smooth="yes"/>
+			<point x="1061" y="68"/>
+			<point x="1096" y="44"/>
+			<point x="1160" y="28" type="curve" smooth="yes"/>
+			<point x="1283" y="-1" type="line" smooth="yes"/>
+			<point x="1334" y="-13"/>
+			<point x="1348" y="-25"/>
+			<point x="1348" y="-51" type="curve" smooth="yes"/>
+			<point x="1348" y="-100"/>
+			<point x="1266" y="-204"/>
+			<point x="715" y="-204" type="curve" smooth="yes"/>
+			<point x="449" y="-204"/>
+			<point x="180" y="-156"/>
+			<point x="46" y="-125" type="curve"/>
+			<point x="54" y="-207" type="line"/>
+			<point x="185" y="-241"/>
+			<point x="410" y="-288"/>
+		</contour>
+		<component base="arGoal" xOffset="1585"/>
+	</outline>
+	<anchor name="aboveAR1ST" x="1550" y="520"/>
+	<anchor name="aboveAR2ND" x="669" y="372"/>
+	<anchor name="belowAR1ST" x="1628" y="-375"/>
+	<anchor name="belowAR2ND" x="881" y="-415"/>
+</glyph>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arQafDotless.j" format="2">
+	<advance width="1588"/>
+	<outline>
+		<contour>
+			<point x="803" y="-213" type="curve" smooth="yes"/>
+			<point x="1359" y="-213"/>
+			<point x="1470" y="-133"/>
+			<point x="1507" y="-21" type="curve" smooth="yes"/>
+			<point x="1526" y="33"/>
+			<point x="1530" y="78"/>
+			<point x="1530" y="161" type="curve" smooth="yes"/>
+			<point x="1530" y="300"/>
+			<point x="1457" y="398"/>
+			<point x="1369" y="398" type="curve" smooth="yes"/>
+			<point x="1287" y="398"/>
+			<point x="1208" y="307"/>
+			<point x="1208" y="198" type="curve" smooth="yes"/>
+			<point x="1208" y="106"/>
+			<point x="1269" y="66"/>
+			<point x="1359" y="66" type="curve" smooth="yes"/>
+			<point x="1412" y="66"/>
+			<point x="1441" y="75"/>
+			<point x="1475" y="87" type="curve"/>
+			<point x="1462" y="-55"/>
+			<point x="1399" y="-130"/>
+			<point x="815" y="-130" type="curve" smooth="yes"/>
+			<point x="497" y="-130"/>
+			<point x="197" y="-86"/>
+			<point x="46" y="-50" type="curve"/>
+			<point x="54" y="-133" type="line"/>
+			<point x="203" y="-172"/>
+			<point x="451" y="-213"/>
+		</contour>
+		<contour>
+			<point x="1374" y="138" type="curve" smooth="yes"/>
+			<point x="1306" y="138"/>
+			<point x="1262" y="156"/>
+			<point x="1262" y="214" type="curve" smooth="yes"/>
+			<point x="1262" y="272"/>
+			<point x="1310" y="322"/>
+			<point x="1360" y="322" type="curve" smooth="yes"/>
+			<point x="1421" y="322"/>
+			<point x="1476" y="255"/>
+			<point x="1476" y="146" type="curve" smooth="yes"/>
+			<point x="1476" y="140"/>
+			<point x="1476" y="129"/>
+			<point x="1476" y="120" type="curve"/>
+			<point x="1484" y="151" type="line"/>
+			<point x="1450" y="142"/>
+			<point x="1412" y="138"/>
+		</contour>
+	</outline>
+	<anchor name="aboveAR" x="729" y="439"/>
+	<anchor name="belowAR" x="1095" y="-327"/>
+</glyph>

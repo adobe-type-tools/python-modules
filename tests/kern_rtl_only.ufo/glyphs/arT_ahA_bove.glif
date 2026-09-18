@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arTahAbove" format="2">
+	<unicode hex="0615"/>
+	<outline>
+		<contour>
+			<point x="4" y="757" type="curve" smooth="yes"/>
+			<point x="53" y="757"/>
+			<point x="78" y="768"/>
+			<point x="95" y="780" type="curve" smooth="yes"/>
+			<point x="116" y="795"/>
+			<point x="124" y="813"/>
+			<point x="124" y="838" type="curve" smooth="yes"/>
+			<point x="124" y="871"/>
+			<point x="93" y="905"/>
+			<point x="51" y="905" type="curve" smooth="yes"/>
+			<point x="26" y="905"/>
+			<point x="-1" y="896"/>
+			<point x="-31" y="868" type="curve"/>
+			<point x="-29" y="904" type="line"/>
+			<point x="-29" y="994" type="line"/>
+			<point x="-74" y="990" type="line"/>
+			<point x="-71" y="826" type="line"/>
+			<point x="-77" y="818"/>
+			<point x="-80" y="812"/>
+			<point x="-85" y="804" type="curve"/>
+			<point x="-95" y="804"/>
+			<point x="-102" y="805"/>
+			<point x="-117" y="806" type="curve"/>
+			<point x="-114" y="768" type="line"/>
+			<point x="-86" y="759"/>
+			<point x="-53" y="757"/>
+		</contour>
+		<contour>
+			<point x="6" y="800" type="curve" smooth="yes"/>
+			<point x="-14" y="800"/>
+			<point x="-31" y="800"/>
+			<point x="-46" y="801" type="curve"/>
+			<point x="-13" y="844"/>
+			<point x="20" y="863"/>
+			<point x="47" y="863" type="curve" smooth="yes"/>
+			<point x="71" y="863"/>
+			<point x="87" y="850"/>
+			<point x="87" y="834" type="curve" smooth="yes"/>
+			<point x="87" y="815"/>
+			<point x="59" y="800"/>
+		</contour>
+	</outline>
+	<anchor name="_aboveAR" x="0" y="733"/>
+	<anchor name="aboveAR" x="-60" y="1047"/>
+</glyph>

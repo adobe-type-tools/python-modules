@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arVInvertedAbove" format="2">
+	<unicode hex="065B"/>
+	<outline>
+		<contour>
+			<point x="-105" y="757" type="line"/>
+			<point x="-52" y="757" type="line"/>
+			<point x="-1" y="901" type="line"/>
+			<point x="1" y="901" type="line"/>
+			<point x="14" y="864"/>
+			<point x="38" y="805"/>
+			<point x="62" y="754" type="curve"/>
+			<point x="114" y="758" type="line"/>
+			<point x="82" y="815"/>
+			<point x="46" y="892"/>
+			<point x="22" y="954" type="curve"/>
+			<point x="-23" y="950" type="line"/>
+		</contour>
+	</outline>
+	<anchor name="_aboveAR" x="0" y="733"/>
+	<anchor name="aboveAR" x="0" y="1000"/>
+</glyph>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arQaf.j" format="2">
+	<advance width="1588"/>
+	<outline>
+		<component base="arQafDotless.j"/>
+		<component base="ar2A" xOffset="1349" yOffset="-247"/>
+	</outline>
+	<anchor name="aboveAR" x="744" y="439"/>
+	<anchor name="belowAR" x="1095" y="-353"/>
+</glyph>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arPehYehHamza.fj" format="2">
+	<advance width="1604"/>
+	<outline>
+		<component base="arPehAlefMaksura.fj"/>
+		<component base="arHamzaAbove" xOffset="280" yOffset="-618"/>
+	</outline>
+	<anchor name="aboveAR1ST" x="1434" y="531"/>
+	<anchor name="aboveAR2ND" x="669" y="435"/>
+	<anchor name="belowAR1ST" x="1474" y="-512"/>
+	<anchor name="belowAR2ND" x="881" y="-415"/>
+</glyph>

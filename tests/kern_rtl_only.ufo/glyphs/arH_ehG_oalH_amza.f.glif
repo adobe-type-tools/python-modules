@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arHehGoalHamza.f" format="2">
+	<advance width="463"/>
+	<outline>
+		<component base="arHehGoal.f"/>
+		<component base="arHamzaAbove" xOffset="222" yOffset="-380"/>
+	</outline>
+	<anchor name="aboveAR" x="202" y="633"/>
+	<anchor name="belowAR" x="249" y="-180"/>
+</glyph>

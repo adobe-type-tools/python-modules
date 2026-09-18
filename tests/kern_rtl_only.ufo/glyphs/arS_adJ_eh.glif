@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arSadJeh" format="2">
+	<advance width="1048"/>
+	<outline>
+		<component base="arSadReh"/>
+		<component base="ar3A" xOffset="135" yOffset="-411"/>
+	</outline>
+	<anchor name="aboveAR1ST" x="652" y="586"/>
+	<anchor name="aboveAR2ND" x="127" y="612"/>
+	<anchor name="belowAR1ST" x="770" y="-180"/>
+	<anchor name="belowAR2ND" x="85" y="-317"/>
+</glyph>

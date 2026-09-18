@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arTehYeh.j" format="2">
+	<advance width="1441"/>
+	<outline>
+		<component base="arTehAlefMaksura.j"/>
+		<component base="ar2B" xOffset="995" yOffset="-335"/>
+	</outline>
+	<anchor name="aboveAR1ST" x="1219" y="699"/>
+	<anchor name="aboveAR2ND" x="669" y="435"/>
+	<anchor name="belowAR1ST" x="1466" y="-315"/>
+	<anchor name="belowAR2ND" x="1002" y="-519"/>
+</glyph>

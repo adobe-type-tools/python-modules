@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arLamAlefHamzaBelow.f" format="2">
+	<advance width="562"/>
+	<outline>
+		<component base="arLamAlef.f"/>
+		<component base="arHamzaBelow" xOffset="144" yOffset="-10"/>
+	</outline>
+	<anchor name="aboveAR1ST" x="435" y="733"/>
+	<anchor name="aboveAR2ND" x="75" y="647"/>
+	<anchor name="belowAR1ST" x="423" y="-180"/>
+	<anchor name="belowAR2ND" x="144" y="-277"/>
+</glyph>

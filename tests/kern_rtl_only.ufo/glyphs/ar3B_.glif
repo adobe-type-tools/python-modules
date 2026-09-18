@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="ar3B" format="2">
+	<outline>
+		<component base="ar2A" xScale="0.9632" yScale="0.9632" yOffset="-845"/>
+		<component base="ar1A" xScale="0.8632" yScale="0.8632" yOffset="-889"/>
+	</outline>
+	<anchor name="_belowAR" x="0" y="0"/>
+	<anchor name="belowAR" x="7" y="-297"/>
+</glyph>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arRreh" format="2">
+	<unicode hex="0691"/>
+	<advance width="278"/>
+	<outline>
+		<component base="arReh"/>
+		<component base="arTahAbove" xOffset="115" yOffset="-273"/>
+	</outline>
+	<anchor name="aboveAR" x="105" y="775"/>
+	<anchor name="belowAR" x="85" y="-297"/>
+</glyph>

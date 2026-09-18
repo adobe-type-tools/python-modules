@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arLam.i" format="2">
+	<advance width="237"/>
+	<outline>
+		<contour>
+			<point x="0" y="0" type="curve" smooth="yes"/>
+			<point x="102" y="0"/>
+			<point x="155" y="62"/>
+			<point x="155" y="188" type="curve" smooth="yes"/>
+			<point x="155" y="718" type="line"/>
+			<point x="82" y="713" type="line"/>
+			<point x="87" y="196" type="line" smooth="yes"/>
+			<point x="87" y="116"/>
+			<point x="57" y="84"/>
+			<point x="0" y="84" type="curve" smooth="yes"/>
+			<point x="-25" y="84"/>
+			<point x="-43" y="67"/>
+			<point x="-43" y="42" type="curve" smooth="yes"/>
+			<point x="-43" y="19"/>
+			<point x="-25" y="0"/>
+		</contour>
+	</outline>
+	<anchor name="aboveAR" x="111" y="733"/>
+	<anchor name="belowAR" x="96" y="-180"/>
+</glyph>

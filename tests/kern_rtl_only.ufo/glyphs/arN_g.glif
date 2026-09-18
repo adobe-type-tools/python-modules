@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arNg" format="2">
+	<unicode hex="06AD"/>
+	<advance width="732"/>
+	<outline>
+		<component base="arKaf"/>
+		<component base="ar3A" xScale="0.9632" yScale="0.9632" xOffset="304" yOffset="-32"/>
+	</outline>
+	<anchor name="aboveAR" x="284" y="953"/>
+	<anchor name="belowAR" x="397" y="-180"/>
+</glyph>

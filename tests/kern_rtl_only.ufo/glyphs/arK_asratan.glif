@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arKasratan" format="2">
+	<unicode hex="064D"/>
+	<outline>
+		<component base="arFathatan" xOffset="33" yOffset="-982"/>
+	</outline>
+	<anchor name="_belowAR" x="0" y="0"/>
+	<anchor name="belowAR" x="20" y="-237"/>
+</glyph>

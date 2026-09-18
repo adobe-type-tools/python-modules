@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arTehMarbutaGoal" format="2">
+	<unicode hex="06C3"/>
+	<advance width="440"/>
+	<outline>
+		<component base="arTehMarbuta"/>
+	</outline>
+	<anchor name="aboveAR" x="201" y="663"/>
+	<anchor name="belowAR" x="235" y="-180"/>
+</glyph>

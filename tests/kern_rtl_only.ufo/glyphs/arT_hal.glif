@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arThal" format="2">
+	<unicode hex="0630"/>
+	<advance width="458"/>
+	<outline>
+		<component base="arDal"/>
+		<component base="ar1A" xOffset="189" yOffset="-153"/>
+	</outline>
+	<anchor name="aboveAR" x="169" y="782"/>
+	<anchor name="belowAR" x="242" y="-180"/>
+</glyph>

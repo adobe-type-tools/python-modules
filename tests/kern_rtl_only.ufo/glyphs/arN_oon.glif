@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arNoon" format="2">
+	<unicode hex="0646"/>
+	<advance width="614"/>
+	<outline>
+		<component base="arNoonGhunna"/>
+		<component base="ar1A" xOffset="267" yOffset="-323"/>
+	</outline>
+	<anchor name="aboveAR" x="247" y="612"/>
+	<anchor name="belowAR" x="329" y="-280"/>
+</glyph>

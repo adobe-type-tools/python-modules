@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arJeem.md" format="2">
+	<advance width="653"/>
+	<outline>
+		<component base="arHah.m"/>
+		<component base="ar1B" xOffset="302" yOffset="-289"/>
+	</outline>
+	<anchor name="aboveAR" x="292" y="572"/>
+	<anchor name="belowAR" x="309" y="-499"/>
+</glyph>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arGhain.m" format="2">
+	<advance width="501"/>
+	<outline>
+		<component base="arAin.m"/>
+		<component base="ar1A" xOffset="261" yOffset="-303"/>
+	</outline>
+	<anchor name="aboveAR" x="241" y="644"/>
+	<anchor name="belowAR" x="275" y="-180"/>
+</glyph>

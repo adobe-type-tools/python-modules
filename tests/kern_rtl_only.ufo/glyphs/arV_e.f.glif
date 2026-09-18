@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arVe.f" format="2">
+	<advance width="420"/>
+	<outline>
+		<component base="arWaw.f"/>
+		<component base="ar3A" xOffset="208" yOffset="-328"/>
+	</outline>
+	<anchor name="aboveAR" x="188" y="694"/>
+	<anchor name="belowAR" x="230" y="-329"/>
+</glyph>

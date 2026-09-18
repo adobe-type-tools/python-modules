@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arBehDotless.fj" format="2">
+	<advance width="1650"/>
+	<outline>
+		<contour>
+			<point x="703" y="-32" type="curve" smooth="yes"/>
+			<point x="1360" y="-32"/>
+			<point x="1459" y="33"/>
+			<point x="1496" y="131" type="curve"/>
+			<point x="1477" y="131" type="line"/>
+			<point x="1489" y="35"/>
+			<point x="1550" y="0"/>
+			<point x="1650" y="0" type="curve" smooth="yes"/>
+			<point x="1674" y="0"/>
+			<point x="1693" y="17"/>
+			<point x="1693" y="43" type="curve" smooth="yes"/>
+			<point x="1693" y="67"/>
+			<point x="1674" y="84"/>
+			<point x="1650" y="84" type="curve" smooth="yes"/>
+			<point x="1578" y="84"/>
+			<point x="1533" y="111"/>
+			<point x="1533" y="187" type="curve" smooth="yes"/>
+			<point x="1533" y="216"/>
+			<point x="1534" y="247"/>
+			<point x="1537" y="280" type="curve"/>
+			<point x="1477" y="284" type="line"/>
+			<point x="1473" y="246"/>
+			<point x="1471" y="223"/>
+			<point x="1459" y="187" type="curve" smooth="yes"/>
+			<point x="1428" y="94"/>
+			<point x="1313" y="52"/>
+			<point x="715" y="52" type="curve" smooth="yes"/>
+			<point x="449" y="52"/>
+			<point x="176" y="74"/>
+			<point x="46" y="102" type="curve"/>
+			<point x="54" y="19" type="line"/>
+			<point x="181" y="-10"/>
+			<point x="410" y="-32"/>
+		</contour>
+	</outline>
+	<anchor name="aboveAR" x="767" y="502"/>
+	<anchor name="belowAR" x="1060" y="-193"/>
+</glyph>

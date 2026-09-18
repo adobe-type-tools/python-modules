@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arAlef" format="2">
+	<unicode hex="0627"/>
+	<advance width="240"/>
+	<outline>
+		<contour>
+			<point x="90" y="-3" type="line"/>
+			<point x="155" y="0" type="line"/>
+			<point x="155" y="718" type="line"/>
+			<point x="82" y="713" type="line"/>
+		</contour>
+	</outline>
+	<anchor name="aboveAR" x="111" y="733"/>
+	<anchor name="belowAR" x="118" y="-180"/>
+</glyph>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arQaf" format="2">
+	<unicode hex="0642"/>
+	<advance width="689"/>
+	<outline>
+		<component base="arQafDotless"/>
+		<component base="ar2A" xOffset="454" yOffset="-243"/>
+	</outline>
+	<anchor name="aboveAR" x="434" y="692"/>
+	<anchor name="belowAR" x="377" y="-307"/>
+</glyph>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arFathatan" format="2">
+	<unicode hex="064B"/>
+	<outline>
+		<contour>
+			<point x="-141" y="761" type="line"/>
+			<point x="120" y="819" type="line"/>
+			<point x="109" y="865" type="line"/>
+			<point x="-152" y="807" type="line"/>
+		</contour>
+		<contour>
+			<point x="-141" y="876" type="line"/>
+			<point x="119" y="933" type="line"/>
+			<point x="108" y="979" type="line"/>
+			<point x="-153" y="922" type="line"/>
+		</contour>
+	</outline>
+	<anchor name="_aboveAR" x="0" y="733"/>
+	<anchor name="aboveAR" x="-20" y="995"/>
+</glyph>

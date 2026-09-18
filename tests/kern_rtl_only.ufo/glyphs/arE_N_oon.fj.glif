@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<glyph name="arENoon.fj" format="2">
+	<advance width="1789"/>
+	<outline>
+		<component base="arAlefMaksuraNoonGhunna.fj"/>
+		<component base="ar2V" xOffset="1606" yOffset="-93"/>
+		<component base="ar1A" xOffset="944" yOffset="-438"/>
+	</outline>
+	<anchor name="aboveAR1ST" x="1645" y="535"/>
+	<anchor name="aboveAR2ND" x="924" y="497"/>
+	<anchor name="belowAR1ST" x="1614" y="-412"/>
+	<anchor name="belowAR2ND" x="982" y="-375"/>
+</glyph>
