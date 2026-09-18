@@ -148,6 +148,9 @@ class Defaults(object):
     # ignore pairs which contain glyphs using the following suffix
     ignore_suffix: str = ''
 
+    # debug mode
+    debug: bool = False
+
 
 class KernAdapter(ABC):
     '''
@@ -961,37 +964,30 @@ class KernProcessor(object):
 
 class MakeMeasuredSubtables(object):
 
-    def __init__(self, kernDict, kerning, groups, maxSubtableSize):
+    def __init__(self, kernDict, kerning, groups, coverageTableSize, maxSubtableSize):
 
         self.kernDict = kernDict
         self.subtables = []
-        self.numberOfKernedGlyphs = self._getNumberOfKernedGlyphs(
-            kerning, groups)
 
-        coverageTableSize = 2 + (2 * self.numberOfKernedGlyphs)
-        # maxSubtableSize = 2 ** 14
-
-        logger.debug(f'coverage table size: {coverageTableSize}')
-        logger.debug(f'  max subtable size: {maxSubtableSize}')
-        # If Extension is not used, coverage and class subtables are
+        # If Extension table is not used, coverage and class subtables are
         # pushed to very end of GPOS block.
         #
         # Order is: script list, lookup list, feature list, then
         # table that contains lookups.
 
         # GPOS table size
-        # All GPOS lookups need to be considered
+        # All GPOS lookups need to be considered (incl mark, mkmk, curs, cpsp)
         # Look up size of all GPOS lookups
 
         measuredSubtables = []
         leftItems = sorted(set([left for left, right in self.kernDict.keys()]))
 
+        subtable = []
+
         groupedGlyphsLeft = set([])
         groupedGlyphsRight = set([])
         usedGroupsLeft = set([])
         usedGroupsRight = set([])
-
-        subtable = []
 
         for item in leftItems:
             itemPair = [
@@ -1018,6 +1014,7 @@ class MakeMeasuredSubtables(object):
 
                 subtable = []
                 subtable.append(item)
+
                 groupedGlyphsLeft = set([])
                 groupedGlyphsRight = set([])
                 usedGroupsLeft = set([])
@@ -1036,26 +1033,6 @@ class MakeMeasuredSubtables(object):
                 ]:
                     stDict[pair] = kerning.get(pair)
             self.subtables.append(stDict)
-
-    def _getNumberOfKernedGlyphs(self, kerning, groups):
-        leftList = []
-        rightList = []
-        for left, right in kerning.keys():
-            leftList.extend(groups.get(left, [left]))
-            rightList.extend(groups.get(right, [right]))
-
-        # This previous approach counts every glyph only once,
-        # which I think might be wrong:
-        # Coverage table includes left side glyphs only.
-        # Could measure only left side in order to get size of coverage table.
-        allKernedGlyphs = set(leftList) | set(rightList)
-        return len(allKernedGlyphs)
-        # (Assume that a glyph must be counted twice when kerned
-        # on both sides).
-        # return len(set(leftList)) + len(set(rightList))
-
-        # every time you get to 48 k add UseExtension keyword
-        # mark is a gpos feature too.
 
 
 class run(object):
@@ -1157,8 +1134,24 @@ class run(object):
 
                 st_output.append(
                     self._dict2pos(table, self.minKern, rtl=rtl))
-        logger.info(f'{self.num_subtables} subtables created')
         return st_output
+
+    def _getCoverageTableSize(self, kerning, groups):
+
+        leftList = []
+        rightList = []
+        for left, right in kerning.keys():
+            leftList.extend(groups.get(left, [left]))
+            rightList.extend(groups.get(right, [right]))
+
+        # Coverage table includes left side glyphs only.
+        # This previous approach counted every glyph only once,
+        # which I think might be wrong:
+        # Could measure only left side in order to get size of coverage table.
+
+        allKernedGlyphs = set(leftList) | set(rightList)
+        coverageTableSize = 2 + (2 * len(allKernedGlyphs))
+        return coverageTableSize
 
     def _make_fea_data(self, kp):
         # Build the output data.
@@ -1231,20 +1224,25 @@ class run(object):
 
             if self.write_subtables:
                 self.num_subtables = 0
+                coverageTableSize = self._getCoverageTableSize(kp.kerning, kp.groups)
+                logger.debug(f'coverage table size: {coverageTableSize}')
+                logger.debug(f'max subtable size: {self.subtable_size}')
 
                 glyph_to_class_subtables = MakeMeasuredSubtables(
                     kp.glyph_group, kp.kerning, kp.groups,
-                    self.subtable_size).subtables
+                    coverageTableSize, self.subtable_size).subtables
                 output.extend(self._build_st_output(
                     glyph_to_class_subtables, '\n# glyph, group:'))
 
                 class_to_class_subtables = MakeMeasuredSubtables(
                     kp.group_group, kp.kerning, kp.groups,
-                    self.subtable_size).subtables
+                    coverageTableSize, self.subtable_size).subtables
                 output.extend(self._build_st_output(
                     class_to_class_subtables,
                     '\n# group, glyph and group, group:')
                 )
+                if self.num_subtables > 0:
+                    logger.info(f'{self.num_subtables} subtables created')
 
         # Check if RTL pairs exist
         rtl_container_dicts = [i[0] for i in order_rtl_ext + order_rtl]
@@ -1265,21 +1263,27 @@ class run(object):
                             container_dict, minKern, enum, rtl=True))
 
             if self.write_subtables:
+                coverageTableSize = self._getCoverageTableSize(kp.kerning, kp.groups)
+                logger.debug(f'RTL coverage table size: {coverageTableSize}')
+                logger.debug(f'max subtable size: {self.subtable_size}')
                 self.num_subtables_rtl = 0
 
                 rtl_glyph_class_subtables = MakeMeasuredSubtables(
                     kp.rtl_glyph_group, kp.kerning, kp.groups,
-                    self.subtable_size).subtables
+                    coverageTableSize, self.subtable_size).subtables
                 output.extend(self._build_st_output(
                     rtl_glyph_class_subtables,
                     '\n# RTL glyph, group:', rtl=True))
 
                 rtl_class_class_subtables = MakeMeasuredSubtables(
                     kp.rtl_group_group, kp.kerning, kp.groups,
-                    self.subtable_size).subtables
+                    coverageTableSize, self.subtable_size).subtables
                 output.extend(self._build_st_output(
                     rtl_class_class_subtables,
                     '\n# RTL group, glyph and group, group:', rtl=True))
+
+                if self.num_subtables_rtl > 0:
+                    logger.info(f'{self.num_subtables_rtl} RTL subtables created')
 
             output.append(lookup_rtl_close)
 
@@ -1425,15 +1429,25 @@ def get_args(args=None):
         help=(
             'do not write pairs containing this suffix. '
             'This is a rudimentary feature, not working if a '
-            'suffixed glyph is part of a kerning group.'
-        )
-    )
+            'suffixed glyph is part of a kerning group.'))
+
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        default=False,
+        help=('set logging level to DEBUG'))
 
     return parser.parse_args(args)
 
 
 def main(test_args=None):
     args = get_args(test_args)
+
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
+    else:
+        logging.basicConfig(level=logging.INFO, format='%(message)s')
+
     if args.input_file:
         input_path = Path(args.input_file)
         if input_path.is_file():
@@ -1447,5 +1461,4 @@ def main(test_args=None):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
     main()
